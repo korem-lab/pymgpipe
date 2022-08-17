@@ -18,7 +18,8 @@ def regularFVA(
     ex_only = True, 
     solver='gurobi',
     threads=int(os.cpu_count()/2),
-    write_to_file=True):
+    write_to_file=True,
+    specific_reactions=None):
     gc.enable()
 
     if not os.path.exists(path):
@@ -30,6 +31,9 @@ def regularFVA(
     model = load_model(path=path,solver=solver)
     reactions_to_run = _get_exchange_reactions(model) if ex_only else _get_all_forward_reactions(model)
 
+    if specific_reactions is not None:
+        reactions_to_run = [r for r in reactions_to_run if r in specific_reactions]
+        
     print('Starting FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
 
     out_file='fva/%s.csv'%model.name
