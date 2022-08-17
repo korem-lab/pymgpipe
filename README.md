@@ -20,8 +20,8 @@ If you're having issues with dependencies, try running `pip install -r requireme
 ### Starting materials
 To create multi-species community models with **pymgpipe**, you need two things to start-
 
--  `panModels` folder with individual taxa models (either in `.mat` or `.xml` format)
--  `normCoverage.csv` file with samples as **columns** and taxa as **rows**. Taxa names should correspond to file names within `panModels/`
+-  Folder with individual taxa models (either in `.mat` or `.xml` format)
+-  Relative abundance file with samples as **columns** and taxa as **rows**. Taxa names should correspond to file names within taxa folder.
 
 Examples of both can be found in the  `examples/` folder
 
