@@ -1,6 +1,8 @@
 ## pymgpipe
 
-Install by running `pip install git+https://github.com/korem-lab/pymgpipe.git`
+### Installation
+Run `pip install git+https://github.com/korem-lab/pymgpipe.git`<br/><br/>
+You should now just be able to `import pymgpipe`. If you get a **ModuleNotFoundError**, make sure you're using the same python environment you used with `pip`. I highly recommend using the `pyenv` package to manage python versions & environments.
 
 
 ### Additional Dependencies
