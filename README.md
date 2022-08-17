@@ -3,7 +3,7 @@
 Install by running command `pip install git+https://github.com/korem-lab/pymgpipe.git`
 
 
-# Optional Dependencies
+### Additional Dependencies
 Need at least one of the following solvers-
 
 -  [cplex](<https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/>)
