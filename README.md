@@ -17,6 +17,14 @@ If you're running python 3.8.*, you should be able to just use `pip install cple
 Clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`<br/>
 If you're having issues with dependencies, try running `pip install -r requirements.txt`
 
+### Starting materials
+To create multi-species community models with **pymgpipe**, you need two things to start-
+
+-  `panModels` folder with individual taxa models (either in `.mat` or `.xml` format)
+-  `normCoverage.csv` file with samples as **columns** and taxa as **rows**. Taxa names should correspond to file names within `panModels/`
+
+Examples of both can be found in the  `examples/` folder
+
 ### Testing installation
 To ensure you have **pymgpipe** running correctly, follow the example shown at `examples/workflow.ipynb`. Change the `solver` param to correspond to your solver of choice and run through the steps.
 
