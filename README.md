@@ -10,5 +10,5 @@ Need at least one of the following solvers-
 -  [gurobipy](<http://www.gurobi.com>)
 
 ### Creating a local copy
-Clone repository into desired directory. After cd'ing into directory, run `pip install .`
+Clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`<br/>
 If you're having issues with dependencies, try running `pip install -r requirements.txt`
