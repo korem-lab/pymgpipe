@@ -1,9 +1,5 @@
 import os
-from queue import Empty
 import optlang
-import gurobipy
-import cplex
-
 import re
 import pandas as pd
 
@@ -135,12 +131,14 @@ def _get_all_forward_reactions(model):
 
 def _load_cplex_model(path):
     try:
+        import cplex
         return cplex.Cplex(path)
     except Exception as e:
         return None
 
 def _load_gurobi_model(path):
     try:
+        import gurobipy
         return gurobipy.read(path)
     except Exception as e:
         raise None
