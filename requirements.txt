@@ -1,0 +1,11 @@
+cobra==0.23.0
+cplex==22.1.0.0
+docplex==2.23.222
+gurobipy==9.5.2
+micom==0.30.4
+numpy==1.23.2
+optlang==1.5.2
+packaging==21.3
+pandas==1.4.3
+setuptools==56.0.0
+tqdm==4.64.0
