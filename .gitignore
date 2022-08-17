@@ -133,3 +133,5 @@ dmypy.json
 examples/problems/
 examples/models/
 examples/fva/
+examples/normCoverage_formatted.csv
+examples/sample_label_conversion.csv
