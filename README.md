@@ -25,7 +25,17 @@ To create multi-species community models with **pymgpipe**, you need two things 
 
 Examples of both can be found in the  `examples/` folder
 
-### Testing installation
+### Testing solver
+To ensure you have your solver setup correctly, you can run the following code snippet
+
+
+```
+from pymgpipe.test import test_pymgpipe
+test_pymgpipe(solver='gurobi')
+```
+If everything is properly configured, this should return no exceptions.
+
+### Testing model creation
 To ensure you have **pymgpipe** running correctly, follow the example shown at `examples/workflow.ipynb`. Change the `solver` param to correspond to your solver of choice and run through the steps.
 
 After running all three steps, your directory should look like this
