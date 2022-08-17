@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='pymgpipe',
@@ -9,6 +9,7 @@ setup(
         'optlang',
         'tqdm',
     ],
-    packages=['pymgpipe','pymgpipe.mseFBA'],
-    url='https://github.com/korem-lab/pymgpipe'
+    url='https://github.com/korem-lab/pymgpipe',
+    packages=find_packages(),
+    include_package_data = True,
 )
