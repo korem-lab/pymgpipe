@@ -37,11 +37,14 @@ def build_models(
     if not os.path.exists(formatted_coverage_file):
         formatted = _format_coverage_file(coverage_file,taxa_dir)
         formatted.to_csv(formatted_coverage_file)
+        num_samples = len(formatted.sample_id.unique())
+        num_taxa = len(formatted.strain.unique())
+        print('Created formatted coverage file with %s unique taxa and %s samples...'%(num_taxa,num_samples))
     else:
         formatted = pd.read_csv(formatted_coverage_file,index_col=0)
         num_samples = len(formatted.sample_id.unique())
         num_taxa = len(formatted.strain.unique())
-        print('Loading existing coverage file with %s unique taxa and %s samples...'%(num_taxa,num_samples))
+        print('Loaded existing coverage file with %s unique taxa and %s samples...'%(num_taxa,num_samples))
     
     threads = os.cpu_count() if threads == -1 else threads
     print('Building models using %s threads...'%(threads))
@@ -105,8 +108,6 @@ def _build_single_model(coverage_df,solver,sample_label):
     gc.collect()
 
 def _format_coverage_file(coverage_file,taxa_dir):
-    print('Formatting coverage file and removing non-existent taxa...')
-    
     model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
     coverage = pd.read_csv(coverage_file,index_col=0,header=0)
     sample_conversion_dict = {v:'mc'+str(i+1) for i,v in enumerate(coverage.columns)}
@@ -122,12 +123,10 @@ def _format_coverage_file(coverage_file,taxa_dir):
     missing_taxa = set([f.split('.')[0] for f in melted.file if not os.path.exists(f)])
     if len(missing_taxa)>0:
         melted.drop(missing_taxa,axis='index',inplace=True)
-        print('Removed %s missing taxa from coverage file' %len(missing_taxa))
+        print('!!! Removed %s missing taxa from coverage file\n' %len(missing_taxa))
         print(missing_taxa)
     
     melted = melted.loc[melted.abundance!=0]
-
-    print('Saved formatted coverage file with %s unique taxa and %s samples'%(len(melted.strain.unique()),len(melted.sample_id.unique())))
 
     melted.reset_index(inplace=True)
     melted.rename({'index':'id'},axis='columns',inplace=True)
