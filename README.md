@@ -11,7 +11,7 @@ Need at least one of the following solvers-
 -  [cplex](<https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/>)
 -  [gurobipy](<http://www.gurobi.com>)
 
-If you're running python 3.8.10, you should be able to just use `pip install cplex` or `pip install gurobipy`. For later versions of python, this might not work. Also, this does not actually create a license, it just installs the python interface to interact with these solvers. Both gurobipy and cplex offer free academic licenses. 
+If you're running python 3.8.*, you should be able to just use `pip install cplex` or `pip install gurobipy`. For later versions of python, this might not work. Also, this does not actually create a license, it just installs the python interface to interact with these solvers. Both gurobipy and cplex offer free academic licenses. 
 
 ### Creating a local copy
 Clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`<br/>
