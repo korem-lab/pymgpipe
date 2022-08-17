@@ -8,7 +8,8 @@ setup(
         'cobra',
         'cplex',
         'gurobipy',
-        'optlang'
+        'optlang',
+        'tqdm',
     ],
     packages=['pymgpipe','pymgpipe.mseFBA']
 )
