@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# examples
+examples/problems/
+examples/models/
+examples/fva/
