@@ -11,5 +11,7 @@ setup(
     ],
     url='https://github.com/korem-lab/pymgpipe',
     packages=find_packages(),
-    include_package_data = True,
+    package_data = {
+        'pymgpipe': ['*.mps'],
+    }
 )
