@@ -13,10 +13,6 @@ Need at least one of the following solvers-
 
 If you're running python 3.8.*, you should be able to just use `pip install cplex` or `pip install gurobipy`. For later versions of python, this might not work. Also, this does not actually create a license, it just installs the python interface to interact with these solvers. Both gurobipy and cplex offer free academic licenses. 
 
-### Creating a local copy
-Clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`<br/>
-If you're having issues with dependencies, try running `pip install -r requirements.txt`
-
 ### Starting materials
 To create multi-species community models with **pymgpipe**, you need two things to start-
 
@@ -54,3 +50,8 @@ examples
 │   │   ...
 └───panModels
 │   │   ...
+```
+
+### Creating a local copy (optional)
+If you want to mess around with this code, clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`<br/>
+If you're having issues with dependencies, try running `pip install -r requirements.txt`
