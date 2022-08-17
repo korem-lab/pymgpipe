@@ -10,4 +10,5 @@ setup(
         'gurobipy',
         'optlang'
     ],
+    packages=['pymgpipe','pymgpipe.mseFBA']
 )

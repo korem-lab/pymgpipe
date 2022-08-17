@@ -1,2 +1,2 @@
-from .build import build_models
+from .build import *
 from .mseFBA import *
