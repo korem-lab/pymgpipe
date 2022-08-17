@@ -16,3 +16,6 @@ If you're running python 3.8.*, you should be able to just use `pip install cple
 ### Creating a local copy
 Clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`<br/>
 If you're having issues with dependencies, try running `pip install -r requirements.txt`
+
+### Testing installation
+To ensure you have **pymgpipe** running correctly, follow the example shown at `examples/workflow.ipynb`. Change the `solver` param to correspond to your solver of choice and run through the steps.
