@@ -53,5 +53,4 @@ examples
 ```
 
 ### Creating a local copy (optional)
-If you want to mess around with this code, clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`<br/>
-If you're having issues with dependencies, try running `pip install -r requirements.txt`
+If you want to mess around with this code, clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory`. If you're having issues with dependencies, try running `pip install -r requirements.txt`
