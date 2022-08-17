@@ -6,8 +6,6 @@ setup(
     install_requires=[
         'micom',
         'cobra',
-        'cplex',
-        'gurobipy',
         'optlang',
         'tqdm',
     ],
