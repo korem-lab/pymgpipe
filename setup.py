@@ -2,8 +2,7 @@ from setuptools import setup
 
 setup(
     name='pymgpipe',
-    version_format='{tag}.dev{commitcount}+{gitsha}',
-    setup_requires=['setuptools-git-version'],
+    version='0.0.1',
     install_requires=[
         'micom',
         'cobra',
