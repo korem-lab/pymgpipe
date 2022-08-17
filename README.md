@@ -19,3 +19,20 @@ If you're having issues with dependencies, try running `pip install -r requireme
 
 ### Testing installation
 To ensure you have **pymgpipe** running correctly, follow the example shown at `examples/workflow.ipynb`. Change the `solver` param to correspond to your solver of choice and run through the steps.
+
+After running all three steps, your directory should look like this
+
+```
+examples
+│   workflow.ipynb
+│   normCoverage.csv
+│   normCoverage_formatted.csv
+│   sample_label_conversion.csv
+└───problems
+│   │   ...
+└───models
+│   │   ...
+└───fva
+│   │   ...
+└───panModels
+│   │   ...
