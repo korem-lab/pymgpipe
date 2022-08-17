@@ -11,5 +11,6 @@ setup(
         'optlang',
         'tqdm',
     ],
-    packages=['pymgpipe','pymgpipe.mseFBA']
+    packages=['pymgpipe','pymgpipe.mseFBA'],
+    url='https://github.com/korem-lab/pymgpipe'
 )
