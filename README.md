@@ -4,7 +4,7 @@
 Run `pip install git+https://github.com/korem-lab/pymgpipe`<br/><br/>
 You should now just be able to `import pymgpipe`. If you get a **ModuleNotFoundError**, make sure you're using the same python environment you used with `pip`. I highly recommend using the `pyenv` package to manage python versions & environments.
 
-
+This will also install the `mseFBA` package, which you can access with `import mseFBA`.
 ### Additional Dependencies
 Need at least one of the following solvers-
 
