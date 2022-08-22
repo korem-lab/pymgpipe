@@ -22,7 +22,8 @@ def build_models(
     coverage_file,
     taxa_dir,
     solver='gurobi',
-    threads=int(os.cpu_count()/2)
+    threads=int(os.cpu_count()/2),
+    sample=None
 ):
     if taxa_dir[-1] != '/':
         taxa_dir=taxa_dir+'/'
@@ -48,6 +49,9 @@ def build_models(
     
     threads = os.cpu_count() if threads == -1 else threads
     print('Building models using %s threads...'%(threads))
+
+    if sample is not None:
+        formatted = formatted.loc[formatted.sample_id==sample]
 
     gc.enable()
 
