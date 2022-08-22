@@ -64,20 +64,20 @@ def build_models(
         p.daemon = False
 
         _func = partial(_build_single_model, formatted, solver, 1)
-        _ = list(tqdm.tqdm(p.imap(_func, list(formatted.sample_id.unique())),total=num_samples))
+        built = list(tqdm.tqdm(p.imap(_func, list(formatted.sample_id.unique())),total=num_samples))
 
         p.close()
         p.join()
     else:
         print('Running samples in serial...')
         _func = partial(_build_single_model, formatted, solver, threads)
-        _ = tqdm.tqdm(list(map(_func,list(formatted.sample_id.unique()))),total=num_samples)
+        built = tqdm.tqdm(list(map(_func,list(formatted.sample_id.unique()))),total=num_samples)
     
-    print('Finished building models and associated LP problems!')
+    print('Finished building %s models and associated LP problems!'%len(built))
+    print('Deleting associated pickle files...')
     try:
-        for f in os.listdir('.pickleModels/'):
-            os.remove('.pickleModels/'+f)
-        os.rmdir('.pickleModels/')
+        for f in built:
+            os.remove(f)
     except:
         return
 
@@ -118,6 +118,7 @@ def _build_single_model(coverage_df,solver,threads,sample_label):
 
     del pymgpipe_model    
     gc.collect()
+    return pickle_out
 
 def _format_coverage_file(coverage_file,taxa_dir):
     model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
