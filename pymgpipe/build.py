@@ -59,11 +59,13 @@ def build_models(
     print('Found %s completed samples, skipping those!'%(len(finished)))
     samples_to_run = [s for s in samples_to_run if s not in finished]
     
-    threads = os.cpu_count() if threads == -1 else threads
     _func = partial(_build_single_model, formatted, solver)
 
     if parallelize:
+        threads = os.cpu_count() if threads == -1 else threads
+        threads = min(threads,samples_to_run)
         print('Building %s samples in parallel using %s threads...'%(len(samples_to_run),threads))
+        
         p = Pool(threads, initializer=_mute)
         p.daemon = False
 
@@ -72,7 +74,7 @@ def build_models(
         p.close()
         p.join()
     else:
-        print('Building %s samples in series...'%(len(samples_to_run),threads))
+        print('Building %s samples in series...'%(len(samples_to_run)))
         built = tqdm.tqdm(list(map(_func,samples_to_run)),total=len(samples_to_run))
     
     print('Finished building %s models and associated LP problems!'%len(built))    
