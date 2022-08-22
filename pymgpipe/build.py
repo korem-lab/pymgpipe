@@ -46,12 +46,14 @@ def build_models(
         num_samples = len(formatted.sample_id.unique())
         num_taxa = len(formatted.strain.unique())
         print('Loaded existing coverage file with %s unique taxa and %s samples...'%(num_taxa,num_samples))
-    
-    threads = os.cpu_count() if threads == -1 else threads
-    print('Building models using %s threads...'%(threads))
 
     if sample is not None:
         formatted = formatted.loc[formatted.sample_id==sample]
+        num_samples = len(formatted.sample_id.unique())
+        num_taxa = len(formatted.strain.unique())
+
+    threads = os.cpu_count() if threads == -1 else threads
+    print('Building %s samples using %s threads...'%(num_samples,threads))
 
     gc.enable()
 
@@ -91,18 +93,14 @@ def _build_single_model(coverage_df,solver,sample_label):
         gc.collect()
         return
     
-    pymgpipe_model = None
-    if os.path.exists(pickle_out):
-        pymgpipe_model = _create_pymgpipe_model(pickle_out,solver)
-
-    if pymgpipe_model is None:
+    if not os.path.exists(pickle_out):
         try:
             build(coverage_df, out_folder='.pickleModels/', model_db=None, cutoff=1e-6, threads=1,solver=solver)
         except Exception as e:
             print('Error in building multi-species community model for sample %s'%sample_label)
             print(e)
-        pymgpipe_model = _create_pymgpipe_model(pickle_out,solver)
 
+    pymgpipe_model = _create_pymgpipe_model(pickle_out,solver)
     pymgpipe_model.name=sample_label
 
     write_sbml_model(pymgpipe_model,model_out)
