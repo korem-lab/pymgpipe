@@ -3,7 +3,7 @@ sys.path.insert(1, '../')
 
 import pandas as pd
 import os
-from micom.workflows.build import build
+from micom.community import Community
 from micom import load_pickle
 import cobra
 from cobra.io import write_sbml_model
@@ -23,75 +23,56 @@ def build_models(
     taxa_dir,
     solver='gurobi',
     threads=int(os.cpu_count()/2),
-    sample=None,
+    samples=None,
     parallelize=True
 ):
+    gc.enable()
+
     if taxa_dir[-1] != '/':
         taxa_dir=taxa_dir+'/'
 
     Path('models').mkdir(exist_ok=True)
     Path('problems').mkdir(exist_ok=True)
-    Path('.pickleModels').mkdir(exist_ok=True)
-
-    _hide_folder('.pickleModels')
 
     formatted_coverage_file=coverage_file.split('.csv')[0]+'_formatted.csv'
-    if not os.path.exists(formatted_coverage_file):
+    if os.path.exists(formatted_coverage_file):
+        formatted = pd.read_csv(formatted_coverage_file,index_col=0)
+    else:
         formatted = _format_coverage_file(coverage_file,taxa_dir)
         formatted.to_csv(formatted_coverage_file)
-        num_samples = len(formatted.sample_id.unique())
-        num_taxa = len(formatted.strain.unique())
-        print('Created formatted coverage file with %s unique taxa and %s samples...'%(num_taxa,num_samples))
-    else:
-        formatted = pd.read_csv(formatted_coverage_file,index_col=0)
-        num_samples = len(formatted.sample_id.unique())
-        num_taxa = len(formatted.strain.unique())
-        print('Loaded existing coverage file with %s unique taxa and %s samples...'%(num_taxa,num_samples))
+    samples_to_run = formatted.sample_id.unique()
+    taxa = formatted.strain.unique()
 
-    if sample is not None:
-        formatted = formatted.loc[formatted.sample_id==sample]
-        num_samples = len(formatted.sample_id.unique())
-        num_taxa = len(formatted.strain.unique())
-
+    print('Found coverage file with %s samples and %s unique taxa'%(len(samples_to_run),len(taxa)))
+   
+    if samples is not None:
+        samples_to_run = samples if isinstance(samples,list) else [samples]
+    
     threads = os.cpu_count() if threads == -1 else threads
-    print('Building %s samples using %s threads...'%(num_samples,threads))
-
-    gc.enable()
+    _func = partial(_build_single_model, formatted, solver)
 
     if parallelize:
-        print('Parallelizing by samples...')
+        print('Building %s samples in parallel using %s threads...'%(len(samples_to_run),threads))
         p = Pool(threads, initializer=_mute)
         p.daemon = False
 
-        _func = partial(_build_single_model, formatted, solver, 1)
-        built = list(tqdm.tqdm(p.imap(_func, list(formatted.sample_id.unique())),total=num_samples))
+        built = list(tqdm.tqdm(p.imap(_func, samples_to_run),total=len(samples_to_run)))
 
         p.close()
         p.join()
     else:
-        print('Running samples in serial...')
-        _func = partial(_build_single_model, formatted, solver, threads)
-        built = tqdm.tqdm(list(map(_func,list(formatted.sample_id.unique()))),total=num_samples)
+        print('Building %s samples in series...'%(len(samples_to_run),threads))
+        built = tqdm.tqdm(list(map(_func,samples_to_run)),total=len(samples_to_run))
     
-    print('Finished building %s models and associated LP problems!'%len(built))
-    print('Deleting associated pickle files...')
-    try:
-        for f in built:
-            os.remove(f)
-    except:
-        return
+    print('Finished building %s models and associated LP problems!'%len(built))    
 
-def _build_single_model(coverage_df,solver,threads,sample_label):
-    pickle_out = '.pickleModels/%s.pickle'%sample_label
+def _build_single_model(coverage_df,solver,sample_label):
     model_out = 'models/%s.xml'%sample_label
     problem_out = 'problems/%s.mps'%sample_label
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
     pymgpipe_model = None
-    threads=1
 
     if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
-        if os.path.exists(pickle_out):
-            os.remove(pickle_out)
         return
 
     if os.path.exists(model_out) and _is_valid_sbml(model_out):
@@ -101,58 +82,32 @@ def _build_single_model(coverage_df,solver,threads,sample_label):
         gc.collect()
         return
     
-    if not os.path.exists(pickle_out):
-        try:
-            build(coverage_df, out_folder='.pickleModels/', model_db=None, cutoff=1e-6,threads=threads,solver=solver)
-        except Exception as e:
-            raise Exception('Error in building multi-species community model for sample %s-\n%s'%(sample_label,e))
-    
-    pymgpipe_model = _create_pymgpipe_model(pickle_out,solver)
-    if pymgpipe_model is None:
-        raise Exception('Could not load pickle file %s'%pickle_out)
-
-    pymgpipe_model.name=sample_label
-
-    write_sbml_model(pymgpipe_model,model_out)
-    pymgpipe_model.solver.problem.write(problem_out)
+    if not os.path.exists(model_out):
+        pymgpipe_model = _build_com(sample_label=sample_label,tax=coverage_df,cutoff=1e-6,solver=solver)
+        write_sbml_model(pymgpipe_model,model_out)
+        pymgpipe_model.solver.problem.write(problem_out)
 
     del pymgpipe_model    
     gc.collect()
-    return pickle_out
+    return model_out
 
-def _format_coverage_file(coverage_file,taxa_dir):
-    model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
-    coverage = pd.read_csv(coverage_file,index_col=0,header=0)
-    sample_conversion_dict = {v:'mc'+str(i+1) for i,v in enumerate(coverage.columns)}
-    coverage.rename(columns=sample_conversion_dict,inplace=True)
-    
-    sample_conversion_dict = pd.DataFrame({'conversion':sample_conversion_dict})
-    sample_conversion_dict.to_csv('sample_label_conversion.csv')
+def _build_com(sample_label, tax, cutoff, solver):
+    com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
+    modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
+    return modified_com
 
-    melted = pd.melt(coverage, value_vars=coverage.columns,ignore_index=False,var_name='sample_id',value_name='abundance',)
-    melted['strain']=melted.index
-    melted['file']=taxa_dir+melted.strain+model_type
-
-    missing_taxa = set([f.split('.')[0] for f in melted.file if not os.path.exists(f)])
-    if len(missing_taxa)>0:
-        melted.drop(missing_taxa,axis='index',inplace=True)
-        print('!!! Removed %s missing taxa from coverage file\n' %len(missing_taxa))
-        print(missing_taxa)
-    
-    melted = melted.loc[melted.abundance!=0]
-
-    melted.reset_index(inplace=True)
-    melted.rename({'index':'id'},axis='columns',inplace=True)
-
-    return melted
-
-def _create_pymgpipe_model(file,solver='glpk'):
+def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
     cobra_config = cobra.Configuration()
     cobra_config.solver = solver
-    try:
-        com = load_pickle(file)
-    except Exception as e:
-        return None
+
+    if com is None:
+        if file is None:
+            raise Exception('Need to pass in either file or model!')
+        try:
+            com = load_pickle(file)
+        except Exception as e:
+            return None
+    
     com.solver = solver
     
     # RESETTING COEFS OF METAB EXCHANGE REACTIONS TO 1
@@ -187,6 +142,32 @@ def _create_pymgpipe_model(file,solver='glpk'):
 
     return com
 
+def _format_coverage_file(coverage_file,taxa_dir):
+    model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
+    coverage = pd.read_csv(coverage_file,index_col=0,header=0)
+    sample_conversion_dict = {v:'mc'+str(i+1) for i,v in enumerate(coverage.columns)}
+    coverage.rename(columns=sample_conversion_dict,inplace=True)
+    
+    sample_conversion_dict = pd.DataFrame({'conversion':sample_conversion_dict})
+    sample_conversion_dict.to_csv('sample_label_conversion.csv')
+
+    melted = pd.melt(coverage, value_vars=coverage.columns,ignore_index=False,var_name='sample_id',value_name='abundance',)
+    melted['strain']=melted.index
+    melted['file']=taxa_dir+melted.strain+model_type
+
+    missing_taxa = set([f.split('.')[0] for f in melted.file if not os.path.exists(f)])
+    if len(missing_taxa)>0:
+        melted.drop(missing_taxa,axis='index',inplace=True)
+        print('!!! Removed %s missing taxa from coverage file\n' %len(missing_taxa))
+        print(missing_taxa)
+    
+    melted = melted.loc[melted.abundance!=0]
+
+    melted.reset_index(inplace=True)
+    melted.rename({'index':'id'},axis='columns',inplace=True)
+
+    return melted
+
 def _add_coupling_constraints(com,u_const=0.01,C_const=400):
     abundances = _get_model_abundances(com)
     target_reactions = [r for r in com.reactions if not (('EX_' in r.id and '(e)' not in r.id and '[e]' not in r.id) or 'biomass' in r.id or 'Community' in r.id)]
@@ -210,11 +191,6 @@ def _get_model_abundances(com):
 
 def _get_biomass_reactions(com):
     return [r for r in com.reactions if 'biomass' in r.id and 'EX' not in r.id]
-
-def _hide_folder(path):
-    if os.name == 'nt':
-        FILE_ATTRIBUTE_HIDDEN = 0x02
-        ctypes.windll.kernel32.SetFileAttributesW(path, FILE_ATTRIBUTE_HIDDEN)
 
 def _is_valid_lp(file):
     with open(file, "rb") as fh:
