@@ -47,6 +47,17 @@ def build_models(
    
     if samples is not None:
         samples_to_run = samples if isinstance(samples,list) else [samples]
+
+    finished = []
+    for s in samples_to_run:
+        model_out = 'models/%s.xml'%s
+        problem_out = 'problems/%s.mps'%s
+
+        if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
+            finished.append(s)
+
+    print('Found %s completed samples, skipping those!'%(len(finished)))
+    samples_to_run = [s for s in samples_to_run if s not in finished]
     
     threads = os.cpu_count() if threads == -1 else threads
     _func = partial(_build_single_model, formatted, solver)
@@ -72,19 +83,13 @@ def _build_single_model(coverage_df,solver,sample_label):
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
     pymgpipe_model = None
 
-    if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
-        return
-
     if os.path.exists(model_out) and _is_valid_sbml(model_out):
         pymgpipe_model = read_sbml_model(model_out)
-        pymgpipe_model.solver.problem.write(problem_out)
-        del pymgpipe_model
-        gc.collect()
-        return
-    
-    if not os.path.exists(model_out):
+    else:
         pymgpipe_model = _build_com(sample_label=sample_label,tax=coverage_df,cutoff=1e-6,solver=solver)
         write_sbml_model(pymgpipe_model,model_out)
+
+    if not os.path.exists(problem_out) or not _is_valid_lp(problem_out):
         pymgpipe_model.solver.problem.write(problem_out)
 
     del pymgpipe_model    
