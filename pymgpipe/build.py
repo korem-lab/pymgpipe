@@ -203,8 +203,9 @@ def _get_biomass_reactions(com):
     return [r for r in com.reactions if 'biomass' in r.id and 'EX' not in r.id]
 
 def _hide_folder(path):
-    FILE_ATTRIBUTE_HIDDEN = 0x02
-    ctypes.windll.kernel32.SetFileAttributesW(path, FILE_ATTRIBUTE_HIDDEN)
+    if os.name == 'nt':
+        FILE_ATTRIBUTE_HIDDEN = 0x02
+        ctypes.windll.kernel32.SetFileAttributesW(path, FILE_ATTRIBUTE_HIDDEN)
 
 def _is_valid_lp(file):
     with open(file, "rb") as fh:
