@@ -23,7 +23,8 @@ def build_models(
     taxa_dir,
     solver='gurobi',
     threads=int(os.cpu_count()/2),
-    sample=None
+    sample=None,
+    parallelize=True
 ):
     if taxa_dir[-1] != '/':
         taxa_dir=taxa_dir+'/'
@@ -57,14 +58,20 @@ def build_models(
 
     gc.enable()
 
-    p = Pool(threads, initializer=_mute)
-    p.daemon=False
+    if parallelize:
+        print('Parallelizing by samples...')
+        p = Pool(threads, initializer=_mute)
+        p.daemon = False
 
-    _func = partial(_build_single_model, formatted, solver)
-    _ = list(tqdm.tqdm(p.imap(_func, list(formatted.sample_id.unique())),total=num_samples))
+        _func = partial(_build_single_model, formatted, solver, 1)
+        _ = list(tqdm.tqdm(p.imap(_func, list(formatted.sample_id.unique())),total=num_samples))
 
-    p.close()
-    p.join()
+        p.close()
+        p.join()
+    else:
+        print('Running samples in serial...')
+        _func = partial(_build_single_model, formatted, solver, threads)
+        _ = tqdm.tqdm(list(map(_func,list(formatted.sample_id.unique()))),total=num_samples)
     
     print('Finished building models and associated LP problems!')
     try:
@@ -74,12 +81,13 @@ def build_models(
     except:
         return
 
-def _build_single_model(coverage_df,solver,sample_label):
+def _build_single_model(coverage_df,solver,threads,sample_label):
     pickle_out = '.pickleModels/%s.pickle'%sample_label
     model_out = 'models/%s.xml'%sample_label
     problem_out = 'problems/%s.mps'%sample_label
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
     pymgpipe_model = None
+    threads=1
 
     if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
         if os.path.exists(pickle_out):
@@ -95,12 +103,14 @@ def _build_single_model(coverage_df,solver,sample_label):
     
     if not os.path.exists(pickle_out):
         try:
-            build(coverage_df, out_folder='.pickleModels/', model_db=None, cutoff=1e-6, threads=1,solver=solver)
+            build(coverage_df, out_folder='.pickleModels/', model_db=None, cutoff=1e-6,threads=threads,solver=solver)
         except Exception as e:
-            print('Error in building multi-species community model for sample %s'%sample_label)
-            print(e)
-
+            raise Exception('Error in building multi-species community model for sample %s-\n%s'%(sample_label,e))
+    
     pymgpipe_model = _create_pymgpipe_model(pickle_out,solver)
+    if pymgpipe_model is None:
+        raise Exception('Could not load pickle file %s'%pickle_out)
+
     pymgpipe_model.name=sample_label
 
     write_sbml_model(pymgpipe_model,model_out)
