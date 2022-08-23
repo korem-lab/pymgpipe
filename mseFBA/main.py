@@ -26,7 +26,8 @@ def run(
     verbosity=0,
     presolve=True,
     threshold=1e-5,
-    scale=True
+    scale=True,
+    map_labels=True
 ):
     gc.enable()
 
@@ -53,6 +54,10 @@ def run(
         metabolomics_df = scale_metabolomics(metabolomics_file)
     else:
         metabolomics_df = pd.read_csv(metabolomics_file,index_col=0)
+
+    if map_labels:
+        conversion = pd.read_csv('sample_label_conversion.csv',index_col=0).conversion.to_dict()
+        metabolomics_df.rename(conversion,axis='columns',inplace=True)
 
     p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df))
     _func = partial(
