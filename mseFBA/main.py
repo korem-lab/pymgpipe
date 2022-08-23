@@ -228,6 +228,8 @@ def combine_mse_solutions(mse_dir='mse/',out_file='mse_sol.csv',write_to_file=Tr
 def evaluate_mse_results(metabolomics,comparison_df=None,mse_dir='mse/',map_labels=True):
     if comparison_df is None:
         comparison_df = combine_mse_solutions(mse_dir=mse_dir,write_to_file=False)
+    
+    comparison_df = _load_dataframe(comparison_df)
     metabolomics = _load_dataframe(metabolomics)
 
     if map_labels:
