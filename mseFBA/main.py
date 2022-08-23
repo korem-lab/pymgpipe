@@ -225,16 +225,17 @@ def combine_mse_solutions(mse_dir='mse/',out_file='mse_sol.csv',write_to_file=Tr
         combined.to_csv(out_file)
     return combined
 
-def evaluate_mse_results(metabolomics_file,mse_dir='mse/',map_labels=True):
-    combined_df = combine_mse_solutions(mse_dir=mse_dir,write_to_file=False)
-    metabolomics = _load_dataframe(metabolomics_file)
+def evaluate_mse_results(metabolomics,comparison_df=None,mse_dir='mse/',map_labels=True):
+    if comparison_df is None:
+        comparison_df = combine_mse_solutions(mse_dir=mse_dir,write_to_file=False)
+    metabolomics = _load_dataframe(metabolomics)
 
     if map_labels:
         conversion = _load_dataframe('sample_label_conversion.csv').conversion.to_dict()
         metabolomics.rename(conversion,axis='columns',inplace=True)
 
-    sp_r = combined_df.corrwith(metabolomics,method='spearman',axis=1)
-    pr_r = combined_df.corrwith(metabolomics,method='pearson',axis=1)
+    sp_r = comparison_df.corrwith(metabolomics,method='spearman',axis=1)
+    pr_r = comparison_df.corrwith(metabolomics,method='pearson',axis=1)
     combined_dataframe = pd.concat([sp_r,pr_r],axis=1)
     combined_dataframe.columns=['spearman','pearson']
 
@@ -242,3 +243,21 @@ def evaluate_mse_results(metabolomics_file,mse_dir='mse/',map_labels=True):
     print('Avg Pearson- '+str(pr_r.mean()))
 
     return combined_dataframe
+
+def compute_nmpcs(fva_dir='fva/',out_file='nmpc_sol.csv',write_to_file=True):
+    fva_files = os.listdir(fva_dir)
+    print('Computing NMPCs using fva results for %s samples...'%len(fva_files))
+    
+    nmpcs = {}
+    for f in fva_files:
+        s = _load_dataframe(fva_dir+f)
+        label = f.split('.csv')[0]
+
+        nmpcs[label]=(s['min']+s['max']).to_dict()
+
+    nmpcs = pd.DataFrame(nmpcs)
+    nmpcs.sort_index(axis=1,inplace=True)
+    nmpcs.sort_index(axis=0,inplace=True)
+    if write_to_file:
+        nmpcs.to_csv(out_file)
+    return nmpcs
