@@ -15,10 +15,30 @@ import numpy as np
 import sys
 from pathlib import Path
 
+class paths:
+    global dataset_dir, samples, fva_dir, conversion_file
+    dataset_dir='./'
+    samples='samples/'
+    fva_dir='fva/'
+    conversion_file='sample_label_conversion.csv'
+
+    def show():
+        print('dataset- %s\nsamples- %s\nfva- %s\nconversion_file- %s\n'%
+        (dataset_dir,samples,fva_dir,conversion_file))
+
+def set_dataset_dir(path):
+    paths.dataset_dir=path
+    paths.samples=dataset_dir+paths.samples
+    paths.fva_dir=dataset_dir+paths.fva_dir
+    paths.conversion_file=dataset_dir+paths.conversion_file
+
 def run(
     metabolomics,
-    files=[],
-    file_dir='problems/',
+    dataset_dir='./',
+    samples='problems/',
+    fva_dir='fva/',
+    conversion_file='sample_label_conversion.csv',
+    out_file=None,
     ex_only=True,
     zero_unmapped_metabolites=False,
     threads=int(os.cpu_count()/2),
@@ -28,20 +48,23 @@ def run(
     threshold=1e-5,
     scale=True,
     map_labels=True,
-    out_dir='mse/',
-    parallelize=True,
-    out_file=None
+    parallelize=True
 ):
     gc.enable()
-
-    Path(out_dir).mkdir(exist_ok=True)
+    samples = dataset_dir+samples
+    fva_dir=dataset_dir+fva_dir
+    conversion_file=dataset_dir+conversion_file
         
     try:
-        model_files = files if files else [file_dir+m for m in os.listdir(file_dir)]
+        model_files = samples if isinstance(samples,list) else [samples+m for m in os.listdir(samples)]
     except:
-        raise Exception('Please pass in a valid model directory using the \'dir\' parameter or an explicit set of files using the \'files\' parameter')
+        raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
-    finished = [f.split('.csv')[0] for f in os.listdir(out_dir)]
+    solution_df = pd.DataFrame()
+    if os.path.exists(out_file):
+        solution_df = _load_dataframe(out_file)
+    
+    finished = [solution_df.columns]
     if len(finished)>0:
         print('Skipping %s samples that are already finished!'%len(finished))
         model_files = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in finished]
@@ -53,7 +76,7 @@ def run(
     threads = os.cpu_count() if threads == -1 else threads
     threads = min(threads,len(model_files))
 
-    metabolomics_df = _get_metabolomics(metabolomics, scale, map_labels)
+    metabolomics_df = _get_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
 
     print('Parallel- %s'%str(parallelize).upper())
     print('Solver- %s'%solver.upper())
@@ -71,19 +94,18 @@ def run(
         solver,
         verbosity,
         presolve,
-        threshold,
-        out_dir
+        threshold
     )
     if parallelize:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
-        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df))
-        res = list(p.imap(_func, model_files))
+        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df, solution_df))
+        res = list(tqdm.tqdm(p.imap(_func, model_files)))
         p.close()
         p.join()
     else:
         print('Running mseFBA on %s samples in series...\n'%len(model_files))
-        _pool_init(metabolomics_df)
-        res = list(map(_func,model_files))
+        _pool_init(metabolomics_df, solution_df)
+        res = list(tqdm.tqdm(map(_func,model_files)))
 
     feasible_models = list(filter(lambda sample: sample[1] == True, res))
     infeasible_models = list(filter(lambda sample: sample[1] == False, res))
@@ -92,9 +114,6 @@ def run(
     if len(infeasible_models) > 0:
         print('Some models were infeasible and could not be solved-\n')
         print(infeasible_models)
-
-    if out_file is not None:
-        combine_mse_solutions(mse_dir=out_dir,out_file=out_file)
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, out_dir, model_file):
     model = load_model(model_file,solver)
@@ -117,35 +136,38 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
             flux_threshold=threshold
         )
     except InfeasibleModelException:
-        raise Exception('UH OH')
+        pass
 
     solved = solution is not None
     if solved:
-        solution.sort_index(axis=0,inplace=True)
-        solution.to_csv(out_dir+'%s.csv'%model.name)
+        solution.sort_index(inplace=True)
+        solution_global = pd.concat([solution_global,solution],axis=1)
 
     del model
     gc.collect()
-    
+
     return (model_file, solved)
     
-def _get_metabolomics(metabolomics,scale=True,map_labels=True):
+def _get_metabolomics(metabolomics,fva_dir,scale=True,map_labels=True,conversion_file='sample_label_conversion.csv'):
     metabolomics_df = _load_dataframe(metabolomics)
     
     if scale:
-        metabolomics_df = scale_metabolomics(metabolomics_df)
+        metabolomics_df = scale_metabolomics(metabolomics_df,fva_dir)
 
     if map_labels:
-        conversion = _load_dataframe('sample_label_conversion.csv').conversion.to_dict()
+        conversion = _load_dataframe(conversion_file).conversion.to_dict()
         metabolomics_df.rename(conversion,axis='columns',inplace=True)
 
     return metabolomics_df
 
-def _pool_init(m_df):
+def _pool_init(m_df, s_df):
     sys.stdout = open(os.devnull, 'w')  
 
     global metabolomics_global
     metabolomics_global = m_df
+
+    global solution_global
+    solution_global = s_df
 
 def scale_metabolomics(metabolomics,fva_dir='fva/'):
     print('Scaling metabolomics...')
