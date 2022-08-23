@@ -56,8 +56,9 @@ def build_models(
         if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
             finished.append(s)
 
-    print('Found %s completed samples, skipping those!'%(len(finished)))
-    samples_to_run = [s for s in samples_to_run if s not in finished]
+    if len(finished)>0:
+        print('Found %s completed samples, skipping those!'%(len(finished)))
+        samples_to_run = [s for s in samples_to_run if s not in finished]
     
     _func = partial(_build_single_model, formatted, solver)
 

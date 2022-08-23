@@ -14,7 +14,8 @@ from optlang.interface import Objective
 from pathlib import Path
 
 def regularFVA(
-    path, 
+    path=None,
+    model=None, 
     ex_only = True, 
     solver='gurobi',
     threads=int(os.cpu_count()/2),
@@ -28,11 +29,15 @@ def regularFVA(
     if write_to_file:
         Path('fva').mkdir(exist_ok=True)
 
-    model = load_model(path=path,solver=solver)
-    reactions_to_run = _get_exchange_reactions(model) if ex_only else _get_all_forward_reactions(model)
+    if path is not None:
+        model = load_model(path=path,solver=solver)
+    if model is None:
+        raise Exception('Need either path or model!')
 
     if specific_reactions is not None:
-        reactions_to_run = [r for r in reactions_to_run if r in specific_reactions]
+        reactions_to_run = specific_reactions
+    else:
+        reactions_to_run = _get_exchange_reactions(model) if ex_only else _get_all_forward_reactions(model)
         
     print('Starting FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
 
