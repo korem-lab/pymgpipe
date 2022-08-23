@@ -215,3 +215,30 @@ def _load_dataframe(m):
         return m
     else:
         raise Exception('_load_dataframe can only take a string or dataframe, received %s'%type(m))
+
+def combine_mse_solutions(mse_dir='mse/',out_file='mse_sol.csv',write_to_file=True):
+    dfs = [_load_dataframe(mse_dir+f) for f in os.listdir(mse_dir)]
+    combined = pd.concat(dfs,axis=1)
+    combined.sort_index(axis=1,inplace=True)
+    combined.sort_index(axis=0,inplace=True)
+    if write_to_file:
+        combined.to_csv(out_file)
+    return combined
+
+def evaluate_mse_results(metabolomics_file,mse_dir='mse/',map_labels=True):
+    combined_df = combine_mse_solutions(mse_dir=mse_dir,write_to_file=False)
+    metabolomics = _load_dataframe(metabolomics_file)
+
+    if map_labels:
+        conversion = _load_dataframe('sample_label_conversion.csv').conversion.to_dict()
+        metabolomics.rename(conversion,axis='columns',inplace=True)
+
+    sp_r = combined_df.corrwith(metabolomics,method='spearman',axis=1)
+    pr_r = combined_df.corrwith(metabolomics,method='pearson',axis=1)
+    combined_dataframe = pd.concat([sp_r,pr_r],axis=1)
+    combined_dataframe.columns=['spearman','pearson']
+
+    print('Avg Spearman- '+str(sp_r.mean()))
+    print('Avg Pearson- '+str(pr_r.mean()))
+
+    return combined_dataframe
