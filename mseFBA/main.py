@@ -1,5 +1,4 @@
 import os
-from re import M
 
 import pandas as pd
 from gurobipy import *
@@ -29,7 +28,8 @@ def run(
     threshold=1e-5,
     scale=True,
     map_labels=True,
-    out_dir='mse/'
+    out_dir='mse/',
+    parallelize=True
 ):
     gc.enable()
 
@@ -48,6 +48,9 @@ def run(
     threads = os.cpu_count() if threads == -1 else threads
     threads = min(threads,len(model_files))
 
+    metabolomics_dict = _get_metabolomics(metabolomics, scale, map_labels).to_dict()
+
+    print('Parallel- %s'%str(parallelize).upper())
     print('Solver- %s'%solver.upper())
     print('Presolve- %s'%str(presolve).upper())
     print('Verbosity- %s'%verbosity)
@@ -55,11 +58,7 @@ def run(
     print('Scale metabolomics- %s'%str(scale).upper())
     print('Map sample IDs- %s'%str(map_labels).upper())
     print('------------------------------------------')
-    print('Running mseFBA on %s samples using %s threads...'%(len(model_files),threads))
-    
-    metabolomics_df = _get_metabolomics(metabolomics, scale, map_labels)
-
-    p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df))
+        
     _func = partial(
         _mseFBA_worker,
         ex_only,
@@ -70,13 +69,19 @@ def run(
         threshold,
         out_dir
     )
-    res = tqdm.tqdm(p.imap(_func, model_files),total=len(model_files))
+    if parallelize:
+        print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
+        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_dict))
+        res = list(p.imap(_func, model_files))
+        p.close()
+        p.join()
+    else:
+        print('Running mseFBA on %s samples in series...\n'%len(model_files))
+        _pool_init(metabolomics_dict)
+        res = list(map(_func,model_files))
 
     feasible_models = filter(lambda sample: sample[1] == True, res)
     infeasible_models = filter(lambda sample: sample[1] == False, res)
-
-    p.close()
-    p.join()
 
     print('Finished mseFBA! Solved %s samples'%len(feasible_models))
     if len(infeasible_models) > 0:
@@ -86,15 +91,15 @@ def run(
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, out_dir, model_file):
     model = load_model(model_file,solver)
-    
-    metabolite_dict = metabolomics_global[model.name].to_dict()
+    print(model.name)
+    metab_map = metabolomics_global[model.name]
     if zero_unmapped_metabolites:
         ex_reactions = _get_exchange_reactions(model)
-        metabolite_dict.update({k:0 for k in ex_reactions if k not in metabolite_dict})
+        metab_map.update({k:0 for k in ex_reactions if k not in metab_map})
         
-    _add_correlation_objective(model,metabolite_dict)
+    _add_correlation_objective(model,metab_map)
 
-    solved = False
+    solution = None
     try:
         solution = solve_model(
             model=model,
@@ -104,17 +109,16 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
             method='barrier',
             flux_threshold=threshold
         )
-        solved=True
     except InfeasibleModelException:
         pass
 
-    del model
-    gc.collect()
+    solved = solution is not None
+    if solved:
+        solution.sort_index(axis=0,inplace=True)
+        solution.to_csv(out_dir+'%s.csv'%model.name)
 
-    solution.sort_index(axis=0,inplace=True)
-    solution.to_csv(out_dir+'%s.csv'%model.name)
+    return model_file
     
-    return (model_file,solved)
 
 def _get_metabolomics(metabolomics,scale=True,map_labels=True):
     metabolomics_df = _load_dataframe(metabolomics)
@@ -128,11 +132,11 @@ def _get_metabolomics(metabolomics,scale=True,map_labels=True):
 
     return metabolomics_df
 
-def _pool_init(df):
+def _pool_init(mdict):
     sys.stdout = open(os.devnull, 'w')  
 
     global metabolomics_global
-    metabolomics_global = df
+    metabolomics_global = mdict
 
 def scale_metabolomics(metabolomics,fva_dir='fva/'):
     print('Scaling metabolomics...')
