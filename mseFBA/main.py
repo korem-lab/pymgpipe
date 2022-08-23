@@ -29,7 +29,8 @@ def run(
     scale=True,
     map_labels=True,
     out_dir='mse/',
-    parallelize=True
+    parallelize=True,
+    out_file=None
 ):
     gc.enable()
 
@@ -92,6 +93,8 @@ def run(
         print('Some models were infeasible and could not be solved-\n')
         print(infeasible_models)
 
+    if out_file is not None:
+        combine_mse_solutions(mse_dir=out_dir,out_file=out_file)
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, out_dir, model_file):
     model = load_model(model_file,solver)
@@ -121,7 +124,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
         solution.sort_index(axis=0,inplace=True)
         solution.to_csv(out_dir+'%s.csv'%model.name)
 
-    return (model_file,solved)
+    return (solution,solved)
     
 def _get_metabolomics(metabolomics,scale=True,map_labels=True):
     metabolomics_df = _load_dataframe(metabolomics)

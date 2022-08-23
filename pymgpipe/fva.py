@@ -23,11 +23,18 @@ def regularFVA(
     specific_reactions=None):
     gc.enable()
 
-    if not os.path.exists(path):
-        raise Exception('Could not find sample at path %s'%path)
-    
+    result_df = []
     if write_to_file:
         Path('fva').mkdir(exist_ok=True)
+        out_file='fva/%s.csv'%model.name
+
+        if os.path.exists(out_file):
+            result_df = pd.read_csv(out_file)
+            metabs_to_skip = result_df.index.unique()
+            print('\nFound existing file, skipping %s metabolites...'%len(metabs_to_skip))
+
+            reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip] 
+            result_df = result_df.to_dict('records')
 
     if path is not None:
         model = load_model(path=path,solver=solver)
@@ -40,20 +47,9 @@ def regularFVA(
         reactions_to_run = _get_exchange_reactions(model) if ex_only else _get_all_forward_reactions(model)
         
     print('Starting FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
-
-    out_file='fva/%s.csv'%model.name
-    result_df = []
-    if os.path.exists(out_file):
-        result_df = pd.read_csv(out_file)
-        metabs_to_skip = result_df['id'].unique()
-        print('\nFound existing file, skipping %s metabolites...'%len(metabs_to_skip))
-
-        reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip] 
-        result_df = result_df.to_dict('records')
     
-    threads = os.cpu_count() if threads == -1 else min(threads,len(reactions_to_run))
-
-    print('Solving for %s remaining metabolites using %s threads...'%(len(reactions_to_run),threads))
+    threads = os.cpu_count() if threads == -1 else threads
+    threads = min(threads,len(reactions_to_run))
 
     p = Pool(processes=threads,initializer=partial(_pool_init,model))
     _func = _single_metabolite_worker
