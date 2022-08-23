@@ -124,7 +124,10 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
         solution.sort_index(axis=0,inplace=True)
         solution.to_csv(out_dir+'%s.csv'%model.name)
 
-    return (solution,solved)
+    del model
+    gc.collect()
+    
+    return (model_file, solved)
     
 def _get_metabolomics(metabolomics,scale=True,map_labels=True):
     metabolomics_df = _load_dataframe(metabolomics)
