@@ -15,23 +15,6 @@ import numpy as np
 import sys
 from pathlib import Path
 
-class paths:
-    global dataset_dir, samples, fva_dir, conversion_file
-    dataset_dir='./'
-    samples='samples/'
-    fva_dir='fva/'
-    conversion_file='sample_label_conversion.csv'
-
-    def show():
-        print('dataset- %s\nsamples- %s\nfva- %s\nconversion_file- %s\n'%
-        (dataset_dir,samples,fva_dir,conversion_file))
-
-def set_dataset_dir(path):
-    paths.dataset_dir=path
-    paths.samples=dataset_dir+paths.samples
-    paths.fva_dir=dataset_dir+paths.fva_dir
-    paths.conversion_file=dataset_dir+paths.conversion_file
-
 def run(
     metabolomics,
     dataset_dir='./',
