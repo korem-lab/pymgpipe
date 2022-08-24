@@ -34,9 +34,6 @@ def run(
     parallelize=True
 ):
     gc.enable()
-    # samples = dataset_dir+samples
-    # fva_dir=dataset_dir+fva_dir
-    # conversion_file=dataset_dir+conversion_file
         
     try:
         model_files = samples if isinstance(samples,list) else [samples+m for m in os.listdir(samples)]
@@ -127,7 +124,8 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     if solved:
         solution.sort_index(inplace=True)
         solution_global = pd.concat([solution_global,solution],axis=1)
-        solution_global.to_csv(solution_path)
+        if solution_path is not None:
+            solution_global.to_csv(solution_path)
 
     del model
     gc.collect()
