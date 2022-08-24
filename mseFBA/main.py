@@ -109,11 +109,11 @@ def run(
     except:
         pass
 
-    print('Finished mseFBA! Solved %s samples'%len(feasible))
+    sys.stdout = sys.__stdout__
+    print('Finished mseFBA! Solved %s samples. Results stored in %s!'%(len(feasible),out_file))
     if len(infeasible) > 0:
         print('Some models were infeasible and could not be solved-\n')
         print(list(zip(*infeasible))[0])
-
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
     global solution_path, metabolomics_global
