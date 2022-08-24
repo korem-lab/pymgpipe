@@ -13,7 +13,6 @@ from pymgpipe.optlang_util import _get_exchange_reactions, _get_reverse_id
 
 import numpy as np
 import sys
-from pathlib import Path
 
 def run(
     metabolomics,
@@ -34,9 +33,11 @@ def run(
     parallelize=True
 ):
     gc.enable()
+    fva_dir = dataset_dir+fva_dir
+    conversion_file = dataset_dir+conversion_file
         
     try:
-        model_files = samples if isinstance(samples,list) else [samples+m for m in os.listdir(samples)]
+        model_files = samples if isinstance(samples,list) else [dataset_dir+samples+m for m in os.listdir(dataset_dir+samples)]
     except:
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
