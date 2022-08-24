@@ -81,40 +81,39 @@ def run(
         threshold
     )
     
-    global final, out_path
-    out_path = out_file
     final = _load_dataframe(out_file,return_empty=True)
 
     if parallelize:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
         p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df))
-        res = tqdm.tqdm(map(_save_solution, p.imap(_func, model_files)))
-          
-        p.close()
-        p.join()
+        res = p.imap(_func, model_files)
     else:
         print('Running mseFBA on %s samples in series...\n'%len(model_files))
         _pool_init(metabolomics_df)
-        res = tqdm.tqdm(map(_save_solution, map(_func, model_files)))
+        res = map(_func, model_files)
+    
+    infeasible = []
+    feasible = []
+    for r in tqdm.tqdm(res):
+        sample_file, solution = r
+        if solution is not None:
+            final = pd.concat([final,solution],axis=1)
+            final.sort_index(inplace=True)
+            final.to_csv(out_file)
+            feasible.append(sample_file)
+        else:
+            infeasible.append(sample_file)
+    try:
+        p.close()
+        p.join()
+    except:
+        pass
 
-    feasible_models = list(filter(lambda sample: sample[1] is not None, res))
-    infeasible_models = list(filter(lambda sample: sample[1] is None, res))
-
-    print('Finished mseFBA! Solved %s samples'%len(feasible_models))
-    if len(infeasible_models) > 0:
+    print('Finished mseFBA! Solved %s samples'%len(feasible))
+    if len(infeasible) > 0:
         print('Some models were infeasible and could not be solved-\n')
-        print(list(zip(*infeasible_models))[0])
+        print(list(zip(*infeasible))[0])
 
-def _save_solution(res):
-    global final, out_path
-
-    _,solution = res
-
-    final = pd.concat([final,solution],axis=1)
-    final.sort_index(inplace=True)
-    final.to_csv(out_path)
-
-    return res
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
     global solution_path, metabolomics_global
@@ -149,9 +148,9 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     
 def process_metabolomics(metabolomics,fva_dir='fva/',scale=True,map_labels=True,conversion_file='sample_label_conversion.csv',out_file=None):
     metabolomics_df = _load_dataframe(metabolomics)
-    
-    metabolomics_df = scale_metabolomics(metabolomics_df,fva_dir) if scale else metabolomics_df
+
     metabolomics_df = map_sample_labels(metabolomics_df,conversion_file) if map_labels else metabolomics_df
+    metabolomics_df = scale_metabolomics(metabolomics_df,fva_dir) if scale else metabolomics_df
 
     print('\n-------------------------------------------------------------')
     print('Using metabolomics file with %s metabolites and %s samples!'%(len(metabolomics_df.index),len(metabolomics_df.columns)))
@@ -165,7 +164,7 @@ def map_sample_labels(metabolomics, conversion_file):
     conversion = _load_dataframe(conversion_file).conversion.to_dict()
 
     samples = list(set(metabolomics_df.columns).intersection(set(conversion.keys())))
-    print('Mapping sample labels for %s matched samples...'%len(samples))
+    print('Mapping sample labels for %s matched samples...\n'%len(samples))
 
     metabolomics_df = metabolomics_df[samples]
     return metabolomics_df.rename(conversion, axis='columns')
