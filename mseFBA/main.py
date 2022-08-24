@@ -87,14 +87,14 @@ def run(
 
     if parallelize:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
-        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df, out_file))
+        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df))
         res = tqdm.tqdm(map(_save_solution, p.imap(_func, model_files)))
           
         p.close()
         p.join()
     else:
         print('Running mseFBA on %s samples in series...\n'%len(model_files))
-        _pool_init(metabolomics_df, out_file)
+        _pool_init(metabolomics_df)
         res = tqdm.tqdm(map(_save_solution, map(_func, model_files)))
 
     feasible_models = list(filter(lambda sample: sample[1] is not None, res))
@@ -170,12 +170,11 @@ def map_sample_labels(metabolomics, conversion_file):
     metabolomics_df = metabolomics_df[samples]
     return metabolomics_df.rename(conversion, axis='columns')
 
-def _pool_init(m_df, s_path):
+def _pool_init(m_df):
     sys.stdout = open(os.devnull, 'w')  
 
-    global metabolomics_global, solution_path
+    global metabolomics_global
     metabolomics_global = m_df
-    solution_path = s_path
 
 def scale_metabolomics(metabolomics,fva_dir='fva/'):
     print('Scaling metabolomics...')
