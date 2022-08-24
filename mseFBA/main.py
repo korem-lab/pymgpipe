@@ -34,9 +34,9 @@ def run(
     parallelize=True
 ):
     gc.enable()
-    samples = dataset_dir+samples
-    fva_dir=dataset_dir+fva_dir
-    conversion_file=dataset_dir+conversion_file
+    # samples = dataset_dir+samples
+    # fva_dir=dataset_dir+fva_dir
+    # conversion_file=dataset_dir+conversion_file
         
     try:
         model_files = samples if isinstance(samples,list) else [samples+m for m in os.listdir(samples)]
@@ -47,7 +47,7 @@ def run(
     if os.path.exists(out_file):
         solution_df = _load_dataframe(out_file)
     
-    finished = [solution_df.columns]
+    finished = list(solution_df.columns)
     if len(finished)>0:
         print('Skipping %s samples that are already finished!'%len(finished))
         model_files = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in finished]
@@ -81,13 +81,13 @@ def run(
     )
     if parallelize:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
-        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df, solution_df))
+        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df, solution_df, out_file))
         res = list(tqdm.tqdm(p.imap(_func, model_files)))
         p.close()
         p.join()
     else:
         print('Running mseFBA on %s samples in series...\n'%len(model_files))
-        _pool_init(metabolomics_df, solution_df)
+        _pool_init(metabolomics_df, solution_df, out_file)
         res = list(tqdm.tqdm(map(_func,model_files)))
 
     feasible_models = list(filter(lambda sample: sample[1] == True, res))
@@ -98,7 +98,9 @@ def run(
         print('Some models were infeasible and could not be solved-\n')
         print(infeasible_models)
 
-def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, out_dir, model_file):
+def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
+    global solution_global, solution_path, metabolomics_global
+
     model = load_model(model_file,solver)
 
     metab_map = metabolomics_global[model.name].dropna().to_dict()
@@ -125,6 +127,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     if solved:
         solution.sort_index(inplace=True)
         solution_global = pd.concat([solution_global,solution],axis=1)
+        solution_global.to_csv(solution_path)
 
     del model
     gc.collect()
@@ -143,14 +146,13 @@ def _get_metabolomics(metabolomics,fva_dir,scale=True,map_labels=True,conversion
 
     return metabolomics_df
 
-def _pool_init(m_df, s_df):
+def _pool_init(m_df, s_df, s_path):
     sys.stdout = open(os.devnull, 'w')  
 
-    global metabolomics_global
+    global metabolomics_global, solution_global, solution_path
     metabolomics_global = m_df
-
-    global solution_global
     solution_global = s_df
+    solution_path = s_path
 
 def scale_metabolomics(metabolomics,fva_dir='fva/'):
     print('Scaling metabolomics...')
