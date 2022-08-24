@@ -41,7 +41,7 @@ def run(
     except:
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
-    metabolomics_df = _get_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
+    metabolomics_df = process_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
     unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in list(metabolomics_df.columns)]
     if len(unmatched_metabolomics) > 0:
         print('%s samples dont have associated columns in metabolomics file-\n'%len(unmatched_metabolomics))
@@ -80,24 +80,41 @@ def run(
         presolve,
         threshold
     )
+    
+    global final, out_path
+    out_path = out_file
+    final = _load_dataframe(out_file,return_empty=True)
+
     if parallelize:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
         p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df, out_file))
-        res = list(tqdm.tqdm(p.imap(_func, model_files)))
+        res = tqdm.tqdm(map(_save_solution, p.imap(_func, model_files)))
+          
         p.close()
         p.join()
     else:
         print('Running mseFBA on %s samples in series...\n'%len(model_files))
         _pool_init(metabolomics_df, out_file)
-        res = list(tqdm.tqdm(map(_func,model_files)))
+        res = tqdm.tqdm(map(_save_solution, map(_func, model_files)))
 
-    feasible_models = list(filter(lambda sample: sample[1] == True, res))
-    infeasible_models = list(filter(lambda sample: sample[1] == False, res))
+    feasible_models = list(filter(lambda sample: sample[1] is not None, res))
+    infeasible_models = list(filter(lambda sample: sample[1] is None, res))
 
     print('Finished mseFBA! Solved %s samples'%len(feasible_models))
     if len(infeasible_models) > 0:
         print('Some models were infeasible and could not be solved-\n')
         print(list(zip(*infeasible_models))[0])
+
+def _save_solution(res):
+    global final, out_path
+
+    _,solution = res
+
+    final = pd.concat([final,solution],axis=1)
+    final.sort_index(inplace=True)
+    final.to_csv(out_path)
+
+    return res
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
     global solution_path, metabolomics_global
@@ -125,19 +142,12 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     except:
         pass
 
-    solved = solution is not None
-    if solved:
-        aggregate_sol =  _load_dataframe(solution_path,return_empty=True)
-        aggregate_sol = pd.concat([aggregate_sol,solution],axis=1)
-        aggregate_sol.sort_index(inplace=True)
-        aggregate_sol.to_csv(solution_path)
-
     del model
     gc.collect()
 
-    return (model_file, solved)
+    return (model_file, solution)
     
-def _get_metabolomics(metabolomics,fva_dir,scale=True,map_labels=True,conversion_file='sample_label_conversion.csv'):
+def process_metabolomics(metabolomics,fva_dir='fva/',scale=True,map_labels=True,conversion_file='sample_label_conversion.csv',out_file=None):
     metabolomics_df = _load_dataframe(metabolomics)
     
     metabolomics_df = scale_metabolomics(metabolomics_df,fva_dir) if scale else metabolomics_df
@@ -146,6 +156,8 @@ def _get_metabolomics(metabolomics,fva_dir,scale=True,map_labels=True,conversion
     print('\n-------------------------------------------------------------')
     print('Using metabolomics file with %s metabolites and %s samples!'%(len(metabolomics_df.index),len(metabolomics_df.columns)))
     print('-------------------------------------------------------------')
+    if out_file is not None:
+        metabolomics_df.to_csv(out_file)
     return metabolomics_df
 
 def map_sample_labels(metabolomics, conversion_file):
@@ -242,11 +254,9 @@ def _load_dataframe(m, return_empty=False):
     else:
         raise Exception('_load_dataframe can only take a string or dataframe, received %s'%type(m))
 
-def evaluate_results(metabolomics,to_compare,map_labels=True,conversion_file='sample_label_conversion.csv'):
+def evaluate_results(to_compare,metabolomics):
     to_compare = _load_dataframe(to_compare)
-
     metabolomics = _load_dataframe(metabolomics)
-    metabolomics = map_sample_labels(metabolomics,conversion_file) if map_labels else metabolomics
 
     sp_r = to_compare.corrwith(metabolomics,method='spearman',axis=1)
     pr_r = to_compare.corrwith(metabolomics,method='pearson',axis=1)
