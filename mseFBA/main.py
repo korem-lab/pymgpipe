@@ -41,6 +41,13 @@ def run(
     except:
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
+    metabolomics_df = _get_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
+    unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in list(metabolomics_df.columns)]
+    if len(unmatched_metabolomics) > 0:
+        print('%s samples dont have associated columns in metabolomics file-\n'%len(unmatched_metabolomics))
+        print([f.split('/')[-1].split('.mps')[0] for f in unmatched_metabolomics])
+        model_files = [f for f in model_files if f not in unmatched_metabolomics]
+        
     solution_df = _load_dataframe(out_file,return_empty=True)
     finished = list(solution_df.columns)
     if len(finished)>0:
@@ -54,8 +61,7 @@ def run(
     threads = os.cpu_count() if threads == -1 else threads
     threads = min(threads,len(model_files))
 
-    metabolomics_df = _get_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
-
+    print('\n---------------Parameters---------------')
     print('Parallel- %s'%str(parallelize).upper())
     print('Solver- %s'%solver.upper())
     print('Presolve- %s'%str(presolve).upper())
@@ -96,6 +102,8 @@ def run(
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
     global solution_path, metabolomics_global
     model = load_model(model_file,solver)
+    if model.name not in metabolomics_global.columns:
+        raise Exception('Could not find %s in metabolomics- %s'%(model_file,list(metabolomics_global.columns)))
 
     metab_map = metabolomics_global[model.name].dropna().to_dict()
     if zero_unmapped_metabolites:
@@ -132,14 +140,23 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
 def _get_metabolomics(metabolomics,fva_dir,scale=True,map_labels=True,conversion_file='sample_label_conversion.csv'):
     metabolomics_df = _load_dataframe(metabolomics)
     
-    if scale:
-        metabolomics_df = scale_metabolomics(metabolomics_df,fva_dir)
+    metabolomics_df = scale_metabolomics(metabolomics_df,fva_dir) if scale else metabolomics_df
+    metabolomics_df = map_sample_labels(metabolomics_df,conversion_file) if map_labels else metabolomics_df
 
-    if map_labels:
-        conversion = _load_dataframe(conversion_file).conversion.to_dict()
-        metabolomics_df.rename(conversion,axis='columns',inplace=True)
-
+    print('\n-------------------------------------------------------------')
+    print('Using metabolomics file with %s metabolites and %s samples!'%(len(metabolomics_df.index),len(metabolomics_df.columns)))
+    print('-------------------------------------------------------------')
     return metabolomics_df
+
+def map_sample_labels(metabolomics, conversion_file):
+    metabolomics_df = _load_dataframe(metabolomics)
+    conversion = _load_dataframe(conversion_file).conversion.to_dict()
+
+    samples = list(set(metabolomics_df.columns).intersection(set(conversion.keys())))
+    print('Mapping sample labels for %s matched samples...'%len(samples))
+
+    metabolomics_df = metabolomics_df[samples]
+    return metabolomics_df.rename(conversion, axis='columns')
 
 def _pool_init(m_df, s_path):
     sys.stdout = open(os.devnull, 'w')  
@@ -170,11 +187,9 @@ def scale_metabolomics(metabolomics,fva_dir='fva/'):
     if len(fva_dfs)/len(raw.columns) < 0.5:
         print(f'!!! Using FVA results for less than 50% of all samples, results might not be as good as they could be!\n')
 
-    print('Scaling %s metabolites...'%len(raw.index))
-
     missing_metabs = [m for m in list(raw.index) if m not in min_max]
     if len(missing_metabs)>0:
-        print('Skipping %s metabolites due to them being missing from models, these metabolites will not be included in formatted metabolomics...\n'%len(missing_metabs)) 
+        print('Skipping %s metabolites due to them being missing from models, these metabolites will not be included in formatted metabolomics...'%len(missing_metabs)) 
         raw.drop(missing_metabs,inplace=True)
 
     def _scale_row(x):
@@ -229,11 +244,9 @@ def _load_dataframe(m, return_empty=False):
 
 def evaluate_results(metabolomics,to_compare,map_labels=True,conversion_file='sample_label_conversion.csv'):
     to_compare = _load_dataframe(to_compare)
-    metabolomics = _load_dataframe(metabolomics)
 
-    if map_labels:
-        conversion = _load_dataframe(conversion_file).conversion.to_dict()
-        metabolomics.rename(conversion,axis='columns',inplace=True)
+    metabolomics = _load_dataframe(metabolomics)
+    metabolomics = map_sample_labels(metabolomics,conversion_file) if map_labels else metabolomics
 
     sp_r = to_compare.corrwith(metabolomics,method='spearman',axis=1)
     pr_r = to_compare.corrwith(metabolomics,method='pearson',axis=1)
