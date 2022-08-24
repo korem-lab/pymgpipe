@@ -16,11 +16,11 @@ import sys
 
 def run(
     metabolomics,
+    out_file,
     dataset_dir='./',
     samples='problems/',
     fva_dir='fva/',
     conversion_file='sample_label_conversion.csv',
-    out_file=None,
     ex_only=True,
     zero_unmapped_metabolites=False,
     threads=int(os.cpu_count()/2),
@@ -35,16 +35,13 @@ def run(
     gc.enable()
     fva_dir = dataset_dir+fva_dir
     conversion_file = dataset_dir+conversion_file
-        
+ 
     try:
         model_files = samples if isinstance(samples,list) else [dataset_dir+samples+m for m in os.listdir(dataset_dir+samples)]
     except:
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
-    solution_df = pd.DataFrame()
-    if os.path.exists(out_file):
-        solution_df = _load_dataframe(out_file)
-    
+    solution_df = _load_dataframe(out_file,return_empty=True)
     finished = list(solution_df.columns)
     if len(finished)>0:
         print('Skipping %s samples that are already finished!'%len(finished))
@@ -79,13 +76,13 @@ def run(
     )
     if parallelize:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
-        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df, solution_df, out_file))
+        p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df, out_file))
         res = list(tqdm.tqdm(p.imap(_func, model_files)))
         p.close()
         p.join()
     else:
         print('Running mseFBA on %s samples in series...\n'%len(model_files))
-        _pool_init(metabolomics_df, solution_df, out_file)
+        _pool_init(metabolomics_df, out_file)
         res = list(tqdm.tqdm(map(_func,model_files)))
 
     feasible_models = list(filter(lambda sample: sample[1] == True, res))
@@ -94,11 +91,10 @@ def run(
     print('Finished mseFBA! Solved %s samples'%len(feasible_models))
     if len(infeasible_models) > 0:
         print('Some models were infeasible and could not be solved-\n')
-        print(infeasible_models)
+        print(list(zip(*infeasible_models))[0])
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
-    global solution_global, solution_path, metabolomics_global
-
+    global solution_path, metabolomics_global
     model = load_model(model_file,solver)
 
     metab_map = metabolomics_global[model.name].dropna().to_dict()
@@ -118,15 +114,15 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
             method='barrier',
             flux_threshold=threshold
         )
-    except InfeasibleModelException:
+    except:
         pass
 
     solved = solution is not None
     if solved:
-        solution.sort_index(inplace=True)
-        solution_global = pd.concat([solution_global,solution],axis=1)
-        if solution_path is not None:
-            solution_global.to_csv(solution_path)
+        aggregate_sol =  _load_dataframe(solution_path,return_empty=True)
+        aggregate_sol = pd.concat([aggregate_sol,solution],axis=1)
+        aggregate_sol.sort_index(inplace=True)
+        aggregate_sol.to_csv(solution_path)
 
     del model
     gc.collect()
@@ -145,12 +141,11 @@ def _get_metabolomics(metabolomics,fva_dir,scale=True,map_labels=True,conversion
 
     return metabolomics_df
 
-def _pool_init(m_df, s_df, s_path):
+def _pool_init(m_df, s_path):
     sys.stdout = open(os.devnull, 'w')  
 
-    global metabolomics_global, solution_global, solution_path
+    global metabolomics_global, solution_path
     metabolomics_global = m_df
-    solution_global = s_df
     solution_path = s_path
 
 def scale_metabolomics(metabolomics,fva_dir='fva/'):
@@ -218,38 +213,30 @@ def _add_correlation_objective(model, flux_map):
     except Exception as e:
         raise Exception('Failed to add mseFBA objective to model- %s'%e)
 
-def _load_dataframe(m):
+def _load_dataframe(m, return_empty=False):
     if isinstance(m,str):
         if not os.path.exists(m):
-            raise Exception('Tried to load dataframe from path that does not exist- %s'%m)
+            if return_empty:
+                return pd.DataFrame() 
+            else:
+                raise Exception('Tried to load dataframe from path that does not exist- %s'%m)
+        
         return pd.read_csv(m,index_col=0)
     elif isinstance(m, pd.DataFrame):
         return m
     else:
         raise Exception('_load_dataframe can only take a string or dataframe, received %s'%type(m))
 
-def combine_mse_solutions(mse_dir='mse/',out_file='mse_sol.csv',write_to_file=True):
-    dfs = [_load_dataframe(mse_dir+f) for f in os.listdir(mse_dir)]
-    combined = pd.concat(dfs,axis=1)
-    combined.sort_index(axis=1,inplace=True)
-    combined.sort_index(axis=0,inplace=True)
-    if write_to_file:
-        combined.to_csv(out_file)
-    return combined
-
-def evaluate_mse_results(metabolomics,comparison_df=None,mse_dir='mse/',map_labels=True):
-    if comparison_df is None:
-        comparison_df = combine_mse_solutions(mse_dir=mse_dir,write_to_file=False)
-    
-    comparison_df = _load_dataframe(comparison_df)
+def evaluate_results(metabolomics,to_compare,map_labels=True,conversion_file='sample_label_conversion.csv'):
+    to_compare = _load_dataframe(to_compare)
     metabolomics = _load_dataframe(metabolomics)
 
     if map_labels:
-        conversion = _load_dataframe('sample_label_conversion.csv').conversion.to_dict()
+        conversion = _load_dataframe(conversion_file).conversion.to_dict()
         metabolomics.rename(conversion,axis='columns',inplace=True)
 
-    sp_r = comparison_df.corrwith(metabolomics,method='spearman',axis=1)
-    pr_r = comparison_df.corrwith(metabolomics,method='pearson',axis=1)
+    sp_r = to_compare.corrwith(metabolomics,method='spearman',axis=1)
+    pr_r = to_compare.corrwith(metabolomics,method='pearson',axis=1)
     combined_dataframe = pd.concat([sp_r,pr_r],axis=1)
     combined_dataframe.columns=['spearman','pearson']
 
@@ -275,3 +262,12 @@ def compute_nmpcs(fva_dir='fva/',out_file='nmpc_sol.csv',write_to_file=True):
     if write_to_file:
         nmpcs.to_csv(out_file)
     return nmpcs
+
+def _combine_sample_solutions(s_dir='mse/',out_file='combined_sol.csv',write_to_file=True):
+    dfs = [_load_dataframe(s_dir+f) for f in os.listdir(s_dir)]
+    combined = pd.concat(dfs,axis=1)
+    combined.sort_index(axis=1,inplace=True)
+    combined.sort_index(axis=0,inplace=True)
+    if write_to_file:
+        combined.to_csv(out_file)
+    return combined
