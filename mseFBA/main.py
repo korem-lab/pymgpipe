@@ -110,7 +110,7 @@ def run(
         pass
 
     sys.stdout = sys.__stdout__
-    print('Finished mseFBA! Solved %s samples. Results stored in %s!'%(len(feasible),out_file))
+    print('Finished mseFBA! Solved %s samples and saved to %s'%(len(feasible),out_file))
     if len(infeasible) > 0:
         print('Some models were infeasible and could not be solved-\n')
         print(list(zip(*infeasible))[0])
