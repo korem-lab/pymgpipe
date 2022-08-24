@@ -14,19 +14,21 @@ from optlang.interface import Objective
 from pathlib import Path
 
 def regularFVA(
-    path=None,
-    model=None, 
+    model=None,
     ex_only = True, 
     solver='gurobi',
     threads=int(os.cpu_count()/2),
     write_to_file=True,
-    specific_reactions=None):
+    specific_reactions=None,
+    out_dir='fva/'):
     gc.enable()
+
+    model = load_model(path=model,solver=solver) if isinstance(model,str) else model
 
     result_df = []
     if write_to_file:
-        Path('fva').mkdir(exist_ok=True)
-        out_file='fva/%s.csv'%model.name
+        Path(out_dir).mkdir(exist_ok=True)
+        out_file=out_dir+'%s.csv'%model.name
 
         if os.path.exists(out_file):
             result_df = pd.read_csv(out_file)
@@ -35,11 +37,6 @@ def regularFVA(
 
             reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip] 
             result_df = result_df.to_dict('records')
-
-    if path is not None:
-        model = load_model(path=path,solver=solver)
-    if model is None:
-        raise Exception('Need either path or model!')
 
     if specific_reactions is not None:
         reactions_to_run = specific_reactions
