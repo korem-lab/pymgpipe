@@ -72,7 +72,8 @@ def run(
     threshold=1e-5,
     scale=True,
     map_labels=True,
-    parallelize=True
+    parallelize=True,
+    problem_type = '.mps',
 ):
     gc.enable()
     fva_dir = dataset_dir+fva_dir
@@ -84,17 +85,17 @@ def run(
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
     metabolomics_df = process_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
-    unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in list(metabolomics_df.columns)]
+    unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split(problem_type)[0] not in list(metabolomics_df.columns)]
     if len(unmatched_metabolomics) > 0:
         print('%s samples dont have associated columns in metabolomics file-\n'%len(unmatched_metabolomics))
-        print([f.split('/')[-1].split('.mps')[0] for f in unmatched_metabolomics])
+        print([f.split('/')[-1].split(problem_type)[0] for f in unmatched_metabolomics])
         model_files = [f for f in model_files if f not in unmatched_metabolomics]
         
     solution_df = load_dataframe(out_file,return_empty=True)
     finished = list(solution_df.columns)
     if len(finished)>0:
         print('Skipping %s samples that are already finished!'%len(finished))
-        model_files = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in finished]
+        model_files = [f for f in model_files if f.split('/')[-1].split(problem_type)[0] not in finished]
 
     if len(model_files) == 0:
         print('Finished mseFBA, no samples left to run!')
@@ -191,7 +192,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
 def _add_correlation_objective(model, flux_map):
     obj_expression = None
 
-    flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
+    flux_map = {k+'_'+model.name:v for k,v in flux_map.items() if k in model.variables or k+'_'+model.name in model.variables}
     for f_id, flux in flux_map.items():
         forward_var = model.variables[f_id]
         reverse_var = model.variables[_get_reverse_id(f_id)]

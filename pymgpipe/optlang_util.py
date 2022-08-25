@@ -17,8 +17,9 @@ def load_model(path, solver='gurobi'):
     if not os.path.exists(path):
         raise Exception('Could not find model at %s'%path)
 
-    if path[-4:] != '.mps':
-        raise Exception('Path must point to an .mps file')
+    # commenting this out for now
+    # if path[-4:] != '.mps':
+    #     raise Exception('Path must point to an .mps file')
 
     if solver == 'gurobi':
         model = _load_gurobi_model(path)
@@ -114,7 +115,7 @@ def _get_fluxes_from_model(model,specific_reactions=None,threshold=1e-5):
         flux = float(forward.primal-reverse.primal)
         flux = 0 if flux == -0.0 else flux
         flux = flux if abs(flux)>threshold else 0
-        fluxes[forward.name]=flux
+        fluxes[forward.name.split('_mc')[0]]=flux
     return fluxes
 
 def _get_reverse_id(id):
