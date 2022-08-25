@@ -94,7 +94,7 @@ def run(
     
     infeasible = []
     feasible = []
-    for r in tqdm.tqdm(res):
+    for r in tqdm.tqdm(res,total=len(model_files)):
         sample_file, solution = r
         if solution is not None:
             final = pd.concat([final,solution],axis=1)
