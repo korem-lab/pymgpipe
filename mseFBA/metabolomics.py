@@ -1,4 +1,4 @@
-from utils import *
+from .utils import *
 
 def process_metabolomics(metabolomics,fva_dir='fva/',scale=True,map_labels=True,conversion_file='sample_label_conversion.csv',out_file=None):
     metabolomics_df = load_dataframe(metabolomics)
@@ -7,7 +7,7 @@ def process_metabolomics(metabolomics,fva_dir='fva/',scale=True,map_labels=True,
     metabolomics_df = _scale_metabolomics(metabolomics_df,fva_dir) if scale else metabolomics_df
 
     print('\n-------------------------------------------------------------')
-    print('Using metabolomics file with %s metabolites and %s samples!'%(len(metabolomics_df.index),len(metabolomics_df.columns)))
+    print('Using processed metabolomics with %s metabolites and %s samples!'%(len(metabolomics_df.index),len(metabolomics_df.columns)))
     print('-------------------------------------------------------------')
     if out_file is not None:
         metabolomics_df.to_csv(out_file)

@@ -9,10 +9,52 @@ import gc
 from pymgpipe import load_model, solve_model
 from pymgpipe.optlang_util import _get_exchange_reactions, _get_reverse_id
 
-from metabolomics import *
-from utils import *
+from .metabolomics import *
+from .utils import *
 
 from optlang.interface import Objective
+
+class paths(object):
+    def __init__(self, ds_dir='./'):
+        self.dataset_directory = ds_dir
+        self.refresh_all()
+
+    @property
+    def dataset_directory(self):
+        return self._dataset_directory
+
+    @dataset_directory.setter
+    def dataset_directory(self, value):
+        self._dataset_directory = value
+
+    @property
+    def fva_directory(self):
+        return self._fva_directory
+
+    @fva_directory.setter
+    def fva_directory(self, value):
+        self._fva_directory = value
+
+    @property
+    def problem_directory(self):
+        return self._problem_directory
+
+    @problem_directory.setter
+    def problem_directory(self, value):
+        self._problem_directory = value
+
+    @property
+    def conversion_file(self):
+        return self._conversion_file
+
+    @conversion_file.setter
+    def conversion_file(self, value):
+        self._conversion_file = value
+
+    def refresh_all(self):
+        self.fva_directory = self.dataset_directory + 'fva/'
+        self.problem_directory = self.dataset_directory + 'problems/'
+        self.conversion_file = self.dataset_directory + 'sample_label_conversion.csv'
 
 def run(
     metabolomics,
