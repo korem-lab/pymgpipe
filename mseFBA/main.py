@@ -195,7 +195,7 @@ def scale_metabolomics(metabolomics,fva_dir='fva/'):
     min_max = pd.concat([mins.min(axis=1,numeric_only=True).rename('min'),maxs.max(axis=1,numeric_only=True).rename('max')],axis=1).T.to_dict()
 
     if len(fva_dfs)/len(raw.columns) < 0.5:
-        print(f'!!! Using FVA results for less than 50% of all samples, results might not be as good as they could be!\n')
+        print(f'Using FVA results for less than 50% of all samples, results might not be as good as they could be!\n')
 
     missing_metabs = [m for m in list(raw.index) if m not in min_max]
     if len(missing_metabs)>0:

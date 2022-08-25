@@ -113,7 +113,7 @@ def _get_fluxes_from_model(model,specific_reactions=None,threshold=1e-5):
 
         flux = float(forward.primal-reverse.primal)
         flux = 0 if flux == -0.0 else flux
-        flux = flux if abs(flux)>threshold else 0
+        # flux = flux if abs(flux)>threshold else 0
         fluxes[forward.name]=flux
     return fluxes
 
