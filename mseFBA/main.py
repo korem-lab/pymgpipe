@@ -15,7 +15,7 @@ from .utils import *
 from optlang.interface import Objective
 
 class Constants:
-    EX_REGEX = '^EX_.*_m$'
+    EX_REGEX = '^EX_.*_m_mc.*$'
 
 def run(
     metabolomics,
@@ -168,7 +168,7 @@ def _add_correlation_objective(model, flux_map):
         raise Exception('Failed to add mseFBA objective to model- %s'%e)
 
 def _pool_init(m_df):
-    sys.stdout = open(os.devnull, 'w')  
+    # sys.stdout = open(os.devnull, 'w')  
 
     global metabolomics_global
     metabolomics_global = m_df
