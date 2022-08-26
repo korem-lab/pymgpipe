@@ -73,7 +73,7 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
         flux = float(forward.primal-reverse.primal)
         flux = 0 if flux == -0.0 else flux
         flux = flux if abs(flux)>threshold else 0
-        fluxes[forward.name]=flux
+        fluxes[forward.name.split('_mc')[0]]=flux
     return fluxes
 
 def get_reactions(model,reactions=None,regex=None):
