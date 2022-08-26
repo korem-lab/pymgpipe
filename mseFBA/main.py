@@ -24,7 +24,6 @@ def run(
     samples='problems/',
     fva_dir='fva/',
     conversion_file='sample_label_conversion.csv',
-    ex_only=True,
     zero_unmapped_metabolites=False,
     threads=int(os.cpu_count()/2),
     solver='gurobi',
@@ -76,7 +75,6 @@ def run(
         
     _func = partial(
         _mseFBA_worker,
-        ex_only,
         zero_unmapped_metabolites,
         solver,
         verbosity,
@@ -118,7 +116,7 @@ def run(
         print('Some models were infeasible and could not be solved-\n')
         print(list(zip(*infeasible))[0])
 
-def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
+def _mseFBA_worker(zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
     global solution_path, metabolomics_global
     model = load_model(model_file,solver)
     if model.name not in metabolomics_global.columns:
@@ -126,7 +124,6 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
 
     metab_map = metabolomics_global[model.name].dropna().to_dict()
     if zero_unmapped_metabolites:
-        ex_only = True
         ex_reactions = get_reactions(model, regex = Constants.EX_REGEX)
         metab_map.update({k.name:0 for k in ex_reactions if k.name not in metab_map})
         
@@ -136,7 +133,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     try:
         solution = solve_model(
             model=model,
-            regex = Constants.EX_REGEX if ex_only else None,
+            regex = Constants.EX_REGEX,
             verbosity=verbosity,
             presolve=presolve,
             method='barrier',
