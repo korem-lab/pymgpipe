@@ -7,54 +7,15 @@ import tqdm
 import gc
 
 from pymgpipe import load_model, solve_model
-from pymgpipe.optlang_util import _get_exchange_reactions, _get_reverse_id
+from pymgpipe.optlang_util import _get_reverse_id, get_reactions
 
 from .metabolomics import *
 from .utils import *
 
 from optlang.interface import Objective
 
-class paths(object):
-    def __init__(self, ds_dir='./'):
-        self.dataset_directory = ds_dir
-        self.refresh_all()
-
-    @property
-    def dataset_directory(self):
-        return self._dataset_directory
-
-    @dataset_directory.setter
-    def dataset_directory(self, value):
-        self._dataset_directory = value
-
-    @property
-    def fva_directory(self):
-        return self._fva_directory
-
-    @fva_directory.setter
-    def fva_directory(self, value):
-        self._fva_directory = value
-
-    @property
-    def problem_directory(self):
-        return self._problem_directory
-
-    @problem_directory.setter
-    def problem_directory(self, value):
-        self._problem_directory = value
-
-    @property
-    def conversion_file(self):
-        return self._conversion_file
-
-    @conversion_file.setter
-    def conversion_file(self, value):
-        self._conversion_file = value
-
-    def refresh_all(self):
-        self.fva_directory = self.dataset_directory + 'fva/'
-        self.problem_directory = self.dataset_directory + 'problems/'
-        self.conversion_file = self.dataset_directory + 'sample_label_conversion.csv'
+class Constants:
+    EX_REGEX = '^EX_.*_m$'
 
 def run(
     metabolomics,
@@ -165,8 +126,9 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
 
     metab_map = metabolomics_global[model.name].dropna().to_dict()
     if zero_unmapped_metabolites:
-        ex_reactions = _get_exchange_reactions(model)
-        metab_map.update({k:0 for k in ex_reactions if k not in metab_map})
+        ex_only = True
+        ex_reactions = get_reactions(model, regex = Constants.EX_REGEX)
+        metab_map.update({k.name:0 for k in ex_reactions if k.name not in metab_map})
         
     _add_correlation_objective(model,metab_map)
 
@@ -174,7 +136,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     try:
         solution = solve_model(
             model=model,
-            ex_only=ex_only,
+            regex = Constants.EX_REGEX if ex_only else None,
             verbosity=verbosity,
             presolve=presolve,
             method='barrier',
