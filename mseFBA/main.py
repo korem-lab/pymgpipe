@@ -35,6 +35,7 @@ def run(
     map_labels=True,
     parallelize=True
 ):
+    print('\n')
     gc.enable()
     fva_dir = dataset_dir+fva_dir
     conversion_file = dataset_dir+conversion_file
@@ -59,7 +60,9 @@ def run(
 
     if len(model_files) == 0:
         print('Finished mseFBA, no samples left to run!')
-        return
+        print('The results are in...\n')
+        res = evaluate_results(out_file,metabolomics_df)
+        return res
 
     threads = os.cpu_count() if threads == -1 else threads
     threads = min(threads,len(model_files))
@@ -117,6 +120,10 @@ def run(
     if len(infeasible) > 0:
         print('Unable to solve %s models-\n'%len(infeasible))
         print(infeasible)
+
+    print('The results are in...\n')
+    res = evaluate_results(out_file,metabolomics_df)
+    return res
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
     global solution_path, metabolomics_global

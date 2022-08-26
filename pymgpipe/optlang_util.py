@@ -3,6 +3,9 @@ import optlang
 import re
 import pandas as pd
 
+import warnings
+warnings.filterwarnings("ignore")
+
 class UnsupportedSolverException(Exception):
     def __init__(self, msg='Unrecognized solver. Supported solvers include gurobi and cplex', *args, **kwargs):
         super().__init__(msg, *args, **kwargs)

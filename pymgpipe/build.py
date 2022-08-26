@@ -15,7 +15,6 @@ import gc
 import tqdm
 from cobra.io import read_sbml_model
 
-
 def build_models(
     coverage_file,
     taxa_dir,
@@ -36,7 +35,7 @@ def build_models(
     if os.path.exists(formatted_coverage_file):
         formatted = pd.read_csv(formatted_coverage_file,index_col=0)
     else:
-        formatted = _format_coverage_file(coverage_file,taxa_dir)
+        formatted = format_coverage_file(coverage_file,taxa_dir)
         formatted.to_csv(formatted_coverage_file)
     samples_to_run = formatted.sample_id.unique()
     taxa = formatted.strain.unique()
@@ -47,6 +46,7 @@ def build_models(
         samples_to_run = samples if isinstance(samples,list) else [samples]
 
     finished = []
+    print('Checking for finished samples...')
     for s in samples_to_run:
         model_out = 'models/%s.xml'%s
         problem_out = 'problems/%s.mps'%s
@@ -60,9 +60,10 @@ def build_models(
     
     _func = partial(_build_single_model, formatted, solver)
 
+    print('\n-------------------------------------------------------------')
     if parallelize:
         threads = os.cpu_count() if threads == -1 else threads
-        threads = min(threads,samples_to_run)
+        threads = min(threads,len(samples_to_run))
         print('Building %s samples in parallel using %s threads...'%(len(samples_to_run),threads))
         
         p = Pool(threads, initializer=_mute)
@@ -75,6 +76,7 @@ def build_models(
     else:
         print('Building %s samples in series...'%(len(samples_to_run)))
         built = tqdm.tqdm(list(map(_func,samples_to_run)),total=len(samples_to_run))
+    print('\n-------------------------------------------------------------')
     
     print('Finished building %s models and associated LP problems!'%len(built))    
 
@@ -148,26 +150,35 @@ def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
 
     return com
 
-def _format_coverage_file(coverage_file,taxa_dir):
+def format_coverage_file(coverage_file,taxa_dir):
     model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
     coverage = pd.read_csv(coverage_file,index_col=0,header=0)
-    sample_conversion_dict = {v:'mc'+str(i+1) for i,v in enumerate(coverage.columns)}
+
+    conversion_file_path = 'sample_label_conversion.csv'
+    if not os.path.exists(conversion_file_path):
+        sample_conversion_dict = {v:'mc'+str(i+1) for i,v in enumerate(coverage.columns)}
+    else:
+        sample_conversion_dict = pd.read_csv(conversion_file_path,index_col=0).iloc[:, 0].to_dict()
+        if set(sample_conversion_dict.keys()) != set(coverage.columns):
+            raise Exception('Provided label conversion file %s does not provide labels for all samples!'%conversion_file_path)
+    
     coverage.rename(columns=sample_conversion_dict,inplace=True)
     
     sample_conversion_dict = pd.DataFrame({'conversion':sample_conversion_dict})
-    sample_conversion_dict.to_csv('sample_label_conversion.csv')
+    sample_conversion_dict.to_csv(conversion_file_path)
 
     melted = pd.melt(coverage, value_vars=coverage.columns,ignore_index=False,var_name='sample_id',value_name='abundance',)
     melted['strain']=melted.index
     melted['file']=taxa_dir+melted.strain+model_type
 
-    missing_taxa = set([f.split('.')[0] for f in melted.file if not os.path.exists(f)])
+    missing_taxa = set([f.split('/')[-1].split('.')[0] for f in melted.file if not os.path.exists(f)])
     if len(missing_taxa)>0:
         melted.drop(missing_taxa,axis='index',inplace=True)
-        print('!!! Removed %s missing taxa from coverage file\n' %len(missing_taxa))
+        print('Removed %s missing taxa from coverage file-' %len(missing_taxa))
         print(missing_taxa)
     
     melted = melted.loc[melted.abundance!=0]
+    melted.abundance = melted.abundance.div(melted.groupby(['sample_id'])['abundance'].transform('sum'))
 
     melted.reset_index(inplace=True)
     melted.rename({'index':'id'},axis='columns',inplace=True)
