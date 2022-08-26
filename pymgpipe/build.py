@@ -8,14 +8,12 @@ from micom import load_pickle
 import cobra
 from cobra.io import write_sbml_model
 from pathlib import Path
-import ctypes
 
 from multiprocessing import Pool
 from functools import partial
 import gc
 import tqdm
 from cobra.io import read_sbml_model
-from contextlib import redirect_stdout, contextmanager
 
 
 def build_models(

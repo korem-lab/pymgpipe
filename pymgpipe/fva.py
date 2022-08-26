@@ -9,17 +9,18 @@ import tqdm
 import gc
 import sys
 
-from .optlang_util import load_model, solve_model, _get_exchange_reactions, _get_all_forward_reactions, _get_reverse_id
+from .optlang_util import get_reactions, load_model, solve_model, _get_reverse_id
 from optlang.interface import Objective
 from pathlib import Path
 
 def regularFVA(
     model=None,
-    ex_only = True, 
+    reactions=None,
+    regex=None,
+    ex_only=True,
     solver='gurobi',
     threads=int(os.cpu_count()/2),
     write_to_file=True,
-    specific_reactions=None,
     out_dir='fva/'):
     gc.enable()
 
@@ -38,10 +39,10 @@ def regularFVA(
             reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip] 
             result_df = result_df.to_dict('records')
 
-    if specific_reactions is not None:
-        reactions_to_run = specific_reactions
-    else:
-        reactions_to_run = _get_exchange_reactions(model) if ex_only else _get_all_forward_reactions(model)
+    if reactions is None and regex is None and ex_only is True:
+        regex = '^EX_.*_m$'
+
+    reactions_to_run = [r.name for r in get_reactions(model,reactions,regex)]
         
     print('Starting FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
     
