@@ -62,7 +62,12 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
     fluxes = {}
 
     for forward in get_reactions(model,reactions,regex):
+        r_id = _get_reverse_id(forward.name)
+        if r_id not in model.variables:
+            continue
+
         reverse = model.variables[_get_reverse_id(forward.name)]
+        print(forward.name,reverse.name)
 
         flux = float(forward.primal-reverse.primal)
         flux = 0 if flux == -0.0 else flux
