@@ -21,7 +21,8 @@ def build_models(
     solver='gurobi',
     threads=int(os.cpu_count()/2),
     samples=None,
-    parallelize=True
+    parallelize=True,
+    model_type='.mps'
 ):
     gc.enable()
 
@@ -49,7 +50,7 @@ def build_models(
     print('Checking for finished samples...')
     for s in samples_to_run:
         model_out = 'models/%s.xml'%s
-        problem_out = 'problems/%s.mps'%s
+        problem_out = 'problems/'+s+model_type
 
         if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
             finished.append(s)
@@ -58,7 +59,7 @@ def build_models(
         print('Found %s completed samples, skipping those!'%(len(finished)))
         samples_to_run = [s for s in samples_to_run if s not in finished]
     
-    _func = partial(_build_single_model, formatted, solver)
+    _func = partial(_build_single_model, formatted, solver, model_type)
 
     print('\n-------------------------------------------------------------')
     if parallelize:
@@ -80,9 +81,9 @@ def build_models(
     
     print('Finished building %s models and associated LP problems!'%len(built))    
 
-def _build_single_model(coverage_df,solver,sample_label):
+def _build_single_model(coverage_df,solver,model_type,sample_label):
     model_out = 'models/%s.xml'%sample_label
-    problem_out = 'problems/%s.mps'%sample_label
+    problem_out = 'problems/'+sample_label+model_type
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
     pymgpipe_model = None
 
