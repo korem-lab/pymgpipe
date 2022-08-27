@@ -21,6 +21,8 @@ def compute_nmpcs(fva_dir='fva/',out_file='nmpc_sol.csv',write_to_file=True):
     
     nmpcs = {}
     for f in fva_files:
+        if 'min_max' in f:
+            continue
         s = load_dataframe(fva_dir+f)
         label = f.split('.csv')[0]
 
