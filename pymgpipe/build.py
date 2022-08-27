@@ -22,15 +22,17 @@ def build_models(
     threads=int(os.cpu_count()/2),
     samples=None,
     parallelize=True,
-    model_type='.mps'
+    model_type='.mps',
+    problem_dir='problems/',
+    model_dir='models/'
 ):
     gc.enable()
 
     if taxa_dir[-1] != '/':
         taxa_dir=taxa_dir+'/'
 
-    Path('models').mkdir(exist_ok=True)
-    Path('problems').mkdir(exist_ok=True)
+    Path(model_dir).mkdir(exist_ok=True)
+    Path(problem_dir).mkdir(exist_ok=True)
 
     formatted_coverage_file=coverage_file.split('.csv')[0]+'_formatted.csv'
     if os.path.exists(formatted_coverage_file):
@@ -49,8 +51,8 @@ def build_models(
     finished = []
     print('Checking for finished samples...')
     for s in samples_to_run:
-        model_out = 'models/%s.xml'%s
-        problem_out = 'problems/'+s+model_type
+        model_out = model_dir+'%s.xml'%s
+        problem_out = problem_dir+s+model_type
 
         if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
             finished.append(s)
@@ -59,7 +61,14 @@ def build_models(
         print('Found %s completed samples, skipping those!'%(len(finished)))
         samples_to_run = [s for s in samples_to_run if s not in finished]
     
-    _func = partial(_build_single_model, formatted, solver, model_type)
+    _func = partial(
+        _build_single_model,
+        formatted,
+        solver,
+        model_dir,
+        problem_dir,
+        model_type
+    )
 
     print('\n-------------------------------------------------------------')
     if parallelize:
@@ -81,9 +90,9 @@ def build_models(
     
     print('Finished building %s models and associated LP problems!'%len(built))    
 
-def _build_single_model(coverage_df,solver,model_type,sample_label):
-    model_out = 'models/%s.xml'%sample_label
-    problem_out = 'problems/'+sample_label+model_type
+def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,sample_label):
+    model_out = model_dir+'%s.xml'%sample_label
+    problem_out = problem_dir+sample_label+model_type
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
     pymgpipe_model = None
 
