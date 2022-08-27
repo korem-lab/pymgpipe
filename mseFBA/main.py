@@ -33,7 +33,8 @@ def run(
     threshold=1e-5,
     scale=True,
     map_labels=True,
-    parallelize=True
+    parallelize=True,
+    model_type='.mps'
 ):
     print('\n')
     gc.enable()
@@ -46,17 +47,17 @@ def run(
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
     metabolomics_df = process_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
-    unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in list(metabolomics_df.columns)]
+    unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split(model_type)[0] not in list(metabolomics_df.columns)]
     if len(unmatched_metabolomics) > 0:
         print('%s samples dont have associated columns in metabolomics file-\n'%len(unmatched_metabolomics))
-        print([f.split('/')[-1].split('.mps')[0] for f in unmatched_metabolomics])
+        print([f.split('/')[-1].split(model_type)[0] for f in unmatched_metabolomics])
         model_files = [f for f in model_files if f not in unmatched_metabolomics]
         
     solution_df = load_dataframe(out_file,return_empty=True)
     finished = list(solution_df.columns)
     if len(finished)>0:
         print('Skipping %s samples that are already finished!'%len(finished))
-        model_files = [f for f in model_files if f.split('/')[-1].split('.mps')[0] not in finished]
+        model_files = [f for f in model_files if f.split('/')[-1].split(model_type)[0] not in finished]
 
     if len(model_files) == 0:
         print('Finished mseFBA, no samples left to run!')

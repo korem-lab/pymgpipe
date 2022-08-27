@@ -17,9 +17,6 @@ def load_model(path, solver='gurobi'):
     if not os.path.exists(path):
         raise Exception('Could not find model at %s'%path)
 
-    if path[-4:] != '.mps':
-        raise Exception('Path must point to an .mps file')
-
     if solver == 'gurobi':
         model = _load_gurobi_model(path)
     elif solver == 'cplex':
