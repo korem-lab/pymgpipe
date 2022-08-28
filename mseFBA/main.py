@@ -1,4 +1,5 @@
 import os
+from pyexpat import model
 import sys
 import pandas as pd
 from multiprocessing import Pool
@@ -13,6 +14,7 @@ from .metabolomics import *
 from .utils import *
 
 from optlang.interface import Objective
+import time
 
 class Constants:
     EX_REGEX = '^EX_.*_m$'
@@ -34,10 +36,10 @@ def run(
     scale=True,
     map_labels=True,
     parallelize=True,
-    model_type='.mps'
 ):
-    print('\n')
+    start_time = time.time()
     gc.enable()
+
     fva_dir = dataset_dir+fva_dir
     conversion_file = dataset_dir+conversion_file
  
@@ -47,17 +49,17 @@ def run(
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
     metabolomics_df = process_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
-    unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split(model_type)[0] not in list(metabolomics_df.columns)]
+    unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split('.')[0] not in list(metabolomics_df.columns)]
     if len(unmatched_metabolomics) > 0:
         print('%s samples dont have associated columns in metabolomics file-\n'%len(unmatched_metabolomics))
-        print([f.split('/')[-1].split(model_type)[0] for f in unmatched_metabolomics])
+        print([f.split('/')[-1].split('.')[0] for f in unmatched_metabolomics])
         model_files = [f for f in model_files if f not in unmatched_metabolomics]
         
     solution_df = load_dataframe(out_file,return_empty=True)
     finished = list(solution_df.columns)
     if len(finished)>0:
         print('Skipping %s samples that are already finished!'%len(finished))
-        model_files = [f for f in model_files if f.split('/')[-1].split(model_type)[0] not in finished]
+        model_files = [f for f in model_files if f.split('/')[-1].split('.')[0] not in finished]
 
     if len(model_files) == 0:
         print('Finished mseFBA, no samples left to run!')
@@ -65,7 +67,7 @@ def run(
         res = evaluate_results(out_file,metabolomics_df)
         return res
 
-    threads = os.cpu_count() if threads == -1 else threads
+    threads = os.cpu_count()-1 if threads == -1 else threads
     threads = min(threads,len(model_files))
 
     print('\n---------------Parameters---------------')
@@ -117,7 +119,7 @@ def run(
         pass
 
     sys.stdout = sys.__stdout__
-    print('Finished mseFBA! Solved %s samples and saved to %s'%(len(feasible),out_file))
+    print('\n--Finished mseFBA in %s seconds! Solved %s samples and saved to %s--'%((int(time.time()-start_time)),len(feasible),out_file))
     if len(infeasible) > 0:
         print('Unable to solve %s models-\n'%len(infeasible))
         print(infeasible)
@@ -152,8 +154,8 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     except:
         pass
 
-    del model
-    gc.collect()
+    # del model
+    # gc.collect()
 
     return (model_file, solution)
  

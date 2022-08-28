@@ -19,7 +19,7 @@ def _map_sample_labels(metabolomics, conversion_file):
     conversion = load_dataframe(conversion_file).conversion.to_dict()
 
     samples = list(set(metabolomics_df.columns).intersection(set(conversion.keys())))
-    print('Mapping sample labels for %s matched samples...'%len(samples))
+    print('\nMapping sample labels for %s matched samples...'%len(samples))
 
     metabolomics_df = metabolomics_df[samples]
     return metabolomics_df.rename(conversion, axis='columns')

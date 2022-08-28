@@ -223,7 +223,12 @@ def _is_valid_lp(file):
     with open(file, "rb") as fh:
         fh.seek(-1024, 2)
         last = fh.readlines()[-1].decode()
-        return last.strip()=='ENDATA'
+        if file.endswith('.lp'):
+            return last.strip()=='End'
+        elif file.endswith('.mps'):
+            return last.strip()=='ENDATA'
+        else:
+            raise Exception('Unrecognized LP file at %s. Must be either .lp or .mps!'%file)
 
 def _is_valid_sbml(file):
     with open(file, "rb") as fh:
