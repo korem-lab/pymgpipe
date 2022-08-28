@@ -38,8 +38,8 @@ def run(
     parallelize=True,
 ):
     start_time = time.time()
-    gc.enable()
-
+    gc.disable()
+    
     fva_dir = dataset_dir+fva_dir
     conversion_file = dataset_dir+conversion_file
  

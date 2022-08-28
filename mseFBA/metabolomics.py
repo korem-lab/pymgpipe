@@ -1,5 +1,6 @@
 from .utils import *
 import numpy as np
+import logging
 
 def process_metabolomics(metabolomics,fva_dir='fva/',scale=True,map_labels=True,conversion_file='sample_label_conversion.csv',out_file=None):
     metabolomics_df = load_dataframe(metabolomics)
@@ -41,7 +42,7 @@ def _scale_metabolomics(metabolomics,fva_dir='fva/'):
 
         print('Found FVA results for %s out of %s total samples!'%(len(fva_dfs),len(raw.columns)))
         if len(fva_dfs)/len(raw.columns) < 0.5:
-            print(f'Using FVA results for less than 50% of all samples, results might not be as good as they could be!\n')
+            logging.warning(f'Using FVA results for less than 50% of all samples, results might not be as good as they could be!\n')
 
         mins = pd.concat([df['min'] for df in fva_dfs],axis=1)
         maxs = pd.concat([df['max'] for df in fva_dfs],axis=1)
