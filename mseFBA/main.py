@@ -1,5 +1,4 @@
 import os
-from pyexpat import model
 import sys
 import pandas as pd
 from multiprocessing import Pool
@@ -39,7 +38,7 @@ def run(
 ):
     start_time = time.time()
     gc.disable()
-    
+
     fva_dir = dataset_dir+fva_dir
     conversion_file = dataset_dir+conversion_file
  
