@@ -1,9 +1,13 @@
 import os
 import pandas as pd
+import logging
 
 def evaluate_results(to_compare,metabolomics):
     to_compare = load_dataframe(to_compare)
     metabolomics = load_dataframe(metabolomics)
+
+    if len(metabolomics.columns) != len(to_compare.columns):
+        logging.warning('Comparing two dataframes with unequal number of samples- %s vs %s'%(len(to_compare.columns),len(metabolomics.columns)))
 
     sp_r = to_compare.corrwith(metabolomics,method='spearman',axis=1)
     pr_r = to_compare.corrwith(metabolomics,method='pearson',axis=1)

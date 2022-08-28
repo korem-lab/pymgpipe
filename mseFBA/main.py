@@ -35,8 +35,7 @@ def run(
     map_labels=True,
     parallelize=True
 ):
-    print('\n')
-    gc.enable()
+    gc.disable()
     fva_dir = dataset_dir+fva_dir
     conversion_file = dataset_dir+conversion_file
  
@@ -151,8 +150,8 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     except:
         pass
 
-    del model
-    gc.collect()
+    # del model
+    # gc.collect()
 
     return (model_file, solution)
  
