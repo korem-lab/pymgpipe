@@ -26,24 +26,27 @@ def regularFVA(
 
     model = load_model(path=model,solver=solver) if isinstance(model,str) else model
 
+    if reactions is None and regex is None and ex_only is True:
+        regex = '^EX_.*_m$'
+
+    reactions_to_run = [r.name for r in get_reactions(model,reactions,regex)]
+        
     result_df = []
     if write_to_file:
         Path(out_dir).mkdir(exist_ok=True)
         out_file=out_dir+'%s.csv'%model.name
 
         if os.path.exists(out_file):
-            result_df = pd.read_csv(out_file)
-            metabs_to_skip = result_df.index.unique()
+            result_df = pd.read_csv(out_file,index_col=0)
+            result_df.drop_duplicates(inplace=True)
+
+            metabs_to_skip = list(result_df.index)
             print('\nFound existing file, skipping %s metabolites...'%len(metabs_to_skip))
 
             reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip] 
             result_df = result_df.to_dict('records')
 
-    if reactions is None and regex is None and ex_only is True:
-        regex = '^EX_.*_m$'
 
-    reactions_to_run = [r.name for r in get_reactions(model,reactions,regex)]
-        
     print('Starting FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
     
     threads = os.cpu_count() if threads == -1 else threads

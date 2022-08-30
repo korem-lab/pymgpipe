@@ -26,8 +26,6 @@ def _map_sample_labels(metabolomics, conversion_file):
     return metabolomics_df.rename(conversion, axis='columns')
 
 def _scale_metabolomics(metabolomics,fva_dir='fva/'):
-    print('Scaling metabolomics...')
-
     raw = load_dataframe(metabolomics)
 
     if not os.path.exists(fva_dir):
@@ -40,7 +38,7 @@ def _scale_metabolomics(metabolomics,fva_dir='fva/'):
         if len(fva_dfs)==0:
             raise Exception('No FVA results found')
 
-        print('Found FVA results for %s out of %s total samples!'%(len(fva_dfs),len(raw.columns)))
+        print('\nScaling metabolomics using FVA results for %s out of %s total samples!'%(len(fva_dfs),len(raw.columns)))
         if len(fva_dfs)/len(raw.columns) < 0.5:
             logging.warning(f'Using FVA results for less than 50% of all samples, results might not be as good as they could be!\n')
 
