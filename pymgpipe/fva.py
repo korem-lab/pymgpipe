@@ -13,6 +13,9 @@ from .optlang_util import get_reactions, load_model, solve_model, _get_reverse_i
 from optlang.interface import Objective
 from pathlib import Path
 
+import gurobipy as gp
+
+
 def regularFVA(
     model=None,
     reactions=None,
@@ -21,7 +24,8 @@ def regularFVA(
     solver='gurobi',
     threads=int(os.cpu_count()/2),
     write_to_file=True,
-    out_dir='fva/'):
+    out_dir='fva/',
+    parallel=True):
     gc.enable()
 
     model = load_model(path=model,solver=solver) if isinstance(model,str) else model
@@ -38,7 +42,7 @@ def regularFVA(
 
         if os.path.exists(out_file):
             result_df = pd.read_csv(out_file,index_col=0)
-            result_df.drop_duplicates(inplace=True)
+            result_df = result_df[~result_df.index.duplicated(keep='first')]
 
             metabs_to_skip = list(result_df.index)
             print('\nFound existing file, skipping %s metabolites...'%len(metabs_to_skip))
@@ -46,34 +50,43 @@ def regularFVA(
             reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip] 
             result_df = result_df.to_dict('records')
 
-
-    print('Starting FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
+    if len(reactions_to_run) == 0:
+        print('---Finished! No reactions left to run---')
+        return
     
     threads = os.cpu_count() if threads == -1 else threads
     threads = min(threads,len(reactions_to_run))
 
-    p = Pool(processes=threads,initializer=partial(_pool_init,model))
-    _func = _single_metabolite_worker
+    parallel = False if threads <= 1 else parallel
 
-    failed_metabolites = []
-    out_df = pd.DataFrame()
+    _func = _gurobi_worker if solver=='gurobi' else _optlang_worker
+    if parallel:
+        print('Starting parallel FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
+        p = Pool(processes=threads,initializer=partial(_pool_init,model))
+        res = p.imap(_func, reactions_to_run)
+    else:
+        print('Starting serial FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
+        _pool_init(model)
+        res = map(_func, reactions_to_run)
 
-    for result in tqdm.tqdm(p.imap(_func, reactions_to_run),total=len(reactions_to_run)):
-        if isinstance(result, str):
-            failed_metabolites.append(result)
+    for result in tqdm.tqdm(res,total=len(reactions_to_run)):
         result_df.append(result)
 
         out_df = pd.DataFrame.from_records(result_df,index='id')
         out_df.sort_index(inplace=True)
         if write_to_file:
             out_df.to_csv(out_file) 
-
-    p.close()
-    p.join()
+    
+    try:
+        p.close()
+        p.join()
+    except:
+        pass
 
     return out_df
 
-def _single_metabolite_worker(metabolite):
+# works for both cplex and gurobi
+def _optlang_worker(metabolite):
     global global_model
 
     if metabolite not in global_model.variables:
@@ -89,8 +102,35 @@ def _single_metabolite_worker(metabolite):
 
     return {'id':metabolite,'min':min_sol,'max':max_sol}
 
+# gurobi implementation, slightly faster
+def _gurobi_worker(metabolite):
+    global global_problem
+
+    forward_var = global_problem.getVarByName(metabolite)
+    reverse_var = global_problem.getVarByName(_get_reverse_id(metabolite))
+    net = forward_var - reverse_var
+
+    global_problem.setObjective(forward_var - reverse_var,gp.GRB.MAXIMIZE)
+    global_problem.optimize()
+    
+    max_val = forward_var.X - reverse_var.X
+
+    global_problem.reset()
+
+    global_problem.setObjective(net,gp.GRB.MINIMIZE)
+    global_problem.optimize()
+    
+    min_val = forward_var.X - reverse_var.X
+        
+    return {'id':metabolite,'min':min_val,'max':max_val}
+
+
 def _pool_init(sample_model):
     sys.stdout = open(os.devnull, 'w')  
 
     global global_model
     global_model = sample_model
+
+    global global_problem
+    global_problem = sample_model.problem
+
