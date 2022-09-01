@@ -2,15 +2,15 @@ import os
 import pandas as pd
 import logging
 
-def evaluate_results(to_compare,metabolomics):
+def evaluate_results(to_compare,metabolomics,axis=1):
     to_compare = load_dataframe(to_compare)
     metabolomics = load_dataframe(metabolomics)
 
     if len(metabolomics.columns) != len(to_compare.columns):
         logging.warning('Comparing two dataframes with unequal number of samples- %s vs %s'%(len(to_compare.columns),len(metabolomics.columns)))
 
-    sp_r = to_compare.corrwith(metabolomics,method='spearman',axis=1)
-    pr_r = to_compare.corrwith(metabolomics,method='pearson',axis=1)
+    sp_r = to_compare.corrwith(metabolomics,method='spearman',axis=axis)
+    pr_r = to_compare.corrwith(metabolomics,method='pearson',axis=axis)
     combined_dataframe = pd.concat([sp_r,pr_r],axis=1)
     combined_dataframe.columns=['spearman','pearson']
 
@@ -40,7 +40,12 @@ def compute_nmpcs(fva_dir='fva/',out_file='nmpc_sol.csv',write_to_file=True):
     return nmpcs
 
 def load_dataframe(m, return_empty=False):
-    if isinstance(m,str):
+    if m is None:
+        if return_empty:
+            return pd.DataFrame()
+        else:
+            raise Exception('Tried to load dataframe but received None as parameter')
+    elif isinstance(m,str):
         if not os.path.exists(m):
             if return_empty:
                 return pd.DataFrame() 

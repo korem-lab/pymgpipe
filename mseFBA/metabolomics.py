@@ -83,14 +83,16 @@ class transformations:
     def rzsc(x, q = 0.05):
         return (x-x.median()) / (x[(x >= x.quantile(q)) & (x <= x.quantile(1-q))]).std()
     def abundance(x):
-        return x/sum(x.dropna())
+        log_row = np.log10(x)
+        return log_row/sum(log_row.dropna())
     def minmax(x,min_val=-1000,max_val=1000):
         log_row = np.log10(x)
         scaled = ((max_val-min_val)*(log_row-log_row.min())/(log_row.max()-log_row.min()))+min_val
         return scaled
 
-def transform_metabolomics(metabolomics,func=transformations.none,axis=1):
-    raw = load_dataframe(metabolomics)    
+def transform_metabolomics(metabolomics,func=transformations.none):
+    raw = load_dataframe(metabolomics)   
+    axis = 0 if func is transformations.abundance else 1 
     scaled = raw.apply(func,axis=axis)
 
     return scaled

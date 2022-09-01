@@ -14,13 +14,14 @@ from .utils import *
 
 from optlang.interface import Objective
 import time
+import logging
 
 class Constants:
     EX_REGEX = '^EX_.*_m$'
 
 def run(
     metabolomics,
-    out_file,
+    out_file=None,
     dataset_dir='./',
     samples='problems/',
     fva_dir='fva/',
@@ -32,9 +33,10 @@ def run(
     verbosity=0,
     presolve=True,
     threshold=1e-5,
-    scale=True,
-    map_labels=True,
-    parallelize=True,
+    scale=False,
+    map_labels=False,
+    parallel=True,
+    metabolites=[],
 ):
     start_time = time.time()
     gc.disable()
@@ -54,23 +56,25 @@ def run(
         print([f.split('/')[-1].split('.')[0] for f in unmatched_metabolomics])
         model_files = [f for f in model_files if f not in unmatched_metabolomics]
         
-    solution_df = load_dataframe(out_file,return_empty=True)
-    finished = list(solution_df.columns)
-    if len(finished)>0:
-        print('Skipping %s samples that are already finished!'%len(finished))
-        model_files = [f for f in model_files if f.split('/')[-1].split('.')[0] not in finished]
+    final = load_dataframe(out_file,return_empty=True)
+    if len(final.columns)>0:
+        print('Skipping %s samples that are already finished!'%len(final.columns))
+        model_files = [f for f in model_files if f.split('/')[-1].split('.')[0] not in list(final.columns)]
 
-    if len(model_files) == 0:
+    if len(model_files) == 0 and final.empty:
+        logging.warning('Something went wrong! No existing solution or samples left to run.')
+        return (None, None)
+    elif len(model_files) == 0:
         print('Finished mseFBA, no samples left to run!')
         print('The results are in...\n')
-        res = evaluate_results(out_file,metabolomics_df)
-        return res
+        res = evaluate_results(final,metabolomics_df)
+        return (final,res)
 
     threads = os.cpu_count()-1 if threads == -1 else threads
     threads = min(threads,len(model_files))
 
-    print('\n---------------Parameters---------------')
-    print('Parallel- %s'%str(parallelize).upper())
+    print('\n----------------Parameters----------------')
+    print('Parallel- %s'%str(parallel).upper())
     print('Solver- %s'%solver.upper())
     print('Presolve- %s'%str(presolve).upper())
     print('Verbosity- %s'%verbosity)
@@ -86,12 +90,11 @@ def run(
         solver,
         verbosity,
         presolve,
-        threshold
+        threshold,
+        metabolites
     )
     
-    final = load_dataframe(out_file,return_empty=True)
-
-    if parallelize:
+    if parallel:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
         p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df))
         res = p.imap(_func, model_files)
@@ -107,7 +110,8 @@ def run(
         if solution is not None:
             final = pd.concat([final,solution],axis=1)
             final.sort_index(inplace=True)
-            final.to_csv(out_file)
+            if out_file is not None:
+                final.to_csv(out_file)
             feasible.append(sample_file)
         else:
             infeasible.append(sample_file)
@@ -124,21 +128,24 @@ def run(
         print(infeasible)
 
     print('The results are in...\n')
-    res = evaluate_results(out_file,metabolomics_df)
-    return res
+    res = evaluate_results(final,metabolomics_df)
+    return (final,res)
 
-def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, model_file):
+def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, metabolites, model_file):
     global solution_path, metabolomics_global
     model = load_model(model_file,solver)
     if model.name not in metabolomics_global.columns:
         raise Exception('Could not find %s in metabolomics- %s'%(model_file,list(metabolomics_global.columns)))
 
-    metab_map = metabolomics_global[model.name].dropna().to_dict()
+    all_metabolites = metabolomics_global[model.name].dropna().to_dict()
+    metabs_to_map = {k:v for k,v in all_metabolites.items() if k in metabolites} if metabolites else all_metabolites
+        
     if zero_unmapped_metabolites:
         ex_reactions = get_reactions(model, regex = Constants.EX_REGEX)
-        metab_map.update({k.name:0 for k in ex_reactions if k.name not in metab_map})
+        unmapped_metabs = [k.name for k in ex_reactions if k.name not in all_metabolites]
+        metabs_to_map.update({k:0 for k in unmapped_metabs})
         
-    _add_correlation_objective(model,metab_map)
+    _add_correlation_objective(model,metabs_to_map)
 
     solution = None
     try:
