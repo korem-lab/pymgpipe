@@ -23,7 +23,6 @@ def load_model(path, solver='gurobi'):
         model = _load_cplex_model(path)
     else:
         raise UnsupportedSolverException
-    
     interface = _get_solver_interface(solver)
     optlang_model = interface.Model(problem=model,name=path.split('/')[-1].split('.')[0])
     return optlang_model

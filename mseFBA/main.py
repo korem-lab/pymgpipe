@@ -159,9 +159,8 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     except:
         pass
 
-    # del model
-    # gc.collect()
-    return (model_file, solution, model.objective.expression.as_coefficients_dict()[1]+model.problem.getAttr("ObjVal"))
+    obj_val = get_objective_value(model)
+    return (model_file, solution, obj_val)
  
 def add_correlation_objective(model, flux_map):
     obj_expression = None

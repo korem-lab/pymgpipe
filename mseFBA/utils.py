@@ -57,3 +57,12 @@ def load_dataframe(m, return_empty=False):
         return m
     else:
         raise Exception('_load_dataframe can only take a string or dataframe, received %s'%type(m))
+
+def get_objective_value(m):
+    import optlang
+    if m.interface is optlang.cplex_interface:
+        return m.objective.expression.as_coefficients_dict()[1] + m.problem.solution.get_objective_value()
+    elif m.interface is optlang.gurobi_interface:
+        return m.objective.expression.as_coefficients_dict()[1] + m.problem.getAttr("ObjVal")
+    else:
+        raise Exception('Unrecognized solver- %s'%m.interface)
