@@ -4,7 +4,6 @@ setup(
     name='pymgpipe',
     version='0.0.1',
     install_requires=[
-        'micom',
         'cobra',
         'optlang',
         'tqdm',

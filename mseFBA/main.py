@@ -33,8 +33,6 @@ def run(
     verbosity=0,
     presolve=True,
     threshold=1e-5,
-    scale=False,
-    map_labels=False,
     parallel=True,
     metabolites=[],
 ):
@@ -49,7 +47,7 @@ def run(
     except:
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
-    metabolomics_df = process_metabolomics(metabolomics, fva_dir, scale, map_labels, conversion_file)
+    metabolomics_df = load_dataframe(metabolomics)
     unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split('.')[0] not in list(metabolomics_df.columns)]
     if len(unmatched_metabolomics) > 0:
         print('%s samples dont have associated columns in metabolomics file-\n'%len(unmatched_metabolomics))
@@ -79,8 +77,6 @@ def run(
     print('Presolve- %s'%str(presolve).upper())
     print('Verbosity- %s'%verbosity)
     print('Zero unmapped metabolites- %s'%str(zero_unmapped_metabolites).upper())
-    print('Scale metabolomics- %s'%str(scale).upper())
-    print('Map sample IDs- %s'%str(map_labels).upper())
     print('------------------------------------------')
         
     _func = partial(
@@ -105,14 +101,16 @@ def run(
     
     infeasible = []
     feasible = []
+    objective_vals = {}
     for r in tqdm.tqdm(res,total=len(model_files)):
-        sample_file, solution = r
+        sample_file, solution, obj = r
         if solution is not None:
             final = pd.concat([final,solution],axis=1)
             final.sort_index(inplace=True)
             if out_file is not None:
                 final.to_csv(out_file)
             feasible.append(sample_file)
+            objective_vals[solution.columns[0]]=obj
         else:
             infeasible.append(sample_file)
     try:
@@ -129,7 +127,8 @@ def run(
 
     print('The results are in...\n')
     res = evaluate_results(final,metabolomics_df)
-    return (final,res)
+    objectives = pd.DataFrame({'objective':objective_vals})
+    return (final,res,objectives)
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, metabolites, model_file):
     global solution_path, metabolomics_global
@@ -145,7 +144,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
         unmapped_metabs = [k.name for k in ex_reactions if k.name not in all_metabolites]
         metabs_to_map.update({k:0 for k in unmapped_metabs})
         
-    _add_correlation_objective(model,metabs_to_map)
+    add_correlation_objective(model,metabs_to_map)
 
     solution = None
     try:
@@ -162,10 +161,9 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
 
     # del model
     # gc.collect()
-
-    return (model_file, solution)
+    return (model_file, solution, model.objective.expression.as_coefficients_dict()[1]+model.problem.getAttr("ObjVal"))
  
-def _add_correlation_objective(model, flux_map):
+def add_correlation_objective(model, flux_map):
     obj_expression = None
 
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}

@@ -3,8 +3,6 @@ sys.path.insert(1, '../')
 
 import pandas as pd
 import os
-from micom.community import Community
-from micom import load_pickle
 import cobra
 from cobra.io import write_sbml_model
 from pathlib import Path
@@ -110,6 +108,8 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,samp
     return model_out
 
 def _build_com(sample_label, tax, cutoff, solver):
+    from micom.community import Community
+    
     com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
     modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
     return modified_com

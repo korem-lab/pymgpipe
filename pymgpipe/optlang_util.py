@@ -29,8 +29,7 @@ def load_model(path, solver='gurobi'):
     return optlang_model
 
 def solve_model(
-    path=None,
-    model=None,
+    model,
     regex=None,
     reactions=None,
     solver='gurobi',
@@ -38,8 +37,8 @@ def solve_model(
     presolve=True,
     method='auto',
     flux_threshold=1e-5):
-    if model is None:
-        model = load_model(path, solver)
+    if isinstance(model,str):
+        model = load_model(model, solver)
     model.configuration.verbosity=verbosity
     model.configuration.presolve=presolve
     model.configuration.lp_method=method
