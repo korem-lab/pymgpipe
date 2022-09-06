@@ -24,8 +24,7 @@ def run(
     out_file=None,
     dataset_dir='./',
     samples='problems/',
-    fva_dir='fva/',
-    conversion_file='sample_label_conversion.csv',
+    transformation=transformations.none,
     ex_only=True,
     zero_unmapped_metabolites=False,
     threads=int(os.cpu_count()/2),
@@ -38,16 +37,13 @@ def run(
 ):
     start_time = time.time()
     gc.disable()
-
-    fva_dir = dataset_dir+fva_dir
-    conversion_file = dataset_dir+conversion_file
  
     try:
         model_files = samples if isinstance(samples,list) else [dataset_dir+samples+m for m in os.listdir(dataset_dir+samples)]
     except:
         raise Exception('Please pass in a valid model directory or an explicit list of sample paths using the \'problems\' parameter')
 
-    metabolomics_df = load_dataframe(metabolomics)
+    metabolomics_df = transform_metabolomics(metabolomics,transformation)
     unmatched_metabolomics = [f for f in model_files if f.split('/')[-1].split('.')[0] not in list(metabolomics_df.columns)]
     if len(unmatched_metabolomics) > 0:
         print('%s samples dont have associated columns in metabolomics file-\n'%len(unmatched_metabolomics))
@@ -147,6 +143,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     add_correlation_objective(model,metabs_to_map)
 
     solution = None
+    obj_val = None
     try:
         solution = solve_model(
             model=model,
@@ -156,10 +153,10 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
             method='barrier',
             flux_threshold=threshold
         )
+        obj_val = get_objective_value(model)
     except:
         pass
 
-    obj_val = get_objective_value(model)
     return (model_file, solution, obj_val)
  
 def add_correlation_objective(model, flux_map):
