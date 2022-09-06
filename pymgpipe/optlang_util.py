@@ -120,7 +120,7 @@ def _load_gurobi_model(path):
         import gurobipy
         return gurobipy.read(path)
     except Exception as e:
-        raise Exception('Provided model is not a valid GUROBI model')  
+        raise Exception('Provided model is not a valid GUROBI model-%s'%path)  
 
 def _get_solver_interface(str):
     if str == 'gurobi':

@@ -33,7 +33,7 @@ def run(
     presolve=True,
     threshold=1e-5,
     parallel=True,
-    metabolites=[],
+    metabolites=None,
 ):
     start_time = time.time()
     gc.disable()
@@ -133,7 +133,7 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
         raise Exception('Could not find %s in metabolomics- %s'%(model_file,list(metabolomics_global.columns)))
 
     all_metabolites = metabolomics_global[model.name].dropna().to_dict()
-    metabs_to_map = {k:v for k,v in all_metabolites.items() if k in metabolites} if metabolites else all_metabolites
+    metabs_to_map = {k:v for k,v in all_metabolites.items() if k in metabolites} if metabolites is not None else all_metabolites
         
     if zero_unmapped_metabolites:
         ex_reactions = get_reactions(model, regex = Constants.EX_REGEX)

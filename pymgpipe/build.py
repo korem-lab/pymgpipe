@@ -58,6 +58,10 @@ def build_models(
     if len(finished)>0:
         print('Found %s completed samples, skipping those!'%(len(finished)))
         samples_to_run = [s for s in samples_to_run if s not in finished]
+
+    if len(samples_to_run) == 0:
+        print('Finished building all samples!')
+        return
     
     _func = partial(
         _build_single_model,
@@ -111,8 +115,9 @@ def _build_com(sample_label, tax, cutoff, solver):
     from micom.community import Community
     
     com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
-    modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
-    return modified_com
+    print('WIERD!')
+    # modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
+    return com
 
 def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
     cobra_config = cobra.Configuration()
