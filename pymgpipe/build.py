@@ -115,9 +115,8 @@ def _build_com(sample_label, tax, cutoff, solver):
     from micom.community import Community
     
     com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
-    print('WIERD!')
-    # modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
-    return com
+    modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
+    return modified_com
 
 def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
     cobra_config = cobra.Configuration()
