@@ -24,7 +24,7 @@ def build_models(
     problem_dir='problems/',
     model_dir='models/'
 ):
-    gc.enable()
+    gc.disable()
 
     if taxa_dir[-1] != '/':
         taxa_dir=taxa_dir+'/'
@@ -74,7 +74,7 @@ def build_models(
 
     print('\n-------------------------------------------------------------')
     if parallelize:
-        threads = os.cpu_count() if threads == -1 else threads
+        threads = os.cpu_count()-1 if threads == -1 else threads
         threads = min(threads,len(samples_to_run))
         print('Building %s samples in parallel using %s threads...'%(len(samples_to_run),threads))
         
@@ -108,7 +108,7 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,samp
         pymgpipe_model.solver.problem.write(problem_out)
 
     del pymgpipe_model    
-    gc.collect()
+    # gc.collect()
     return model_out
 
 def _build_com(sample_label, tax, cutoff, solver):

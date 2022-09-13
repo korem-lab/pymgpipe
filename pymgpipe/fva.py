@@ -15,7 +15,6 @@ from pathlib import Path
 
 import gurobipy as gp
 
-
 def regularFVA(
     model=None,
     reactions=None,
@@ -41,10 +40,9 @@ def regularFVA(
         out_file=out_dir+'%s.csv'%model.name
 
         if os.path.exists(out_file):
-            result_df = pd.read_csv(out_file,index_col=0)
-            result_df = result_df[~result_df.index.duplicated(keep='first')]
-
-            metabs_to_skip = list(result_df.index)
+            result_df = pd.read_csv(out_file)
+            result_df=  result_df[~result_df['id'].isnull()][~result_df.id.duplicated(keep='first')]
+            metabs_to_skip = list(result_df.id)
             print('\nFound existing file, skipping %s metabolites...'%len(metabs_to_skip))
 
             reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip] 
