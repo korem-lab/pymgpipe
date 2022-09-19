@@ -87,8 +87,6 @@ def regularFVA(
 def _optlang_worker(metabolite):
     global global_model
 
-    if metabolite not in global_model.variables:
-        return metabolite
     forward_var = global_model.variables[metabolite]
     reverse_var = global_model.variables[_get_reverse_id(metabolite)]
     
@@ -121,7 +119,6 @@ def _gurobi_worker(metabolite):
     min_val = forward_var.X - reverse_var.X
         
     return {'id':metabolite,'min':min_val,'max':max_val}
-
 
 def _pool_init(sample_model):
     sys.stdout = open(os.devnull, 'w')  

@@ -19,7 +19,7 @@ def evaluate_results(to_compare,metabolomics,axis=1):
 
     return combined_dataframe
 
-def compute_nmpcs(fva_dir='fva/',out_file='nmpc_sol.csv',write_to_file=True):
+def format_nmpc_from_files(fva_dir='fva/',out_file='nmpc_sol.csv',write_to_file=True):
     fva_files = os.listdir(fva_dir)
     print('Computing NMPCs using fva results for %s samples...'%len(fva_files))
     
