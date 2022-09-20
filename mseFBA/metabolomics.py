@@ -92,6 +92,11 @@ class transformations:
 
 def transform_metabolomics(metabolomics,func=transformations.none):
     raw = load_dataframe(metabolomics)   
+
+    print('Transforming metabolomics with %s samples and %s metabolites...'%(len(raw.columns),len(raw.index)))
+    if 'transformations.' in transformations.rzsc.__qualname__:
+        print('Using pre-built transformation function- %s'%str(func.__name__))
+
     axis = 0 if func is transformations.abundance else 1 
     scaled = raw.apply(func,axis=axis)
 

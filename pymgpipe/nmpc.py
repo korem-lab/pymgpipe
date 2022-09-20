@@ -27,6 +27,8 @@ def compute_nmpcs(
             parallel=parallel,
             write_to_file=False
         )
+        if res is None:
+            return 
         nmpc = res['min']+res['max']
         nmpc.name = m.name
 

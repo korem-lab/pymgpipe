@@ -15,6 +15,7 @@ from .utils import *
 from optlang.interface import Objective
 import time
 import logging
+from random import shuffle
 
 class Constants:
     EX_REGEX = '^EX_.*_m$'
@@ -54,7 +55,8 @@ def run(
     if len(final.columns)>0:
         print('Skipping %s samples that are already finished!'%len(final.columns))
         model_files = [f for f in model_files if f.split('/')[-1].split('.')[0] not in list(final.columns)]
-
+        shuffle(model_files)
+        
     if len(model_files) == 0 and final.empty:
         logging.warning('Something went wrong! No existing solution or samples left to run.')
         return (None, None)
@@ -157,6 +159,9 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     except:
         pass
 
+    del model
+    # gc.collect()
+    
     return (model_file, solution, obj_val)
  
 def add_correlation_objective(model, flux_map):
@@ -170,6 +175,9 @@ def add_correlation_objective(model, flux_map):
 
         squared_diff=(net-flux)**2
         obj_expression = squared_diff if obj_expression is None else obj_expression + squared_diff
+    if obj_expression is None:
+        logging.warning('No metabolites in correlation objective, returning model as-is.')
+        return
     try:
         model.objective = Objective(obj_expression,direction="min")
         model.update()
