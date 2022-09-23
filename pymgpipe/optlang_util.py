@@ -85,6 +85,8 @@ def get_reactions(model,reactions=None,regex=None):
         return [k for k in model.variables if 'reverse' not in k.name]
 
 def constrain_reactions(model, flux_map, threshold=0.0):
+    if isinstance(flux_map, pd.Series):
+        flux_map = flux_map.to_dict()
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
     for f_id, flux in flux_map.items():
         forward_var = model.variables[f_id]

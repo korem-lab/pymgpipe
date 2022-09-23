@@ -57,7 +57,8 @@ def regularFVA(
 
     parallel = False if threads <= 1 else parallel
 
-    _func = _gurobi_worker if solver=='gurobi' else _optlang_worker
+    # _func = _gurobi_worker if solver=='gurobi' else _optlang_worker
+    _func = _optlang_worker
     if parallel:
         print('Starting parallel FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
         p = Pool(processes=threads,initializer=partial(_pool_init,model))
@@ -89,12 +90,13 @@ def _optlang_worker(metabolite):
 
     forward_var = global_model.variables[metabolite]
     reverse_var = global_model.variables[_get_reverse_id(metabolite)]
+    net = forward_var - reverse_var
     
-    global_model.objective = Objective(forward_var-reverse_var,direction='max')
+    global_model.objective = Objective(net,direction='max')
     max_sol = solve_model(model=global_model).to_dict()[global_model.name][metabolite]
 
-    global_model.objective = Objective(forward_var-reverse_var,direction='min')
-    min_sol =solve_model(model=global_model).to_dict()[global_model.name][metabolite]
+    global_model.objective = Objective(net,direction='min')
+    min_sol = solve_model(model=global_model).to_dict()[global_model.name][metabolite]
 
     return {'id':metabolite,'min':min_sol,'max':max_sol}
 
@@ -106,7 +108,7 @@ def _gurobi_worker(metabolite):
     reverse_var = global_problem.getVarByName(_get_reverse_id(metabolite))
     net = forward_var - reverse_var
 
-    global_problem.setObjective(forward_var - reverse_var,gp.GRB.MAXIMIZE)
+    global_problem.setObjective(net,gp.GRB.MAXIMIZE)
     global_problem.optimize()
     
     max_val = forward_var.X - reverse_var.X

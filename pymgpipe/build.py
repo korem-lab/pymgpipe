@@ -22,7 +22,7 @@ def build_models(
     parallelize=True,
     model_type='.mps',
     problem_dir='problems/',
-    model_dir='models/'
+    model_dir='models/',
 ):
     gc.disable()
 
@@ -115,8 +115,8 @@ def _build_com(sample_label, tax, cutoff, solver):
     from micom.community import Community
     
     com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
-    modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
-    return modified_com
+    # modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
+    return com
 
 def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
     cobra_config = cobra.Configuration()
