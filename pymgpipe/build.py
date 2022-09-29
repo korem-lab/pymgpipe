@@ -21,14 +21,15 @@ def build_models(
     samples=None,
     parallelize=True,
     model_type='.mps',
-    problem_dir='problems/',
-    model_dir='models/',
+    out_dir='./'
 ):
     gc.disable()
 
-    if taxa_dir[-1] != '/':
-        taxa_dir=taxa_dir+'/'
+    taxa_dir = taxa_dir+'/' if taxa_dir[-1] != '/' else taxa_dir
+    out_dir = out_dir+'/' if out_dir[-1] != '/' else out_dir
 
+    model_dir = out_dir+'models/'
+    problem_dir = out_dir+'problems/'
     Path(model_dir).mkdir(exist_ok=True)
     Path(problem_dir).mkdir(exist_ok=True)
 
@@ -36,7 +37,7 @@ def build_models(
     if os.path.exists(formatted_coverage_file):
         formatted = pd.read_csv(formatted_coverage_file,index_col=0)
     else:
-        formatted = format_coverage_file(coverage_file,taxa_dir)
+        formatted = format_coverage_file(coverage_file,taxa_dir,out_dir)
         formatted.to_csv(formatted_coverage_file)
     samples_to_run = formatted.sample_id.unique()
     taxa = formatted.strain.unique()
@@ -164,11 +165,11 @@ def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
 
     return com
 
-def format_coverage_file(coverage_file,taxa_dir):
+def format_coverage_file(coverage_file,taxa_dir,out_dir):
     model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
     coverage = pd.read_csv(coverage_file,index_col=0,header=0)
 
-    conversion_file_path = 'sample_label_conversion.csv'
+    conversion_file_path = out_dir+'sample_label_conversion.csv'
     if not os.path.exists(conversion_file_path):
         sample_conversion_dict = {v:'mc'+str(i+1) for i,v in enumerate(coverage.columns)}
     else:
