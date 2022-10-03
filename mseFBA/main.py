@@ -184,6 +184,22 @@ def add_correlation_objective(model, flux_map):
     except Exception as e:
         raise Exception('Failed to add mseFBA objective to model- %s'%e)
 
+def get_variance_expression(model, ids):
+    import sympy
+    vrs = [m for m in model.variables if m.name in ids]
+    mean = None
+    for v in vrs:
+        mean = v if mean is None else mean + v    
+    mean = mean/len(vrs)
+
+    #Calculate the difference between each model variable and the mean
+    obj_expr = (vrs[0]-mean)*(vrs[0]-mean)
+    for v in vrs[1:]:
+        obj_expr = obj_expr + ((v-mean)*(v-mean))
+    obj_expr = (obj_expr/(len(vars)-1))
+
+    return sympy.expand(obj_expr)
+
 def _pool_init(m_df):
     sys.stdout = open(os.devnull, 'w')  
 
