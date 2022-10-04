@@ -165,6 +165,19 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     return (model_file, solution, obj_val)
  
 def add_correlation_objective(model, flux_map):
+    obj_expression = get_mse_expression(model, flux_map)
+
+    if obj_expression is None:
+        logging.warning('No metabolites in correlation objective, returning model as-is.')
+        return
+    try:
+        model.objective = Objective(obj_expression,direction="min")
+        model.update()
+    except Exception as e:
+        raise Exception('Failed to add mseFBA objective to model- %s'%e)
+
+
+def get_mse_expression(model, flux_map):
     obj_expression = None
 
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
@@ -175,18 +188,10 @@ def add_correlation_objective(model, flux_map):
 
         squared_diff=(net-flux)**2
         obj_expression = squared_diff if obj_expression is None else obj_expression + squared_diff
-    if obj_expression is None:
-        logging.warning('No metabolites in correlation objective, returning model as-is.')
-        return
-    try:
-        model.objective = Objective(obj_expression,direction="min")
-        model.update()
-    except Exception as e:
-        raise Exception('Failed to add mseFBA objective to model- %s'%e)
+    return obj_expression
 
 def get_variance_expression(model, ids):
-    import sympy
-    vrs = [m for m in model.variables if m.name in ids]
+    vrs = [model.variables[f_id]-model.variables[_get_reverse_id(f_id)] for f_id in ids if f_id in model.variables]
     mean = None
     for v in vrs:
         mean = v if mean is None else mean + v    
@@ -196,9 +201,9 @@ def get_variance_expression(model, ids):
     obj_expr = (vrs[0]-mean)*(vrs[0]-mean)
     for v in vrs[1:]:
         obj_expr = obj_expr + ((v-mean)*(v-mean))
-    obj_expr = (obj_expr/(len(vars)-1))
+    obj_expr = (obj_expr/(len(vrs)-1))
 
-    return sympy.expand(obj_expr)
+    return obj_expr
 
 def _pool_init(m_df):
     sys.stdout = open(os.devnull, 'w')  

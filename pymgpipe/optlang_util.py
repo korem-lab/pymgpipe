@@ -2,9 +2,22 @@ import os
 import optlang
 import re
 import pandas as pd
-
+import sys
+from contextlib import contextmanager
 import warnings
+
 warnings.filterwarnings("ignore")
+
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout
+
 
 class UnsupportedSolverException(Exception):
     def __init__(self, msg='Unrecognized solver. Supported solvers include gurobi and cplex', *args, **kwargs):
@@ -35,7 +48,8 @@ def solve_model(
     verbosity=0,
     presolve=True,
     method='auto',
-    flux_threshold=1e-5):
+    flux_threshold=1e-5,
+    multi_sample=False):
     if isinstance(model,str):
         model = load_model(model, solver)
     model.configuration.verbosity=verbosity
@@ -53,18 +67,18 @@ def solve_model(
     if model.status == 'infeasible':
         raise InfeasibleModelException('%s is infeasible!'%model.name)
 
-    fluxes = _get_fluxes_from_model(model,threshold=flux_threshold,regex=regex,reactions=reactions)
+    fluxes = _get_fluxes_from_model(model,threshold=flux_threshold,regex=regex,reactions=reactions,multi_sample=multi_sample)
     return pd.DataFrame({model.name:fluxes})
 
-def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
+def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5,multi_sample=False):
     fluxes = {}
 
     for forward in get_reactions(model,reactions,regex):
-        r_id = _get_reverse_id(forward.name)
+        r_id = _get_reverse_id(forward.name,multi_sample)
         if r_id not in model.variables:
             continue
 
-        reverse = model.variables[_get_reverse_id(forward.name)]
+        reverse = model.variables[r_id]
 
         flux = float(forward.primal-reverse.primal)
         flux = 0 if flux == -0.0 else flux
@@ -104,11 +118,19 @@ def constrain_reactions(model, flux_map, threshold=0.0):
     model.update()
     return list(flux_map.keys())
 
-def _get_reverse_id(id):
+def _get_reverse_id(id, multi_sample=False):
     import hashlib
-    return "_".join(
+    return _get_multi_sample_reverse_id(id) if multi_sample else "_".join(
         (id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5])
     )
+
+def _get_multi_sample_reverse_id(id):
+    import hashlib
+    id, sample_num = id.split('_mc')
+    sample_id = '_mc'+sample_num
+    return "_".join(
+        (id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5])
+    ) + sample_id
 
 def _load_cplex_model(path):
     try:
