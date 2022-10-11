@@ -190,8 +190,10 @@ def get_mse_expression(model, flux_map):
         obj_expression = squared_diff if obj_expression is None else obj_expression + squared_diff
     return obj_expression
 
-def get_variance_expression(model, ids):
-    vrs = [model.variables[f_id]-model.variables[_get_reverse_id(f_id)] for f_id in ids if f_id in model.variables]
+def get_variance_expression(model, ids, multi_sample=False):
+    vrs = [model.variables[f_id]-model.variables[_get_reverse_id(f_id, multi_sample)] for f_id in ids if f_id in model.variables]
+    if len(vrs) <= 1:
+        return None
     mean = None
     for v in vrs:
         mean = v if mean is None else mean + v    
