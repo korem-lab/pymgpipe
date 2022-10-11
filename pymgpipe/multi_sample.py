@@ -6,6 +6,7 @@ from functools import partial
 from .optlang_util import _get_reverse_id
 import optlang
 import os
+import numpy as np
 
 def l_model(m_path,solver='gurobi'):
     m = load_model(m_path,solver=solver)
@@ -105,3 +106,26 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
             fluxes[sample_id] = {}
         fluxes[sample_id][forward.name.split('_mc')[0]]=flux
     return fluxes
+
+
+def compute_multi_sample_nmpcs(model,reactions=None,ex_only=True):
+    comb = pd.DataFrame()
+    if reactions is None and ex_only is True:
+        reactions = list(set([m.name.split('_mc')[0] for m in get_reactions(model,regex='^EX_.*_m_.*$')]))
+
+    print('Performing FVA on %s reactions...'%len(reactions))
+    for metab in tqdm.tqdm(reactions):
+        metab_rxns = get_reactions(model,regex='%s_mc.*$'%metab)
+        net_rxns = [f-model.variables[_get_reverse_id(f.name,multi_sample=True)] for f in metab_rxns]
+        s_obj = np.sum(net_rxns)
+        
+        model.objective = optlang.Objective(s_obj,direction='min')
+        min_sol = solve_multi_sample_model(model,reactions=metab_rxns)
+        
+        model.objective = optlang.Objective(s_obj,direction='max')
+        max_sol = solve_multi_sample_model(model,reactions=metab_rxns)
+
+        comb = pd.concat([comb,min_sol.add(max_sol)],axis=0)
+    return comb
+
+

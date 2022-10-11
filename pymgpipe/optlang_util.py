@@ -90,7 +90,7 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5,multi_
 
 def get_reactions(model,reactions=None,regex=None):
     if reactions is not None:
-        return [k for k in model.variables if k.name in reactions]
+        return [k for k in model.variables if k.name in reactions or k in reactions]
     elif regex is not None:
         try:
             re.compile(regex)
