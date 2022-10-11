@@ -68,7 +68,9 @@ def solve_model(
         raise InfeasibleModelException('%s is infeasible!'%model.name)
 
     fluxes = _get_fluxes_from_model(model,threshold=flux_threshold,regex=regex,reactions=reactions,multi_sample=multi_sample)
-    return pd.DataFrame({model.name:fluxes})
+    res = pd.DataFrame({model.name:fluxes})
+    del model
+    return res
 
 def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5,multi_sample=False):
     fluxes = {}
