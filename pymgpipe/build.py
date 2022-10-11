@@ -116,7 +116,8 @@ def _build_com(sample_label, tax, cutoff, solver):
     from micom.community import Community
     
     com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
-    modified_com = _add_pymgpipe_constraints(com=com,solver=solver)
+    _add_pymgpipe_constraints(com=com,solver=solver)
+    com.solver.update()
     return com
 
 def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):

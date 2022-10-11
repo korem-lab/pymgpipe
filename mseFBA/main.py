@@ -177,13 +177,13 @@ def add_correlation_objective(model, flux_map):
         raise Exception('Failed to add mseFBA objective to model- %s'%e)
 
 
-def get_mse_expression(model, flux_map):
+def get_mse_expression(model, flux_map, multi_sample=False):
     obj_expression = None
 
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
     for f_id, flux in flux_map.items():
         forward_var = model.variables[f_id]
-        reverse_var = model.variables[_get_reverse_id(f_id)]
+        reverse_var = model.variables[_get_reverse_id(f_id, multi_sample)]
         net = forward_var-reverse_var
 
         squared_diff=(net-flux)**2
@@ -195,7 +195,7 @@ def get_variance_expression(model, ids, multi_sample=False):
     if len(vrs) <= 1:
         return None
     mean = None
-    for v in vrs:
+    for v in tqdm.tqdm(vrs):
         mean = v if mean is None else mean + v    
     mean = mean/len(vrs)
 
