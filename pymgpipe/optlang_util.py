@@ -100,13 +100,13 @@ def get_reactions(model,reactions=None,regex=None):
     else:
         return [k for k in model.variables if 'reverse' not in k.name]
 
-def constrain_reactions(model, flux_map, threshold=0.0):
+def constrain_reactions(model, flux_map, threshold=0.0, multi_sample=False):
     if isinstance(flux_map, pd.Series):
         flux_map = flux_map.to_dict()
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
     for f_id, flux in flux_map.items():
         forward_var = model.variables[f_id]
-        reverse_var = model.variables[_get_reverse_id(f_id)]
+        reverse_var = model.variables[_get_reverse_id(f_id,multi_sample)]
 
         if flux > 0:
             forward_var.set_bounds(flux-threshold,flux+threshold)
