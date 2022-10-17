@@ -4,3 +4,4 @@ from .fva import *
 from .nmpc import *
 from .multi_sample import *
 from .MultiSampleModel import *
+from .test import *

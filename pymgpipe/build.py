@@ -4,14 +4,14 @@ sys.path.insert(1, '../')
 import pandas as pd
 import os
 import cobra
-from cobra.io import write_sbml_model
+from cobra.io import write_sbml_model, read_sbml_model
 from pathlib import Path
 
 from multiprocessing import Pool
 from functools import partial
 import gc
 import tqdm
-from cobra.io import read_sbml_model
+import pickle
 
 def build_models(
     coverage_file,
@@ -109,7 +109,6 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,samp
         pymgpipe_model.solver.problem.write(problem_out)
 
     del pymgpipe_model    
-    # gc.collect()
     return model_out
 
 def _build_com(sample_label, tax, cutoff, solver):
@@ -128,7 +127,7 @@ def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
         if file is None:
             raise Exception('Need to pass in either file or model!')
         try:
-            com = load_pickle(file)
+            com = pickle.load(file)
         except Exception as e:
             return None
     

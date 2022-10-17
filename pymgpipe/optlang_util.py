@@ -8,6 +8,10 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+class Constants:
+    EX_REGEX = '^EX_.*_m$'
+    EX_REGEX_MULTI_SAMPLE = '^EX_.*_m_.*$'
+
 @contextmanager
 def suppress_stdout():
     with open(os.devnull, "w") as devnull:
@@ -49,7 +53,8 @@ def solve_model(
     presolve=True,
     method='auto',
     flux_threshold=1e-5,
-    multi_sample=False):
+    multi_sample=False,
+    ex_only=True):
     if isinstance(model,str):
         model = load_model(model, solver)
     model.configuration.verbosity=verbosity
@@ -67,6 +72,8 @@ def solve_model(
     if model.status == 'infeasible':
         raise InfeasibleModelException('%s is infeasible!'%model.name)
 
+    if regex is None and reactions is None and ex_only:
+        regex = Constants.EX_REGEX
     fluxes = _get_fluxes_from_model(model,threshold=flux_threshold,regex=regex,reactions=reactions,multi_sample=multi_sample)
     res = pd.DataFrame({model.name:fluxes})
     del model
@@ -90,6 +97,11 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5,multi_
 
 def get_reactions(model,reactions=None,regex=None):
     if reactions is not None:
+        if not isinstance(reactions[0],str):
+            try:
+                reactions = [r.name for r in reactions]
+            except:
+                raise Exception('List of reactions need to be either IDs or reaction variables! Received- %s'%type(reactions[0]))
         return [k for k in model.variables if k.name in reactions]
     elif regex is not None:
         try:

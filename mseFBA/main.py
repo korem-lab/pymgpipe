@@ -8,7 +8,7 @@ import gc
 import numpy as np
 
 from pymgpipe import load_model, solve_model
-from pymgpipe.optlang_util import _get_reverse_id, get_reactions
+from pymgpipe.optlang_util import _get_reverse_id, get_reactions, Constants
 
 from .metabolomics import *
 from .utils import *
@@ -17,9 +17,6 @@ from optlang.interface import Objective
 import time
 import logging
 from random import shuffle
-
-class Constants:
-    EX_REGEX = '^EX_.*_m$'
 
 def run(
     metabolomics,
@@ -161,7 +158,6 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
         pass
 
     del model
-    # gc.collect()
     
     return (model_file, solution, obj_val)
  

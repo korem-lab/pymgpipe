@@ -74,7 +74,6 @@ def _scale_metabolomics(metabolomics,fva_dir='fva/'):
 
     return scaled
 
-
 class transformations:
     def none(x):
         return x

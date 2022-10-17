@@ -9,7 +9,7 @@ import tqdm
 import gc
 import sys
 
-from .optlang_util import get_reactions, load_model, solve_model, _get_reverse_id
+from .optlang_util import get_reactions, load_model, solve_model, _get_reverse_id, Constants
 from optlang.interface import Objective
 from pathlib import Path
 
@@ -30,7 +30,7 @@ def regularFVA(
     model = load_model(path=model,solver=solver) if isinstance(model,str) else model
 
     if reactions is None and regex is None and ex_only is True:
-        regex = '^EX_.*_m$'
+        regex = Constants.EX_REGEX
 
     reactions_to_run = [r.name for r in get_reactions(model,reactions,regex)]
         
@@ -57,7 +57,7 @@ def regularFVA(
 
     parallel = False if threads <= 1 else parallel
 
-    # _func = _gurobi_worker if solver=='gurobi' else _optlang_worker
+    # _func = _gurobi_worker if solver=='gurobi' else _optlang_worker <- might speed things up?
     _func = _optlang_worker
     if parallel:
         print('Starting parallel FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))

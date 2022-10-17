@@ -1,4 +1,5 @@
-from .optlang_util import load_model, solve_model, _get_exchange_reactions
+from json import load
+from .optlang_util import load_model, solve_model, get_reactions, Constants
 from .fva import regularFVA
 import pkg_resources
 
@@ -9,7 +10,7 @@ def test_pymgpipe(solver='gurobi'):
     loaded_model = load_model(resource_path,solver=solver)
 
     print('Fetching exchange reactions...')
-    ex_reactions = _get_exchange_reactions(model=loaded_model)
+    ex_reactions = get_reactions(model=loaded_model,regex=Constants.EX_REGEX)
     if len(ex_reactions)==0:
         raise Exception('Error fetching exchange reactions from model!')
 
@@ -19,8 +20,14 @@ def test_pymgpipe(solver='gurobi'):
         raise Exception('Reguar FBA solution did not have expected number of metabolites!')
 
     print('Performing FVA on a small subset of reactions...')
-    fva_sol = regularFVA(path=resource_path,ex_only=True,solver=solver,specific_reactions=ex_reactions[:20],write_to_file=False)
+    fva_sol = regularFVA(model=loaded_model,reactions=ex_reactions[:20],write_to_file=False)
+    print(fva_sol)
     if len(fva_sol.index) != 20:
         raise Exception('FVA solution did not have expected number of metabolites!')
 
     print(f'Finished testing! All good to go!')
+
+def sample_model(solver='gurobi'):
+    resource_path = pkg_resources.resource_filename('pymgpipe','sample_model.mps')
+    loaded_model = load_model(resource_path,solver=solver)
+    return loaded_model

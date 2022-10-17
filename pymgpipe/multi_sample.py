@@ -3,7 +3,7 @@ import tqdm
 import sys
 from multiprocessing import Pool
 from functools import partial
-from .optlang_util import _get_reverse_id
+from .optlang_util import _get_reverse_id, Constants
 import optlang
 import os
 import numpy as np
@@ -85,7 +85,7 @@ def solve_multi_sample_model(
     if model.status == 'infeasible':
         raise InfeasibleModelException('%s is infeasible!'%model.name)
 
-    regex = '^EX_.*_m_.*$' if ex_only else regex
+    regex = Constants.EX_REGEX_MULTI_SAMPLE if ex_only else regex
     fluxes = _get_fluxes_from_model(model,threshold=flux_threshold,regex=regex,reactions=reactions)
     return pd.DataFrame(fluxes)
 
@@ -111,7 +111,7 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
 def compute_multi_sample_nmpcs(model,reactions=None,ex_only=True):
     comb = pd.DataFrame()
     if reactions is None and ex_only is True:
-        reactions = list(set([m.name.split('_mc')[0] for m in get_reactions(model,regex='^EX_.*_m_.*$')]))
+        reactions = list(set([m.name.split('_mc')[0] for m in get_reactions(model,regex=Constants.EX_REGEX_MULTI_SAMPLE)]))
 
     print('Performing FVA on %s reactions...'%len(reactions))
     for metab in tqdm.tqdm(reactions):
