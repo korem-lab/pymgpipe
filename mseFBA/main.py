@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from functools import partial
 import tqdm
 import gc
+import numpy as np
 
 from pymgpipe import load_model, solve_model
 from pymgpipe.optlang_util import _get_reverse_id, get_reactions
@@ -195,16 +196,11 @@ def get_variance_expression(model, ids, multi_sample=False):
     if len(vrs) <= 1:
         return None
     mean = None
-    for v in tqdm.tqdm(vrs):
+    for v in vrs:
         mean = v if mean is None else mean + v    
     mean = mean/len(vrs)
 
-    #Calculate the difference between each model variable and the mean
-    obj_expr = (vrs[0]-mean)*(vrs[0]-mean)
-    for v in vrs[1:]:
-        obj_expr = obj_expr + ((v-mean)*(v-mean))
-    obj_expr = (obj_expr/(len(vrs)-1))
-
+    obj_expr = np.sum([(v-mean)*(v-mean) for v in vrs])
     return obj_expr
 
 def _pool_init(m_df):

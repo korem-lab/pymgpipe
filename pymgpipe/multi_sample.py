@@ -91,8 +91,8 @@ def solve_multi_sample_model(
 
 def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
     fluxes = {}
-
-    for forward in get_reactions(model,reactions,regex):
+    rxns = get_reactions(model,reactions,regex)
+    for forward in rxns:
         sample_id = 'mc'+forward.name.split('_mc')[1]
         r_id = _get_reverse_id(forward.name, multi_sample=True)
         if r_id not in model.variables:
@@ -120,10 +120,10 @@ def compute_multi_sample_nmpcs(model,reactions=None,ex_only=True):
         s_obj = np.sum(net_rxns)
         
         model.objective = optlang.Objective(s_obj,direction='min')
-        min_sol = solve_multi_sample_model(model,reactions=metab_rxns)
+        min_sol = solve_multi_sample_model(model,reactions=[m.name for m in metab_rxns])
         
         model.objective = optlang.Objective(s_obj,direction='max')
-        max_sol = solve_multi_sample_model(model,reactions=metab_rxns)
+        max_sol = solve_multi_sample_model(model,reactions=[m.name for m in metab_rxns])
 
         comb = pd.concat([comb,min_sol.add(max_sol)],axis=0)
     return comb
