@@ -147,9 +147,8 @@ class MultiSampleModel(object):
 
     def _get_fluxes(self,reactions=None,regex=None,threshold=1e-5):
         fluxes = {}
-        if reactions is not None and len(reactions)>0 and isinstance(reactions[0],str) and re.match('.*_mc.*',reactions[0]) is None:
-            reactions = [r+'_'+s for r in reactions for s in self.samples]
-        rxns = get_reactions(self,reactions=reactions,regex=regex)
+
+        rxns = self.get_reactions(reactions=reactions,regex=regex)
         for forward in rxns:
             sample_id = 'mc'+forward.name.split('_mc')[1]
             r_id = _get_reverse_id(forward.name)
@@ -164,6 +163,11 @@ class MultiSampleModel(object):
                 fluxes[sample_id] = {}
             fluxes[sample_id][forward.name.split('_mc')[0]]=flux
         return fluxes
+
+    def get_reactions(self,reactions=None,regex=None):
+        if reactions is not None and len(reactions)>0 and isinstance(reactions[0],str) and re.match('.*_mc.*',reactions[0]) is None:
+            reactions = [r+'_'+s for r in reactions for s in self.samples]
+        return get_reactions(self,reactions=reactions,regex=regex)
 
     def write_lp(self,out=None):
         if out is None:
