@@ -5,6 +5,7 @@ import pandas as pd
 import sys
 from contextlib import contextmanager
 import warnings
+import logging
 
 warnings.filterwarnings("ignore")
 
@@ -21,7 +22,6 @@ def suppress_stdout():
             yield
         finally:
             sys.stdout = old_stdout
-
 
 class UnsupportedSolverException(Exception):
     def __init__(self, msg='Unrecognized solver. Supported solvers include gurobi and cplex', *args, **kwargs):
@@ -53,7 +53,6 @@ def solve_model(
     presolve=True,
     method='auto',
     flux_threshold=1e-5,
-    multi_sample=False,
     ex_only=True):
     if isinstance(model,str):
         model = load_model(model, solver)
@@ -74,16 +73,16 @@ def solve_model(
 
     if regex is None and reactions is None and ex_only:
         regex = Constants.EX_REGEX
-    fluxes = _get_fluxes_from_model(model,threshold=flux_threshold,regex=regex,reactions=reactions,multi_sample=multi_sample)
+    fluxes = _get_fluxes_from_model(model,threshold=flux_threshold,regex=regex,reactions=reactions)
     res = pd.DataFrame({model.name:fluxes})
     del model
     return res
 
-def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5,multi_sample=False):
+def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
     fluxes = {}
 
     for forward in get_reactions(model,reactions,regex):
-        r_id = _get_reverse_id(forward.name,multi_sample)
+        r_id = _get_reverse_id(forward.name)
         if r_id not in model.variables:
             continue
 
@@ -96,29 +95,33 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5,multi_
     return fluxes
 
 def get_reactions(model,reactions=None,regex=None):
-    if reactions is not None:
-        if not isinstance(reactions[0],str):
-            try:
-                reactions = [r.name for r in reactions]
-            except:
-                raise Exception('List of reactions need to be either IDs or reaction variables! Received- %s'%type(reactions[0]))
-        return [k for k in model.variables if k.name in reactions]
+    r = []
+    if reactions is not None and len(reactions)>0:
+        if isinstance(reactions[0],optlang.Variable):
+            r = [k for k in reactions if k.name in model.variables]
+        elif isinstance(reactions[0],str):
+            r = [model.variables[k] for k in reactions if k in model.variables]
+        else:
+            raise Exception('List of reactions need to be either IDs or reaction variables! Received- %s'%type(reactions[0]))
     elif regex is not None:
         try:
             re.compile(regex)
-            return [k for k in model.variables if re.match(regex,k.name) and 'reverse' not in k.name]
+            r = [k for k in model.variables if re.match(regex,k.name) and 'reverse' not in k.name]
         except re.error:
             raise Exception('Invalid regex- %s'%regex)
     else:
-        return [k for k in model.variables if 'reverse' not in k.name]
+        r = [k for k in model.variables if 'reverse' not in k.name]
+    if len(r) == 0:
+        logging.warn('Returning 0 reactions from model!')
+    return r
 
-def constrain_reactions(model, flux_map, threshold=0.0, multi_sample=False):
+def constrain_reactions(model, flux_map, threshold=0.0):
     if isinstance(flux_map, pd.Series):
         flux_map = flux_map.to_dict()
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
     for f_id, flux in flux_map.items():
         forward_var = model.variables[f_id]
-        reverse_var = model.variables[_get_reverse_id(f_id,multi_sample)]
+        reverse_var = model.variables[_get_reverse_id(f_id)]
 
         if flux > 0:
             forward_var.set_bounds(flux-threshold,flux+threshold)
@@ -132,19 +135,16 @@ def constrain_reactions(model, flux_map, threshold=0.0, multi_sample=False):
     model.update()
     return list(flux_map.keys())
 
-def _get_reverse_id(id, multi_sample=False):
+def _get_reverse_id(id):
     import hashlib
-    return _get_multi_sample_reverse_id(id) if multi_sample else "_".join(
-        (id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5])
-    )
-
-def _get_multi_sample_reverse_id(id):
-    import hashlib
-    id, sample_num = id.split('_mc')
-    sample_id = '_mc'+sample_num
-    return "_".join(
-        (id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5])
-    ) + sample_id
+    if re.match('.*_mc.*',id) is not None:
+        id, sample_num = id.split('_mc')
+        sample_id = '_mc'+sample_num
+        return "_".join(
+            (id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5])
+        ) + sample_id
+    else:
+        return  "_".join((id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5]))
 
 def _load_cplex_model(path):
     try:
