@@ -8,10 +8,11 @@ import gc
 import numpy as np
 
 from pymgpipe import load_model, solve_model
-from pymgpipe.optlang_util import _get_reverse_id, get_reactions, Constants
+from pymgpipe.optlang_util import set_objective, get_reactions, Constants
 
 from .metabolomics import *
 from .utils import *
+from .flux_analysis import *
 
 from optlang.interface import Objective
 import time
@@ -140,7 +141,8 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
         unmapped_metabs = [k.name for k in ex_reactions if k.name not in all_metabolites]
         metabs_to_map.update({k:0 for k in unmapped_metabs})
         
-    add_correlation_objective(model,metabs_to_map)
+    expr = get_mse_expression(model, metabs_to_map)
+    set_objective(model,expr)
 
     solution = None
     obj_val = None
@@ -160,44 +162,6 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     del model
     
     return (model_file, solution, obj_val)
- 
-def add_correlation_objective(model, flux_map):
-    obj_expression = get_mse_expression(model, flux_map)
-
-    if obj_expression is None:
-        logging.warning('No metabolites in correlation objective, returning model as-is.')
-        return
-    try:
-        model.objective = Objective(obj_expression,direction="min")
-        model.update()
-    except Exception as e:
-        raise Exception('Failed to add mseFBA objective to model- %s'%e)
-
-
-def get_mse_expression(model, flux_map):
-    obj_expression = None
-
-    flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
-    for f_id, flux in flux_map.items():
-        forward_var = model.variables[f_id]
-        reverse_var = model.variables[_get_reverse_id(f_id)]
-        net = forward_var-reverse_var
-
-        squared_diff=(net-flux)**2
-        obj_expression = squared_diff if obj_expression is None else obj_expression + squared_diff
-    return obj_expression
-
-def get_variance_expression(model, ids):
-    vrs = [v-model.variables[_get_reverse_id(v.name)] for v in get_reactions(model,reactions=ids)]
-    if len(vrs) <= 1:
-        return None
-    mean = None
-    for v in vrs:
-        mean = v if mean is None else mean + v    
-    mean = mean/len(vrs)
-
-    obj_expr = np.sum([(v-mean)*(v-mean) for v in vrs])
-    return obj_expr
 
 def _pool_init(m_df):
     sys.stdout = open(os.devnull, 'w')  

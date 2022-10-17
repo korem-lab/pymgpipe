@@ -134,6 +134,14 @@ def constrain_reactions(model, flux_map, threshold=0.0):
             reverse_var.set_bounds(0,threshold)
     model.update()
     return list(flux_map.keys())
+ 
+def set_objective(model, obj_expression, direction='min'):
+    try:
+        model.objective = optlang.Objective(obj_expression,direction=direction)
+        model.update()
+        logging.info('Set model objective!')
+    except Exception as e:
+        raise Exception('Failed to add objective to model- %s'%e)
 
 def _get_reverse_id(id):
     import hashlib
