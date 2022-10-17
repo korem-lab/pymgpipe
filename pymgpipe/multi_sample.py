@@ -8,6 +8,7 @@ from multiprocessing import Pool
 from functools import partial
 import pandas as pd
 import numpy as np
+import re
 
 def _l_model(m_path,solver='gurobi'):
     m = load_model(m_path,solver=solver)
@@ -146,6 +147,8 @@ class MultiSampleModel(object):
 
     def _get_fluxes(self,reactions=None,regex=None,threshold=1e-5):
         fluxes = {}
+        if reactions is not None and len(reactions)>0 and isinstance(reactions[0],str) and re.match('.*_mc.*',reactions[0]) is None:
+            reactions = [r+'_'+s for r in reactions for s in self.samples]
         rxns = get_reactions(self,reactions=reactions,regex=regex)
         for forward in rxns:
             sample_id = 'mc'+forward.name.split('_mc')[1]
