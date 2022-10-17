@@ -195,7 +195,7 @@ def get_variance_expression(model, ids, multi_sample=False):
     if len(vrs) <= 1:
         return None
     mean = None
-    for v in tqdm.tqdm(vrs):
+    for v in vrs:
         mean = v if mean is None else mean + v    
     mean = mean/len(vrs)
 
