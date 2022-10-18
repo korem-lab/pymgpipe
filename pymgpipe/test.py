@@ -4,10 +4,8 @@ from .fva import regularFVA
 import pkg_resources
 
 def test_pymgpipe(solver='gurobi'):
-    resource_path = pkg_resources.resource_filename('pymgpipe','sample_model.mps')
-
     print('Loading model...')
-    loaded_model = load_model(resource_path,solver=solver)
+    loaded_model = get_single_sample_model(solver=solver)
 
     print('Fetching exchange reactions...')
     ex_reactions = get_reactions(model=loaded_model,regex=Constants.EX_REGEX)
@@ -27,7 +25,12 @@ def test_pymgpipe(solver='gurobi'):
 
     print(f'Finished testing! All good to go!')
 
-def sample_model(solver='gurobi'):
-    resource_path = pkg_resources.resource_filename('pymgpipe','sample_model.mps')
+def get_single_sample_model(solver='gurobi'):
+    resource_path = pkg_resources.resource_filename('pymgpipe','samples/single_sample_model.mps')
+    loaded_model = load_model(resource_path,solver=solver)
+    return loaded_model
+
+def get_multi_sample_model(solver='gurobi'):
+    resource_path = pkg_resources.resource_filename('pymgpipe','samples/multi_sample_model.mps')
     loaded_model = load_model(resource_path,solver=solver)
     return loaded_model

@@ -97,7 +97,7 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
 def get_reactions(model,reactions=None,regex=None):
     r = []
     if reactions is not None and len(reactions)>0:
-        if isinstance(reactions[0],optlang.Variable):
+        if isinstance(reactions[0],optlang.gurobi_interface.Variable) or isinstance(reactions[0],optlang.cplex_interface.Variable):
             r = [k for k in reactions if k.name in model.variables]
         elif isinstance(reactions[0],str):
             r = [model.variables[k] for k in reactions if k in model.variables]

@@ -30,7 +30,7 @@ def get_variance_expression(model, ids):
 
 def get_pfba_expression(model,ids):
     import itertools
-    vrs = list(itertools.chain([(v,model.variables[get_reverse_id(v.name)]) for v in get_reactions(model,reactions=ids)]))
+    vrs = list(itertools.chain([(v,model.variables[get_reverse_id(v)]) for v in get_reactions(model,reactions=ids)]))
     if len(vrs)==0:
         logging.warning('No metabolites in pFBA objective, returning Zero')
         return Zero
