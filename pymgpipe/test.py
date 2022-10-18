@@ -27,7 +27,7 @@ def test_pymgpipe(solver='gurobi'):
 
     print(f'Finished testing! All good to go!')
 
-def sample_model(solver='gurobi'):
+def get_sample_model(solver='gurobi'):
     resource_path = pkg_resources.resource_filename('pymgpipe','sample_model.mps')
     loaded_model = load_model(resource_path,solver=solver)
     return loaded_model
