@@ -9,7 +9,7 @@ import tqdm
 import gc
 import sys
 
-from .optlang_util import get_reactions, load_model, solve_model, _get_reverse_id, Constants
+from .optlang_util import get_reactions, load_model, solve_model, get_reverse_id, Constants
 from optlang.interface import Objective
 from pathlib import Path
 
@@ -89,7 +89,7 @@ def _optlang_worker(metabolite):
     global global_model
 
     forward_var = global_model.variables[metabolite]
-    reverse_var = global_model.variables[_get_reverse_id(metabolite)]
+    reverse_var = global_model.variables[get_reverse_id(metabolite)]
     net = forward_var - reverse_var
     
     global_model.objective = Objective(net,direction='max')
@@ -105,7 +105,7 @@ def _gurobi_worker(metabolite):
     global global_problem
 
     forward_var = global_problem.getVarByName(metabolite)
-    reverse_var = global_problem.getVarByName(_get_reverse_id(metabolite))
+    reverse_var = global_problem.getVarByName(get_reverse_id(metabolite))
     net = forward_var - reverse_var
 
     global_problem.setObjective(net,gp.GRB.MAXIMIZE)

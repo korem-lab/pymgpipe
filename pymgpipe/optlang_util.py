@@ -82,7 +82,7 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
     fluxes = {}
 
     for forward in get_reactions(model,reactions,regex):
-        r_id = _get_reverse_id(forward.name)
+        r_id = get_reverse_id(forward.name)
         if r_id not in model.variables:
             continue
 
@@ -121,7 +121,7 @@ def constrain_reactions(model, flux_map, threshold=0.0):
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
     for f_id, flux in flux_map.items():
         forward_var = model.variables[f_id]
-        reverse_var = model.variables[_get_reverse_id(f_id)]
+        reverse_var = model.variables[get_reverse_id(f_id)]
 
         if flux > 0:
             forward_var.set_bounds(flux-threshold,flux+threshold)
@@ -143,8 +143,14 @@ def set_objective(model, obj_expression, direction='min'):
     except Exception as e:
         raise Exception('Failed to add objective to model- %s'%e)
 
-def _get_reverse_id(id):
+def get_reverse_id(id):
     import hashlib
+    if not isinstance(id, str):
+        try:
+            id = id.name
+        except:
+            raise Exception('get_reverse_id must take either string ID or optlang.Variable')
+
     if re.match('.*_mc.*',id) is not None:
         id, sample_num = id.split('_mc')
         sample_id = '_mc'+sample_num
@@ -153,6 +159,9 @@ def _get_reverse_id(id):
         ) + sample_id
     else:
         return  "_".join((id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5]))
+
+def get_reverse_var(model, v):
+    return model.variables[get_reverse_id(v)]
 
 def _load_cplex_model(path):
     try:

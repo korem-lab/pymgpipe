@@ -1,5 +1,5 @@
 import os
-from .optlang_util import _get_solver_interface,_load_cplex_model,_load_gurobi_model, suppress_stdout, load_model, get_reactions, InfeasibleModelException, Constants, _get_reverse_id
+from .optlang_util import _get_solver_interface,_load_cplex_model,_load_gurobi_model, suppress_stdout, load_model, get_reactions, InfeasibleModelException, Constants, get_reverse_id
 import optlang 
 from optlang.interface import *
 import tqdm
@@ -133,7 +133,7 @@ class MultiSampleModel(object):
         print('Performing FVA on %s reactions...'%len(reactions))
         for metab in tqdm.tqdm(reactions):
             metab_rxns = get_reactions(self,regex='%s_mc.*$'%metab)
-            net_rxns = [f-self.variables[_get_reverse_id(f.name)] for f in metab_rxns]
+            net_rxns = [f-self.variables[get_reverse_id(f.name)] for f in metab_rxns]
             s_obj = np.sum(net_rxns)
             
             self.objective = optlang.Objective(s_obj,direction='min')
@@ -151,7 +151,7 @@ class MultiSampleModel(object):
         rxns = self.get_reactions(reactions=reactions,regex=regex)
         for forward in rxns:
             sample_id = 'mc'+forward.name.split('_mc')[1]
-            r_id = _get_reverse_id(forward.name)
+            r_id = get_reverse_id(forward.name)
             if r_id not in self.variables:
                 continue
             reverse = self.variables[r_id]
