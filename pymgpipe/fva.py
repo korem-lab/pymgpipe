@@ -22,7 +22,7 @@ def regularFVA(
     ex_only=True,
     solver='gurobi',
     threads=int(os.cpu_count()/2),
-    write_to_file=True,
+    write_to_file=False,
     out_dir='fva/',
     parallel=True):
     gc.enable()

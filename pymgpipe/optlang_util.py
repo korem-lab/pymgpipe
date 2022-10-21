@@ -141,7 +141,7 @@ def set_objective(model, obj_expression, direction='min'):
         model.update()
         logging.info('Set model objective!')
     except Exception as e:
-        raise Exception('Failed to add objective to model- %s'%e)
+        raise Exception('Failed to add objective to %s- %s\n%s'%(model.name,e,obj_expression))
 
 def get_reverse_id(id):
     import hashlib

@@ -8,7 +8,7 @@ import gc
 import numpy as np
 
 from pymgpipe import load_model, solve_model
-from pymgpipe.optlang_util import set_objective, get_reactions, Constants
+from pymgpipe.optlang_util import set_objective, get_reactions, Constants, suppress_stdout
 
 from .metabolomics import *
 from .utils import *
@@ -90,11 +90,13 @@ def run(
     if parallel:
         print('Running mseFBA on %s samples in parallel using %s threads...\n'%(len(model_files),threads))
         p = Pool(processes=threads,initializer=partial(_pool_init,metabolomics_df))
-        res = p.imap(_func, model_files)
+        with suppress_stdout():
+            res = p.imap(_func, model_files)
     else:
         print('Running mseFBA on %s samples in series...\n'%len(model_files))
         _pool_init(metabolomics_df)
-        res = map(_func, model_files)
+        with suppress_stdout():
+            res = map(_func, model_files)
     
     infeasible = []
     feasible = []
@@ -116,7 +118,6 @@ def run(
     except:
         pass
 
-    sys.stdout = sys.__stdout__
     print('\n--Finished mseFBA in %s seconds! Solved %s samples and saved to %s--'%((int(time.time()-start_time)),len(feasible),out_file))
     if len(infeasible) > 0:
         print('Unable to solve %s models-\n'%len(infeasible))
@@ -164,7 +165,5 @@ def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presol
     return (model_file, solution, obj_val)
 
 def _pool_init(m_df):
-    sys.stdout = open(os.devnull, 'w')  
-
     global metabolomics_global
     metabolomics_global = m_df
