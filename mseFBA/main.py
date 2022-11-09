@@ -23,7 +23,7 @@ def run(
     metabolomics,
     samples='problems/',
     out_file=None,
-    dataset_dir='./',
+    dataset_dir='',
     transformation=transformations.none,
     ex_only=True,
     zero_unmapped_metabolites=False,

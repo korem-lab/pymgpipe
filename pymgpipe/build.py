@@ -1,245 +1,276 @@
-import sys
-sys.path.insert(1, '../')
-
-import pandas as pd
-import os
+import logging
 import cobra
-from cobra.io import write_sbml_model, read_sbml_model
-from pathlib import Path
+from optlang.symbolics import Zero
+from micom.util import (
+    load_model,
+    clean_ids,
+    compartment_id,
+    COMPARTMENT_RE,
+)
+import re
 
-from multiprocessing import Pool
-from functools import partial
-import gc
-import tqdm
-import pickle
-
-def build_models(
-    coverage_file,
-    taxa_dir,
-    solver='gurobi',
-    threads=int(os.cpu_count()/2),
-    samples=None,
-    parallelize=True,
-    model_type='.mps',
-    out_dir='./'
-):
-    gc.disable()
-
-    taxa_dir = taxa_dir+'/' if taxa_dir[-1] != '/' else taxa_dir
-    out_dir = out_dir+'/' if out_dir[-1] != '/' else out_dir
-
-    model_dir = out_dir+'models/'
-    problem_dir = out_dir+'problems/'
-    Path(model_dir).mkdir(exist_ok=True)
-    Path(problem_dir).mkdir(exist_ok=True)
-
-    formatted_coverage_file=coverage_file.split('.csv')[0]+'_formatted.csv'
-    if os.path.exists(formatted_coverage_file):
-        formatted = pd.read_csv(formatted_coverage_file,index_col=0)
-    else:
-        formatted = format_coverage_file(coverage_file,taxa_dir,out_dir)
-        formatted.to_csv(formatted_coverage_file)
-    samples_to_run = formatted.sample_id.unique()
-    taxa = formatted.strain.unique()
-
-    print('Found coverage file with %s samples and %s unique taxa'%(len(samples_to_run),len(taxa)))
+def build(
+        taxonomy,
+        name,
+        rel_threshold=1e-6,
+        solver='gurobi',
+        add_coupling_constraints=True,
+        add_fecal_diet_compartments=True,
+    ):
+    logging.info("building new micom model {}.".format(id))
+    if not solver:
+        solver = [
+            s
+            for s in ["cplex", "gurobi", "osqp", "glpk"]
+            if s in cobra.util.solver.solvers
+        ][0]
+    logging.info("using the %s solver." % solver)
+    if solver == "glpk":
+        logging.warning(
+            "No QP solver found, will use GLPK. A lot of functionality "
+            "in MICOM will require a QP solver :/"
+        )
    
-    if samples is not None:
-        samples_to_run = samples if isinstance(samples,list) else [samples]
-
-    finished = []
-    print('Checking for finished samples...')
-    for s in samples_to_run:
-        model_out = model_dir+'%s.xml'%s
-        problem_out = problem_dir+s+model_type
-
-        if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
-            finished.append(s)
-
-    if len(finished)>0:
-        print('Found %s completed samples, skipping those!'%(len(finished)))
-        samples_to_run = [s for s in samples_to_run if s not in finished]
-
-    if len(samples_to_run) == 0:
-        print('Finished building all samples!')
-        return
-    
-    _func = partial(
-        _build_single_model,
-        formatted,
-        solver,
-        model_dir,
-        problem_dir,
-        model_type
+    taxonomy = taxonomy.copy()
+    if "abundance" not in taxonomy.columns:
+        taxonomy["abundance"] = 1
+    taxonomy.abundance /= taxonomy.abundance.sum()
+    logging.info(
+        "{} individuals with abundances below threshold".format(
+            (taxonomy.abundance <= rel_threshold).sum()
+        )
     )
+    taxonomy = taxonomy[taxonomy.abundance > rel_threshold]
+   
+    if taxonomy.id.str.contains(r"[^A-Za-z0-9_]", regex=True).any():
+        logging.warning(
+            "Taxa IDs contain prohibited characters and will be reformatted."
+        )
+        taxonomy.id = taxonomy.id.replace(r"[^A-Za-z0-9_\s]+", "_", regex=True)
 
-    print('\n-------------------------------------------------------------')
-    if parallelize:
-        threads = os.cpu_count()-1 if threads == -1 else threads
-        threads = min(threads,len(samples_to_run))
-        print('Building %s samples in parallel using %s threads...'%(len(samples_to_run),threads))
+    obj = Zero
+    multi_species_model = cobra.Model(name=name)
+    
+    taxonomy.set_index('id',inplace=True)
+    index = list(taxonomy.index)
+    # index = track(index, description="Building") if progress else index
+    logging.info('Building sample with %s taxa...'%len(index))
+    for idx in index:
+        row = taxonomy.loc[idx]
+        model = load_model(row.file)
+        suffix = "__" + idx.replace(" ", "_").strip()
+        logging.info("converting IDs for {}".format(idx))
+        external = cobra.medium.find_external_compartment(model)
+        external = 'u'
+        logging.info(
+            "Identified %s as the external compartment for %s. "
+            "If that is wrong you may be in trouble..." % (external, idx)
+        )
+        for r in model.reactions:
+            r.global_id = clean_ids(r.id).replace('(e)','[u]')
+            r.id = r.global_id + suffix
+            r.community_id = idx
+            # avoids https://github.com/opencobra/cobrapy/issues/926
+            r._compartments = None
+            # SBO terms may not be maintained
+            if "sbo" in r.annotation:
+                del r.annotation["sbo"]
+        for m in model.metabolites:
+            m.global_id = clean_ids(m.id).replace('[e]','[u]')
+            m.id = m.global_id + suffix
+            m.compartment += suffix
+            m.community_id = idx
+        logging.info("adding reactions for {} to community".format(idx))
+        multi_species_model.add_reactions(model.reactions)
+        o = multi_species_model.solver.interface.Objective.clone(
+            model.objective, model=multi_species_model.solver
+        )
+        obj += o.expression * row.abundance
+        taxa_obj = multi_species_model.problem.Constraint(
+            o.expression, name="objective_" + idx, lb=0.0
+        )
+        multi_species_model.add_cons_vars([taxa_obj])
+        _add_exchanges(
+            multi_species_model,
+            model.reactions,
+            add_fecal_diet_compartments
+        )
+        multi_species_model.solver.update()  # to avoid dangling refs due to lazy add
         
-        p = Pool(threads, initializer=_mute)
-        p.daemon = False
+    # var to track coupling constraints
+    cp_var = multi_species_model.problem.Variable(name='coupled',type='binary')
+    cp_var.lb = cp_var.ub =  int(add_coupling_constraints)
+    multi_species_model.add_cons_vars(cp_var)
 
-        built = list(tqdm.tqdm(p.imap(_func, samples_to_run),total=len(samples_to_run)))
+    if add_coupling_constraints:
+        _add_coupling_constraints(multi_species_model)
 
-        p.close()
-        p.join()
+    l_biomass = cobra.Metabolite(id='microbeBiomass[u]',compartment='u')
+    multi_species_model.add_metabolites([l_biomass])
+
+    if add_fecal_diet_compartments:
+        _add_fecal_exchange(multi_species_model,l_biomass)
     else:
-        print('Building %s samples in series...'%(len(samples_to_run)))
-        built = tqdm.tqdm(list(map(_func,samples_to_run)),total=len(samples_to_run))
-    print('\n-------------------------------------------------------------')
+        _add_lumen_exchange(multi_species_model,l_biomass)
+
+    biomass_metabs = multi_species_model.metabolites.query(re.compile('^biomass.*'))
+    biomass = cobra.Reaction(
+        id="communityBiomass",
+        lower_bound=1,upper_bound=1,
+    )
+    biomass.add_metabolites({m:-float(taxonomy.abundance[m.community_id]) for m in biomass_metabs})
+    biomass.add_metabolites({l_biomass:1})
+    multi_species_model.add_reaction(biomass)
+
+    multi_species_model.objective = biomass
+    return multi_species_model
+
+def _add_exchanges(
+        model,
+        reactions,
+        fecal_diet
+    ):
+    """Add exchange reactions for a new model."""
+    external_compartment = 'e'
+    for r in reactions:
+        # Some sanity checks for whether the reaction is an exchange
+        ex = external_compartment + "__" + r.community_id
+        # Some AGORA models label the biomass demand as exchange
+        if any(bm in r.id.lower() for bm in ["biomass", "bm"]):
+            r.bounds = (0,1000)
+            if 'EX_' in r.id:
+                model.remove_reactions([r])
+            continue
+        if not cobra.medium.is_boundary_type(r, "exchange", ex):
+            continue
+        if not r.id.lower().startswith("ex"):
+            logging.warning(
+                "Reaction %s seems to be an exchange " % r.id
+                + "reaction but its ID does not start with 'EX_'..."
+            )
+
+        export = len(r.reactants) == 1
+        met = (r.reactants + r.products)[0]
+        old_compartment = compartment_id(met)
+        metab_id = re.sub(
+            COMPARTMENT_RE.format(old_compartment, old_compartment),
+            "",
+            met.global_id,
+        )
+        if metab_id not in model.metabolites:
+            lumen_m = met.copy()
+            lumen_m.id = metab_id
+            lumen_m.compartment = "u"
+            lumen_m.global_id = metab_id[:-3]
+            lumen_m.community_id = "lumen"
+            model.add_metabolites([lumen_m])
+
+            if fecal_diet:
+                _add_fecal_exchange(model,lumen_m)
+                _add_diet_exchange(model, lumen_m)
+            else:
+                _add_lumen_exchange(model,lumen_m)
+        else:
+            lumen_m = model.metabolites.get_by_id(metab_id)
+
+        coef = 1
+        r.add_metabolites({lumen_m: coef if export else -coef})
+        r.id = r.id.replace('EX_','IEX_')
+        r.add_metabolites({k:-v for k,v in r.metabolites.items()},combine=False)
+        r.lower_bound=-1000
+        r.upper_bound=1000
+
+def _add_lumen_exchange(model,met):
+    ex_medium = cobra.Reaction(
+        id="EX_" + met.id,
+        name=met.id + " lumen exchange",
+        lower_bound=-1000,
+        upper_bound=1000,
+    )
+    ex_medium.add_metabolites({met: -1})
+    ex_medium.global_id = ex_medium.id
+    ex_medium.community_id = "lumen"
+    model.add_reactions([ex_medium])
+
+def _add_fecal_exchange(model,met):
+    f_m = met.copy()
+    f_m.id = met.id.replace('[u]','[fe]')
+    f_m.global_id = f_m.id[:-4]
+    f_m.compartment = "fe"
+    f_m.community_id = "fecal"
+
+    model.add_metabolites([f_m])
+
+    f_ex = cobra.Reaction(
+        id="EX_" + f_m.id,
+        name=f_m.id + " fecal exchange",
+        lower_bound=-1000,
+        upper_bound=1000,
+    )
+    f_ex.add_metabolites({f_m:-1})
+    f_ex.global_id = f_ex.id
+    f_ex.community_id = "fecal"
     
-    print('Finished building %s models and associated LP problems!'%len(built))    
+    f_tr = cobra.Reaction(
+        id="UFEt_" + f_m.global_id,
+        name=f_m.id + " lumen fecal transport",
+        lower_bound=0,
+        upper_bound=1000,
+    )
+    f_tr.add_metabolites({met:-1,f_m:1})
+    f_tr.global_id = f_tr.id
+    f_tr.community_id = "lumen/fecal"
 
-def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,sample_label):
-    model_out = model_dir+'%s.xml'%sample_label
-    problem_out = problem_dir+sample_label+model_type
-    coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
-    pymgpipe_model = None
+    model.add_reactions([f_ex,f_tr])
 
-    if os.path.exists(model_out) and _is_valid_sbml(model_out):
-        pymgpipe_model = read_sbml_model(model_out)
-    else:
-        pymgpipe_model = _build_com(sample_label=sample_label,tax=coverage_df,cutoff=1e-6,solver=solver)
-        write_sbml_model(pymgpipe_model,model_out)
+def _add_diet_exchange(model, met):
+    d_m = met.copy()
+    d_m.id = met.id.replace('[u]','[d]')
+    d_m.global_id = d_m.id[:-3]
+    d_m.compartment = "d"
+    d_m.community_id = "diet"
 
-    if not os.path.exists(problem_out) or not _is_valid_lp(problem_out):
-        pymgpipe_model.solver.problem.write(problem_out)
+    model.add_metabolites([d_m])
 
-    del pymgpipe_model    
-    return model_out
-
-def _build_com(sample_label, tax, cutoff, solver):
-    from micom.community import Community
+    d_ex = cobra.Reaction(
+        id="EX_" + d_m.id,
+        name=d_m.id + " diet exchange",
+        lower_bound=-1000,
+        upper_bound=1000,
+    )
+    d_ex.add_metabolites({d_m:-1})
+    d_ex.global_id = d_ex.id
+    d_ex.community_id = "diet"
     
-    com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
-    _add_pymgpipe_constraints(com=com,solver=solver)
-    com.solver.update()
-    return com
+    d_tr = cobra.Reaction(
+        id="DUt_" + d_m.global_id,
+        name=d_m.id + " diet lumen transport",
+        lower_bound=0,
+        upper_bound=1000,
+    )
+    d_tr.add_metabolites({met:1,d_m:-1})
+    d_tr.global_id = d_tr.id
+    d_tr.community_id = "diet/lumen"
 
-def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
-    cobra_config = cobra.Configuration()
-    cobra_config.solver = solver
-
-    if com is None:
-        if file is None:
-            raise Exception('Need to pass in either file or model!')
-        try:
-            com = pickle.load(file)
-        except Exception as e:
-            return None
-    
-    com.solver = solver
-    
-    # RESETTING COEFS OF METAB EXCHANGE REACTIONS TO 1
-    exchange_reactions = [r for r in com.reactions if 'EX_' in r.id and 'biomass' not in r.id]
-    for react in exchange_reactions:
-        react.bounds = (-1000,1000)
-
-        metabs_to_remove = {metab[0]: metab[1] for metab in react.metabolites.items() if metab[1] != -1}
-        metabs_to_add = {metab[0]: 1.0 for metab in react.metabolites.items() if metab[1] != -1}
-        
-        react.subtract_metabolites(metabs_to_remove)
-        react.add_metabolites(metabs_to_add)
-    
-    abundances = com.abundances.to_dict()
-    biomass_reactions = _get_biomass_reactions(com)
-
-    biomass_and_biomass_exchange_reactions = [r for r in com.reactions if 'biomass' in r.id]
-    for reaction in biomass_and_biomass_exchange_reactions:
-        microbe = reaction.id.split('__')[1]
-        abundance = abundances[microbe]
-        reaction.bounds=(abundance,abundance)
-
-    com.solver.remove(com.solver.constraints.community_objective_equality)
-    com.solver.remove(com.solver.variables.community_objective)
-    
-    expr = sum([r.flux_expression for r in biomass_reactions])
-    objective_constraint = com.problem.Constraint(name='objective_constraint',expression=expr,lb=0,ub=1000)
-    com.solver.add(objective_constraint)
-    com.objective = com.problem.Objective(expression=expr,direction='max')
-
-    _add_coupling_constraints(com)
-
-    return com
-
-def format_coverage_file(coverage_file,taxa_dir,out_dir):
-    model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
-    coverage = pd.read_csv(coverage_file,index_col=0,header=0)
-
-    conversion_file_path = out_dir+'sample_label_conversion.csv'
-    if not os.path.exists(conversion_file_path):
-        sample_conversion_dict = {v:'mc'+str(i+1) for i,v in enumerate(coverage.columns)}
-    else:
-        sample_conversion_dict = pd.read_csv(conversion_file_path,index_col=0).iloc[:, 0].to_dict()
-        if set(sample_conversion_dict.keys()) != set(coverage.columns):
-            raise Exception('Provided label conversion file %s does not provide labels for all samples!'%conversion_file_path)
-    
-    coverage.rename(columns=sample_conversion_dict,inplace=True)
-    
-    sample_conversion_dict = pd.DataFrame({'conversion':sample_conversion_dict})
-    sample_conversion_dict.to_csv(conversion_file_path)
-
-    melted = pd.melt(coverage, value_vars=coverage.columns,ignore_index=False,var_name='sample_id',value_name='abundance',)
-    melted['strain']=melted.index
-    melted['file']=taxa_dir+melted.strain+model_type
-
-    missing_taxa = set([f.split('/')[-1].split('.')[0] for f in melted.file if not os.path.exists(f)])
-    if len(missing_taxa)>0:
-        melted.drop(missing_taxa,axis='index',inplace=True)
-        print('Removed %s missing taxa from coverage file-' %len(missing_taxa))
-        print(missing_taxa)
-    
-    melted = melted.loc[melted.abundance!=0]
-    melted.abundance = melted.abundance.div(melted.groupby(['sample_id'])['abundance'].transform('sum'))
-
-    melted.reset_index(inplace=True)
-    melted.rename({'index':'id'},axis='columns',inplace=True)
-
-    return melted
+    model.add_reactions([d_ex,d_tr])    
 
 def _add_coupling_constraints(com,u_const=0.01,C_const=400):
-    abundances = _get_model_abundances(com)
-    target_reactions = [r for r in com.reactions if not (('EX_' in r.id and '(e)' not in r.id and '[e]' not in r.id) or 'biomass' in r.id or 'Community' in r.id)]
+    biomass_rxns= {r.community_id:r for r in com.reactions.query(re.compile('^biomass.*'))}
+
+    consts = []
+    target_reactions = [r for r in com.reactions if not 
+        (r.id.startswith('EX_') or r.id.startswith('DUt_') or r.id.startswith('UFEt') or 
+        'biomass' in r.id or 'community' in r.id.lower())
+    ]
     for r in target_reactions:
-        split = ('___' if '___' in r.id else '__')
-        taxon = r.id.split(split)[1]
-        abundance = abundances[taxon]
-        lb = (-abundance*C_const) - u_const if r.lower_bound != 0 else 0
-        ub = (abundance*C_const) + u_const if r.upper_bound != 0 else 0
+        taxon = r.community_id
+        abundance = com.variables[biomass_rxns[taxon].id]
+        
+        forward = r.forward_variable
+        reverse = r.reverse_variable
 
-        r.bounds = (lb,ub)
-
-def _get_model_abundances(com):
-    abundances = {}
-    bms_rxns = _get_biomass_reactions(com)
-
-    for r in bms_rxns:
-        taxon = r.id.split('__')[1]
-        abundances[taxon] = r.lower_bound
-    return abundances
-
-def _get_biomass_reactions(com):
-    return [r for r in com.reactions if 'biomass' in r.id and 'EX' not in r.id]
-
-def _is_valid_lp(file):
-    with open(file, "rb") as fh:
-        fh.seek(-1024, 2)
-        last = fh.readlines()[-1].decode()
-        if file.endswith('.lp'):
-            return last.strip()=='End'
-        elif file.endswith('.mps'):
-            return last.strip()=='ENDATA'
-        else:
-            raise Exception('Unrecognized LP file at %s. Must be either .lp or .mps!'%file)
-
-def _is_valid_sbml(file):
-    with open(file, "rb") as fh:
-        fh.seek(-1024, 2)
-        last = fh.readlines()[-1].decode()
-        return last.strip()=='</sbml>'
-
-def _mute():
-    sys.stdout = open(os.devnull, 'w')  
+        consts.append(com.solver.interface.Constraint(forward-(abundance*C_const),ub=u_const,name='%s_cp'%forward.name))
+        consts.append(com.solver.interface.Constraint(reverse-(abundance*C_const),ub=u_const,name='%s_cp'%reverse.name))
+    
+    com.solver.add(consts)
+    com.solver.update()

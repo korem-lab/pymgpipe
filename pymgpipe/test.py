@@ -34,3 +34,5 @@ def get_multi_sample_model(solver='gurobi'):
     resource_path = pkg_resources.resource_filename('pymgpipe','samples/multi_sample_model.mps')
     loaded_model = load_model(resource_path,solver=solver)
     return loaded_model
+
+    

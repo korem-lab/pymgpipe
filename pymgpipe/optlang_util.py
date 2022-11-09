@@ -10,7 +10,7 @@ import logging
 warnings.filterwarnings("ignore")
 
 class Constants:
-    EX_REGEX = '^EX_.*_m$'
+    EX_REGEX = '^(?i)EX_((?!biomass|community).)*(_m|\[u\]|\[d\]|\[fe\])$'
     EX_REGEX_MULTI_SAMPLE = '^EX_.*_m_.*$'
 
 @contextmanager
@@ -162,6 +162,13 @@ def get_reverse_id(id):
 
 def get_reverse_var(model, v):
     return model.variables[get_reverse_id(v)]
+
+def get_abundances(model):
+    try:
+        model.variables[1].primal
+    except:
+        model.optimize()
+    return pd.DataFrame({model.name:{r.name.split('__')[1]:r.primal for r in get_reactions(model,regex='^biomass.*')}})
 
 def _load_cplex_model(path):
     try:
