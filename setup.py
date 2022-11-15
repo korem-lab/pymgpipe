@@ -11,6 +11,6 @@ setup(
     url='https://github.com/korem-lab/pymgpipe',
     packages=['pymgpipe','mseFBA'],
     package_data = {
-        'pymgpipe': ['samples/*.mps','resources/diets/*.txt'],
+        'pymgpipe': ['resources/samples/*.mps','resources/diets/*.txt'],
     }
 )

@@ -26,12 +26,12 @@ def test_pymgpipe(solver='gurobi'):
     print(f'Finished testing! All good to go!')
 
 def get_single_sample_model(solver='gurobi'):
-    resource_path = pkg_resources.resource_filename('pymgpipe','samples/single_sample_model.mps')
+    resource_path = pkg_resources.resource_filename('pymgpipe','resources/samples/single_sample_model.mps')
     loaded_model = load_model(resource_path,solver=solver)
     return loaded_model
 
 def get_multi_sample_model(solver='gurobi'):
-    resource_path = pkg_resources.resource_filename('pymgpipe','samples/multi_sample_model.mps')
+    resource_path = pkg_resources.resource_filename('pymgpipe','resources/samples/multi_sample_model.mps')
     loaded_model = load_model(resource_path,solver=solver)
     return loaded_model
 
