@@ -135,7 +135,7 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coup
             rel_threshold=1e-6,
             solver=solver,
             coupling_constraints=coupling_constraints,
-            add_fecal_diet_compartments=fecal_diet_compartments
+            fecal_diet_compartments=fecal_diet_compartments
         )
         if diet is not None:
             add_diet_to_model(pymgpipe_model,diet)
