@@ -48,7 +48,7 @@ def remove_diet(model):
     print('Removing diet from model...')
     for m in model.reactions:
         if m.id.startswith('Diet_EX_'):
-            m.bounds = (0,1000)
+            m.bounds = (-1000,1000)
 
 def add_diet_to_model(
     model,
@@ -70,7 +70,9 @@ def add_diet_to_model(
         logging.warn('Diet not used- please pass in valid DataFrame, local file, or resource file name!')
         return
 
-    remove_diet(model)
+    for m in model.reactions:
+        if m.id.startswith('Diet_EX_'):
+            m.bounds = (0,1000)
 
     d = get_adapted_diet(diet_df)
     logging.info('Adding %s diet to model...'%diet)

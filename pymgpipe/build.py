@@ -241,7 +241,7 @@ def _add_diet_exchange(model, met):
     d_ex = cobra.Reaction(
         id="Diet_EX_" + d_m.id,
         name=d_m.id + " diet exchange",
-        lower_bound=0,
+        lower_bound=-1000,
         upper_bound=1000,
     )
     d_ex.add_metabolites({d_m:-1})
