@@ -4,7 +4,8 @@ sys.path.insert(1, '../')
 import pandas as pd
 import os
 import cobra
-from cobra.io import write_sbml_model, read_sbml_model
+from .io import load_cobra_model
+from .sbml import write_sbml_model
 from pathlib import Path
 from pkg_resources import resource_listdir,resource_filename
 
@@ -16,6 +17,7 @@ import pickle
 from .build import build
 import re
 from .diet import *
+
 
 cobra_config = cobra.Configuration()
 cobra_config.lower_bound=-1000
@@ -32,7 +34,8 @@ def build_models(
     out_dir='./',
     coupling_constraints=True,
     fecal_diet_compartments=False,
-    diet=None
+    diet=None,
+    compress=True
 ):   
     cobra_config.solver = solver
 
@@ -87,7 +90,8 @@ def build_models(
         model_type,
         coupling_constraints,
         fecal_diet_compartments,
-        diet
+        diet,
+        compress
     )
 
     print('-------------------------------------------------------------')
@@ -111,14 +115,18 @@ def build_models(
     
     print('Finished building %s models and associated LP problems!'%len(built))    
 
-def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coupling_constraints,fecal_diet_compartments,diet,sample_label):
+def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coupling_constraints,fecal_diet_compartments,diet,compress,sample_label):
     model_out = model_dir+'%s.xml'%sample_label
     problem_out = problem_dir+sample_label+model_type
+    if compress:
+        model_out = model_out + '.gz'
+        problem_out = problem_out + '.gz'
+
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
     pymgpipe_model = None
 
     if os.path.exists(model_out) and _is_valid_sbml(model_out):
-        pymgpipe_model = read_sbml_model(model_out)
+        pymgpipe_model = load_cobra_model(model_out)
     else:
         #pymgpipe_model = _build_com(sample_label=sample_label,tax=coverage_df,cutoff=1e-6,solver=solver)
         pymgpipe_model = build(
@@ -134,7 +142,13 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coup
         write_sbml_model(pymgpipe_model,model_out)
 
     if not os.path.exists(problem_out) or not _is_valid_lp(problem_out):
-        pymgpipe_model.solver.problem.write(problem_out)
+        try:
+            pymgpipe_model.solver.problem.write(problem_out)
+        except:
+            if compress:
+                logging.warn('Could not write LP to compressed file format, trying .7z extension')
+                pymgpipe_model.solver.problem.write(problem_out.replace('.gz','.7z'))
+            
     del pymgpipe_model
     gc.collect()
     return model_out

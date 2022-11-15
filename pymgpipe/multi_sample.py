@@ -1,7 +1,7 @@
 import os
 from .utils import *
 from .io import *
-from .io import _load_cplex_model,_load_gurobi_model
+from .io import _load_cplex_model,_load_gurobi_model, _model_interfaces
 import optlang 
 from optlang.interface import *
 import tqdm
@@ -22,11 +22,9 @@ class MultiSampleModel(object):
         self.samples = []
         self.solver = solver
 
-        if solver == 'gurobi':
-            baseclass = optlang.gurobi_interface
-        elif solver == 'cplex':
-            baseclass = optlang.cplex_interface
-        else:
+        try:
+            baseclass = _model_interfaces[solver]
+        except:
             raise UnsupportedSolverException
         self.__class__ = type(self.__class__.__name__,
                             (baseclass.Model, object),

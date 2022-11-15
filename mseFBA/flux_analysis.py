@@ -1,4 +1,4 @@
-from pymgpipe.optlang_util import get_reverse_id, get_reactions
+from pymgpipe.utils import get_reverse_id, get_reactions
 from optlang.symbolics import Zero
 import numpy as np
 import logging
