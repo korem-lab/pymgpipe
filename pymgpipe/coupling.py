@@ -9,6 +9,7 @@ def remove_coupling_constraints(com):
     if len(c) == 0:
         logging.info('No coupling constraints to remove!')
         return
+    print('Removed %s coupling constraints from model!'%len(c))
     com.remove(c)
 
 def add_coupling_constraints(com,u_const=0.01,C_const=400):
@@ -26,5 +27,6 @@ def add_coupling_constraints(com,u_const=0.01,C_const=400):
         if v.ub > 0:
             consts.append(com.interface.Constraint(v-(abundance*C_const),ub=u_const,name='%s_cp'%v.name))
     
+    print('Added %s coupling constraints to model!'%len(consts))
     com.add(consts)
     com.update()

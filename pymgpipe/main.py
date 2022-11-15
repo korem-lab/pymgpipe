@@ -64,6 +64,9 @@ def build_models(
     if samples is not None:
         samples_to_run = samples if isinstance(samples,list) else [samples]
 
+    if len(samples_to_run)<=1:
+        parallelize=False
+
     finished = []
     print('Checking for finished samples...\n')
     for s in samples_to_run:
