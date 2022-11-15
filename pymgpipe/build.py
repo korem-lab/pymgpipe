@@ -7,6 +7,7 @@ from micom.util import (
     COMPARTMENT_RE,
 )
 from .utils import load_cobra_model
+from .coupling import add_coupling_constraints
 import re
 
 def build(
@@ -14,8 +15,8 @@ def build(
         name,
         rel_threshold=1e-6,
         solver='gurobi',
-        add_coupling_constraints=True,
-        add_fecal_diet_compartments=True
+        coupling_constraints=True,
+        fecal_diet_compartments=True
     ):
     if not solver:
         solver = [
@@ -98,22 +99,22 @@ def build(
         _add_exchanges(
             multi_species_model,
             model.reactions,
-            add_fecal_diet_compartments
+            fecal_diet_compartments
         )
         multi_species_model.solver.update()  # to avoid dangling refs due to lazy add
         
     # var to track coupling constraints
     cp_var = multi_species_model.problem.Variable(name='coupled',type='binary')
-    cp_var.lb = cp_var.ub =  int(add_coupling_constraints)
+    cp_var.lb = cp_var.ub =  int(coupling_constraints)
     multi_species_model.add_cons_vars(cp_var)
 
-    if add_coupling_constraints:
-        _add_coupling_constraints(multi_species_model)
+    if coupling_constraints:
+        add_coupling_constraints(multi_species_model)
 
     l_biomass = cobra.Metabolite(id='microbeBiomass[u]',compartment='u')
     multi_species_model.add_metabolites([l_biomass])
 
-    if add_fecal_diet_compartments:
+    if fecal_diet_compartments:
         _add_fecal_exchange(multi_species_model,l_biomass)
     else:
         _add_lumen_exchange(multi_species_model,l_biomass)
@@ -260,20 +261,3 @@ def _add_diet_exchange(model, met):
 
     model.add_reactions([d_ex,d_tr])    
 
-def _add_coupling_constraints(com,u_const=0.01,C_const=400):
-    biomass_rxns= {r.community_id:r for r in com.reactions.query(re.compile('^biomass.*'))}
-
-    consts = []
-    target_reactions = [r for r in com.reactions if '_pan' in r.id and 'biomass' not in r.id]
-    for r in target_reactions:
-        taxon = r.community_id
-        abundance = com.variables[biomass_rxns[taxon].id]
-        
-        forward = r.forward_variable
-        reverse = r.reverse_variable
-
-        consts.append(com.solver.interface.Constraint(forward-(abundance*C_const),ub=u_const,name='%s_cp'%forward.name))
-        consts.append(com.solver.interface.Constraint(reverse-(abundance*C_const),ub=u_const,name='%s_cp'%reverse.name))
-    
-    com.solver.add(consts)
-    com.solver.update()

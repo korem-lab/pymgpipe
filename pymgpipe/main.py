@@ -134,7 +134,7 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coup
             taxonomy=coverage_df,
             rel_threshold=1e-6,
             solver=solver,
-            add_coupling_constraints=coupling_constraints,
+            coupling_constraints=coupling_constraints,
             add_fecal_diet_compartments=fecal_diet_compartments
         )
         if diet is not None:
