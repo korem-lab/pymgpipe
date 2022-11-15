@@ -1,5 +1,5 @@
 from json import load
-from .optlang_util import load_model, solve_model, get_reactions, Constants
+from .utils import load_model, solve_model, get_reactions, Constants
 from .fva import regularFVA
 import pkg_resources
 
@@ -35,4 +35,6 @@ def get_multi_sample_model(solver='gurobi'):
     loaded_model = load_model(resource_path,solver=solver)
     return loaded_model
 
-    
+def _run_cplex_checklist():
+    from docplex.mp.check_list import run_docplex_check_list
+    run_docplex_check_list()

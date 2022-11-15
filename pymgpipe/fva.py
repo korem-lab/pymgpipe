@@ -1,19 +1,14 @@
 import os
-
 import pandas as pd
 from gurobipy import *
-
 from multiprocessing import Pool
 from functools import partial
 import tqdm
 import gc
 import sys
-
-from .optlang_util import get_reactions, load_model, solve_model, get_reverse_id, Constants
+from .utils import *
 from optlang.interface import Objective
 from pathlib import Path
-
-import gurobipy as gp
 
 def regularFVA(
     model=None,
@@ -100,27 +95,6 @@ def _optlang_worker(metabolite):
 
     return {'id':metabolite,'min':min_sol,'max':max_sol}
 
-# gurobi implementation, slightly faster
-def _gurobi_worker(metabolite):
-    global global_problem
-
-    forward_var = global_problem.getVarByName(metabolite)
-    reverse_var = global_problem.getVarByName(get_reverse_id(metabolite))
-    net = forward_var - reverse_var
-
-    global_problem.setObjective(net,gp.GRB.MAXIMIZE)
-    global_problem.optimize()
-    
-    max_val = forward_var.X - reverse_var.X
-
-    global_problem.reset()
-
-    global_problem.setObjective(net,gp.GRB.MINIMIZE)
-    global_problem.optimize()
-    
-    min_val = forward_var.X - reverse_var.X
-        
-    return {'id':metabolite,'min':min_val,'max':max_val}
 
 def _pool_init(sample_model):
     sys.stdout = open(os.devnull, 'w')  

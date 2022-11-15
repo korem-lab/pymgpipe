@@ -8,7 +8,7 @@ import gc
 import numpy as np
 
 from pymgpipe import load_model, solve_model
-from pymgpipe.optlang_util import set_objective, get_reactions, Constants, suppress_stdout
+from pymgpipe.utils import set_objective, get_reactions, Constants, suppress_stdout
 
 from .metabolomics import *
 from .utils import *

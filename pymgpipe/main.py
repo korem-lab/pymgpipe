@@ -15,7 +15,11 @@ import tqdm
 import pickle
 from .build import build
 import re
+from .diet import *
 
+cobra_config = cobra.Configuration()
+cobra_config.lower_bound=-1000
+cobra_config.upper_bound=1000
 
 def build_models(
     coverage_file,
@@ -28,7 +32,10 @@ def build_models(
     out_dir='./',
     coupling_constraints=True,
     fecal_diet_compartments=False,
-):
+    diet=None
+):   
+    cobra_config.solver = solver
+
     gc.disable()
     Path(out_dir).mkdir(exist_ok=True)
 
@@ -55,7 +62,7 @@ def build_models(
         samples_to_run = samples if isinstance(samples,list) else [samples]
 
     finished = []
-    print('Checking for finished samples...')
+    print('Checking for finished samples...\n')
     for s in samples_to_run:
         model_out = model_dir+'%s.xml'%s
         problem_out = problem_dir+s+model_type
@@ -70,7 +77,7 @@ def build_models(
     if len(samples_to_run) == 0:
         print('Finished building all samples!')
         return
-    
+
     _func = partial(
         _build_single_model,
         formatted,
@@ -79,10 +86,12 @@ def build_models(
         problem_dir,
         model_type,
         coupling_constraints,
-        fecal_diet_compartments
+        fecal_diet_compartments,
+        diet
     )
 
-    print('\n-------------------------------------------------------------')
+    print('-------------------------------------------------------------')
+    
     if parallelize:
         threads = os.cpu_count()-1 if threads == -1 else threads
         threads = min(threads,len(samples_to_run))
@@ -98,11 +107,11 @@ def build_models(
     else:
         print('Building %s samples in series...'%(len(samples_to_run)))
         built = tqdm.tqdm(list(map(_func,samples_to_run)),total=len(samples_to_run))
-    print('\n-------------------------------------------------------------')
+    print('-------------------------------------------------------------')
     
     print('Finished building %s models and associated LP problems!'%len(built))    
 
-def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coupling_constraints,fecal_diet,sample_label):
+def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coupling_constraints,fecal_diet_compartments,diet,sample_label):
     model_out = model_dir+'%s.xml'%sample_label
     problem_out = problem_dir+sample_label+model_type
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
@@ -118,8 +127,10 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coup
             rel_threshold=1e-6,
             solver=solver,
             add_coupling_constraints=coupling_constraints,
-            add_fecal_diet_compartments=fecal_diet
+            add_fecal_diet_compartments=fecal_diet_compartments
         )
+        if diet is not None:
+            add_diet_to_model(pymgpipe_model,diet)
         write_sbml_model(pymgpipe_model,model_out)
 
     if not os.path.exists(problem_out) or not _is_valid_lp(problem_out):

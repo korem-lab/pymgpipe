@@ -1,8 +1,8 @@
 import pandas as pd
 import os
-
 from .fva import regularFVA
-from .optlang_util import *
+from .utils import *
+import cobra
 
 def compute_nmpcs(
     models=[],
@@ -18,6 +18,8 @@ def compute_nmpcs(
     combined = pd.DataFrame()
     for s in models:
         m = load_model(path=s,solver=solver) if isinstance(s,str) else s
+        if isinstance(m,cobra.Model):
+            m = m.solver
         res = regularFVA(
             m,
             reactions=reactions,
@@ -31,11 +33,11 @@ def compute_nmpcs(
         if res is None:
             return 
         if diet_fecal_compartments:
-            metabs = res.index.str.split('[').str[0].drop_duplicates()
+            metabs = [m for m in res.index.str.split('[').str[0].drop_duplicates() if not m.startswith('Diet')]
             df = {}
             for metab in metabs:
                 fe = res.loc[metab+'[fe]']['max']
-                d = res.loc[metab+'[d]']['min']
+                d = res.loc['Diet_'+metab+'[d]']['min']
                 
                 df[metab]=d+fe
             nmpc = pd.DataFrame({m.name:df})

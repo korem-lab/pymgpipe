@@ -6,11 +6,15 @@ import sys
 from contextlib import contextmanager
 import warnings
 import logging
+from .io import *
 
 warnings.filterwarnings("ignore")
 
+class InfeasibleModelException(Exception):
+    pass
+
 class Constants:
-    EX_REGEX = '^(?i)EX_((?!biomass|community).)*(_m|\[u\]|\[d\]|\[fe\])$'
+    EX_REGEX = '^(Diet_)?(?i)EX_((?!biomass|community).)*(_m|\[u\]|\[d\]|\[fe\])'
     EX_REGEX_MULTI_SAMPLE = '^EX_.*_m_.*$'
 
 @contextmanager
@@ -23,26 +27,6 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
 
-class UnsupportedSolverException(Exception):
-    def __init__(self, msg='Unrecognized solver. Supported solvers include gurobi and cplex', *args, **kwargs):
-        super().__init__(msg, *args, **kwargs)
-
-class InfeasibleModelException(Exception):
-    pass
-
-def load_model(path, solver='gurobi'):
-    if not os.path.exists(path):
-        raise Exception('Could not find model at %s'%path)
-
-    if solver == 'gurobi':
-        model = _load_gurobi_model(path)
-    elif solver == 'cplex':
-        model = _load_cplex_model(path)
-    else:
-        raise UnsupportedSolverException
-    interface = _get_solver_interface(solver)
-    optlang_model = interface.Model(problem=model,name=path.split('/')[-1].split('.')[0])
-    return optlang_model
 
 def solve_model(
     model,
@@ -137,7 +121,7 @@ def constrain_reactions(model, flux_map, threshold=0.0):
  
 def set_objective(model, obj_expression, direction='min'):
     try:
-        model.objective = optlang.Objective(obj_expression,direction=direction)
+        model.objective = model.interface.Objective(obj_expression,direction=direction)
         model.update()
         logging.info('Set model objective!')
     except Exception as e:
@@ -169,28 +153,3 @@ def get_abundances(model):
     except:
         model.optimize()
     return pd.DataFrame({model.name:{r.name.split('__')[1]:r.primal for r in get_reactions(model,regex='^biomass.*')}})
-
-def _load_cplex_model(path):
-    try:
-        import cplex
-        return cplex.Cplex(path)
-    except Exception as e:
-        raise Exception('Provided model is not a valid CPLEX model')
-
-def _load_gurobi_model(path):
-    try:
-        import gurobipy
-        return gurobipy.read(path)
-    except Exception as e:
-        raise Exception('Provided model is not a valid GUROBI model- %s'%path)  
-
-def _get_solver_interface(str):
-    if str == 'gurobi':
-        return optlang.gurobi_interface
-    elif str == 'cplex':
-        return optlang.cplex_interface
-    raise UnsupportedSolverException
-
-def _run_cplex_checklist():
-    from docplex.mp.check_list import run_docplex_check_list
-    run_docplex_check_list()

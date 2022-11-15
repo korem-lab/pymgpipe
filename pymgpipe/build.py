@@ -2,11 +2,11 @@ import logging
 import cobra
 from optlang.symbolics import Zero
 from micom.util import (
-    load_model,
     clean_ids,
     compartment_id,
     COMPARTMENT_RE,
 )
+from .utils import load_cobra_model
 import re
 
 def build(
@@ -15,16 +15,14 @@ def build(
         rel_threshold=1e-6,
         solver='gurobi',
         add_coupling_constraints=True,
-        add_fecal_diet_compartments=True,
+        add_fecal_diet_compartments=True
     ):
-    logging.info("building new micom model {}.".format(id))
     if not solver:
         solver = [
             s
             for s in ["cplex", "gurobi", "osqp", "glpk"]
             if s in cobra.util.solver.solvers
         ][0]
-    logging.info("using the %s solver." % solver)
     if solver == "glpk":
         logging.warning(
             "No QP solver found, will use GLPK. A lot of functionality "
@@ -50,6 +48,7 @@ def build(
 
     obj = Zero
     multi_species_model = cobra.Model(name=name)
+    multi_species_model.solver=solver
     
     taxonomy.set_index('id',inplace=True)
     index = list(taxonomy.index)
@@ -57,7 +56,7 @@ def build(
     logging.info('Building sample with %s taxa...'%len(index))
     for idx in index:
         row = taxonomy.loc[idx]
-        model = load_model(row.file)
+        model = load_cobra_model(row.file)
         suffix = "__" + idx.replace(" ", "_").strip()
         logging.info("converting IDs for {}".format(idx))
         external = cobra.medium.find_external_compartment(model)
@@ -67,12 +66,18 @@ def build(
             "If that is wrong you may be in trouble..." % (external, idx)
         )
         for r in model.reactions:
+            if r.id.startswith('DM_'):
+                r.lower_bound=0 
+            if r.id.startswith('sink_'):
+                r.lower_bound = -1
+
             r.global_id = clean_ids(r.id).replace('(e)','[u]')
             r.id = r.global_id + suffix
             r.community_id = idx
             # avoids https://github.com/opencobra/cobrapy/issues/926
             r._compartments = None
             # SBO terms may not be maintained
+
             if "sbo" in r.annotation:
                 del r.annotation["sbo"]
         for m in model.metabolites:
@@ -116,13 +121,14 @@ def build(
     biomass_metabs = multi_species_model.metabolites.query(re.compile('^biomass.*'))
     biomass = cobra.Reaction(
         id="communityBiomass",
-        lower_bound=1,upper_bound=1,
+        lower_bound=0.4,upper_bound=1,
     )
     biomass.add_metabolites({m:-float(taxonomy.abundance[m.community_id]) for m in biomass_metabs})
     biomass.add_metabolites({l_biomass:1})
     multi_species_model.add_reaction(biomass)
 
     multi_species_model.objective = biomass
+    multi_species_model.solver.update()
     return multi_species_model
 
 def _add_exchanges(
@@ -136,7 +142,7 @@ def _add_exchanges(
         # Some sanity checks for whether the reaction is an exchange
         ex = external_compartment + "__" + r.community_id
         # Some AGORA models label the biomass demand as exchange
-        if any(bm in r.id.lower() for bm in ["biomass", "bm"]):
+        if any(bm in r.id.lower() for bm in ["biomass"]):
             r.bounds = (0,1000)
             if 'EX_' in r.id:
                 model.remove_reactions([r])
@@ -175,7 +181,7 @@ def _add_exchanges(
 
         coef = 1
         r.add_metabolites({lumen_m: coef if export else -coef})
-        r.id = r.id.replace('EX_','IEX_')
+        r.id = r.id.replace('EX_','IEX_') 
         r.add_metabolites({k:-v for k,v in r.metabolites.items()},combine=False)
         r.lower_bound=-1000
         r.upper_bound=1000
@@ -205,7 +211,7 @@ def _add_fecal_exchange(model,met):
         id="EX_" + f_m.id,
         name=f_m.id + " fecal exchange",
         lower_bound=-1000,
-        upper_bound=1000,
+        upper_bound=1000000,
     )
     f_ex.add_metabolites({f_m:-1})
     f_ex.global_id = f_ex.id
@@ -215,7 +221,7 @@ def _add_fecal_exchange(model,met):
         id="UFEt_" + f_m.global_id,
         name=f_m.id + " lumen fecal transport",
         lower_bound=0,
-        upper_bound=1000,
+        upper_bound=1000000,
     )
     f_tr.add_metabolites({met:-1,f_m:1})
     f_tr.global_id = f_tr.id
@@ -233,9 +239,9 @@ def _add_diet_exchange(model, met):
     model.add_metabolites([d_m])
 
     d_ex = cobra.Reaction(
-        id="EX_" + d_m.id,
+        id="Diet_EX_" + d_m.id,
         name=d_m.id + " diet exchange",
-        lower_bound=-1000,
+        lower_bound=0,
         upper_bound=1000,
     )
     d_ex.add_metabolites({d_m:-1})
@@ -246,7 +252,7 @@ def _add_diet_exchange(model, met):
         id="DUt_" + d_m.global_id,
         name=d_m.id + " diet lumen transport",
         lower_bound=0,
-        upper_bound=1000,
+        upper_bound=1000000,
     )
     d_tr.add_metabolites({met:1,d_m:-1})
     d_tr.global_id = d_tr.id
@@ -258,10 +264,7 @@ def _add_coupling_constraints(com,u_const=0.01,C_const=400):
     biomass_rxns= {r.community_id:r for r in com.reactions.query(re.compile('^biomass.*'))}
 
     consts = []
-    target_reactions = [r for r in com.reactions if not 
-        (r.id.startswith('EX_') or r.id.startswith('DUt_') or r.id.startswith('UFEt') or 
-        'biomass' in r.id or 'community' in r.id.lower())
-    ]
+    target_reactions = [r for r in com.reactions if '_pan' in r.id and 'biomass' not in r.id]
     for r in target_reactions:
         taxon = r.community_id
         abundance = com.variables[biomass_rxns[taxon].id]
