@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import logging
+from pymgpipe import load_dataframe
 
 def evaluate_results(to_compare,metabolomics,axis=1):
     to_compare = load_dataframe(to_compare)
@@ -38,25 +39,6 @@ def format_nmpc_from_files(fva_dir='fva/',out_file='nmpc_sol.csv',write_to_file=
     if write_to_file:
         nmpcs.to_csv(out_file)
     return nmpcs
-
-def load_dataframe(m, return_empty=False):
-    if m is None:
-        if return_empty:
-            return pd.DataFrame()
-        else:
-            raise Exception('Tried to load dataframe but received None as parameter')
-    elif isinstance(m,str):
-        if not os.path.exists(m):
-            if return_empty:
-                return pd.DataFrame() 
-            else:
-                raise Exception('Tried to load dataframe from path that does not exist- %s'%m)
-        
-        return pd.read_csv(m,index_col=0)
-    elif isinstance(m, pd.DataFrame):
-        return m
-    else:
-        raise Exception('_load_dataframe can only take a string or dataframe, received %s'%type(m))
 
 def get_objective_value(m):
     import optlang

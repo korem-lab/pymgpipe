@@ -153,3 +153,22 @@ def get_abundances(model):
     except:
         model.optimize()
     return pd.DataFrame({model.name:{r.name.split('__')[1]:r.primal for r in get_reactions(model,regex='^biomass.*')}})
+
+def load_dataframe(m, return_empty=False):
+    if m is None:
+        if return_empty:
+            return pd.DataFrame()
+        else:
+            raise Exception('Tried to load dataframe but received None as parameter')
+    elif isinstance(m,str):
+        if not os.path.exists(m):
+            if return_empty:
+                return pd.DataFrame() 
+            else:
+                raise Exception('Tried to load dataframe from path that does not exist- %s'%m)
+        
+        return pd.read_csv(m,index_col=0)
+    elif isinstance(m, pd.DataFrame):
+        return m
+    else:
+        raise Exception('_load_dataframe can only take a string or dataframe, received %s'%type(m))

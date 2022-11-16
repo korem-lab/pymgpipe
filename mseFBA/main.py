@@ -8,7 +8,7 @@ import gc
 import numpy as np
 
 from pymgpipe import load_model, solve_model
-from pymgpipe.utils import set_objective, get_reactions, Constants, suppress_stdout
+from pymgpipe.utils import set_objective, get_reactions, Constants, suppress_stdout, load_dataframe
 
 from .metabolomics import *
 from .utils import *
@@ -18,6 +18,7 @@ from optlang.interface import Objective
 import time
 import logging
 from random import shuffle
+from collections import namedtuple
 
 def run(
     metabolomics,
@@ -53,7 +54,7 @@ def run(
     final = load_dataframe(out_file,return_empty=True)
     if len(final.columns)>0:
         print('Skipping %s samples that are already finished!'%len(final.columns))
-        model_files = [f for f in model_files if f.split('/')[-1].split('.')[0] not in list(final.columns)]
+        model_files = [f for f in model_files if not isinstance(f,str) or f.split('/')[-1].split('.')[0] not in list(final.columns)]
         shuffle(model_files)
         
     if len(model_files) == 0 and final.empty:
@@ -126,7 +127,9 @@ def run(
     print('The results are in...\n')
     res = evaluate_results(final,metabolomics_df)
     objectives = pd.DataFrame({'objective':objective_vals})
-    return (final,res,objectives)
+
+    res = namedtuple('res', 'solution eval objectives')     
+    return res(final,res,objectives)
 
 def _mseFBA_worker(ex_only, zero_unmapped_metabolites, solver, verbosity, presolve, threshold, metabolites, model_file):
     global solution_path, metabolomics_global

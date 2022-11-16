@@ -1,6 +1,7 @@
 from .utils import *
 import numpy as np
 import logging
+from pymgpipe import load_dataframe
 
 def process_metabolomics(metabolomics,fva_dir='fva/',scale=True,map_labels=True,conversion_file='sample_label_conversion.csv',out_file=None):
     metabolomics_df = load_dataframe(metabolomics)
