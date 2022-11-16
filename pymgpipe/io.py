@@ -22,17 +22,27 @@ _model_interfaces = {
 }
 
 # Loads cobra file and returns cobrapy model
-def load_cobra_model(file):
+# RETURNS- cobra model
+def load_cobra_model(file,solver='gurobi'):
     _, ext = path.splitext(file)
     read_func = _read_funcs[ext]
     model = read_func(file)
     model.name=file.split('/')[-1].split('.')[0]
+    model.solver=solver
     
     return model
 
 # Loads either LP file or cobra file and returns optlang model representing underlying optimization problem
+# RETURNS- optlang model
 def load_model(path, solver='gurobi'):
-    if not os.path.exists(path):
+    if isinstance(path,cobra.Model):
+        return path.solver
+    elif isinstance(path,optlang.interface.Model):
+        return path 
+    elif not isinstance(path,str):
+        raise Exception('Expected string, received %s'%type(path))
+
+    if not os.path.isfile(path):
         raise Exception('Could not find model at %s'%path)
 
     print('Loading model from %s...'%path)
@@ -43,9 +53,12 @@ def load_model(path, solver='gurobi'):
             model = _load_cplex_model(path)
         else:
             raise UnsupportedSolverException
-        optlang_model = _model_interfaces[solver].Model(problem=model,name=path.split('/')[-1].split('.')[0])
+        try:
+            optlang_model = _model_interfaces[solver].Model(problem=model,name=path.split('/')[-1].split('.')[0])
+        except:
+            raise Exception('Unable to create optlang %s model, try switching solver'%solver.upper())
     except:
-        optlang_model = load_cobra_model(path).solver
+        optlang_model = load_cobra_model(path,solver).solver
 
     return optlang_model
 

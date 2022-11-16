@@ -9,7 +9,7 @@ import tqdm
 
 def compute_nmpcs(
     samples=[],
-    out_file = None,
+    out_file = 'nmpcs.csv',
     reactions=None,
     regex=None,
     ex_only=True,
@@ -45,9 +45,11 @@ def compute_nmpcs(
 
     for s in tqdm.tqdm(models,total=len(models)):
         with suppress_stdout():
-            m = load_model(path=s,solver=solver) if isinstance(s,str) else s
-            if not (isinstance(m,optlang.gurobi_interface.Model) or isinstance(m,optlang.cplex_interface.Model)):
+            m = load_model(path=s,solver=solver)
+            if not isinstance(m,optlang.interface.Model):
                 raise Exception('Expected optlang.Model, received %s'%type(m))
+            if not force and m.name in list(nmpcs.columns):
+                continue
     
         # Solve for objective first
         if 'communityBiomass' not in m.variables:
@@ -93,9 +95,8 @@ def compute_nmpcs(
             nmpc.name = m.name
 
         nmpcs = pd.concat([nmpcs,nmpc],axis=1)
-        if out_file is not None:
-            nmpcs.to_csv(out_file)
-            obj_values.to_csv(objective_out_file)
+        nmpcs.to_csv(out_file)
+        obj_values.to_csv(objective_out_file)
 
     res = namedtuple('res', 'nmpc objectives')     
     return res(nmpcs,obj_values)

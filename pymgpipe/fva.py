@@ -22,7 +22,7 @@ def regularFVA(
     parallel=True):
     gc.enable()
 
-    model = load_model(path=model,solver=solver) if isinstance(model,str) else model
+    model = load_model(path=model,solver=solver)
 
     if reactions is None and regex is None and ex_only is True:
         regex = Constants.EX_REGEX

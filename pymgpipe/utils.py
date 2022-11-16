@@ -38,8 +38,7 @@ def solve_model(
     method='auto',
     flux_threshold=1e-5,
     ex_only=True):
-    if isinstance(model,str):
-        model = load_model(model, solver)
+    model = load_model(model, solver)
     model.configuration.verbosity=verbosity
     model.configuration.presolve=presolve
     model.configuration.lp_method=method
@@ -79,6 +78,7 @@ def _get_fluxes_from_model(model,reactions=None,regex=None,threshold=1e-5):
     return fluxes
 
 def get_reactions(model,reactions=None,regex=None):
+    model = load_model(model)
     r = []
     if reactions is not None and len(reactions)>0:
         if isinstance(reactions[0],optlang.gurobi_interface.Variable) or isinstance(reactions[0],optlang.cplex_interface.Variable):
@@ -100,6 +100,7 @@ def get_reactions(model,reactions=None,regex=None):
     return r
 
 def constrain_reactions(model, flux_map, threshold=0.0):
+    model = load_model(model)
     if isinstance(flux_map, pd.Series):
         flux_map = flux_map.to_dict()
     flux_map = {k:v for k,v in flux_map.items() if k in model.variables}
@@ -120,6 +121,7 @@ def constrain_reactions(model, flux_map, threshold=0.0):
     return list(flux_map.keys())
  
 def set_objective(model, obj_expression, direction='min'):
+    model = load_model(model)
     try:
         model.objective = model.interface.Objective(obj_expression,direction=direction)
         model.update()
@@ -148,6 +150,7 @@ def get_reverse_var(model, v):
     return model.variables[get_reverse_id(v)]
 
 def get_abundances(model):
+    model = load_model(model)
     try:
         model.variables[1].primal
     except:
