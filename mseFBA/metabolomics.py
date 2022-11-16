@@ -89,7 +89,7 @@ class transformations:
         scaled = ((max_val-min_val)*(log_row-log_row.min())/(log_row.max()-log_row.min()))+min_val
         return scaled
 
-def transform_metabolomics(metabolomics,func=transformations.none):
+def transform_metabolomics(metabolomics,func=transformations.none,*args):
     raw = load_dataframe(metabolomics)   
 
     print('Transforming metabolomics with %s samples and %s metabolites...'%(len(raw.columns),len(raw.index)))
@@ -97,7 +97,7 @@ def transform_metabolomics(metabolomics,func=transformations.none):
         print('Using pre-built transformation function- %s'%str(func.__name__))
 
     axis = 0 if func is transformations.abundance else 1 
-    scaled = raw.apply(func,axis=axis)
+    scaled = raw.apply(func,args=args,axis=axis)
 
     return scaled
 
