@@ -14,7 +14,7 @@ def get_mse_expression(model, flux_map):
 
         squared_diff=(net-flux)**2
         obj_expression = obj_expression + squared_diff
-    if obj_expression is None:
+    if obj_expression is Zero:
         logging.warning('No metabolites in mseFBA correlation objective, returning None')
     return obj_expression
 

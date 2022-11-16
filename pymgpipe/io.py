@@ -26,6 +26,7 @@ def load_cobra_model(file):
     _, ext = path.splitext(file)
     read_func = _read_funcs[ext]
     model = read_func(file)
+    model.name=file.split('/')[-1].split('.')[0]
     
     return model
 
