@@ -23,7 +23,7 @@ def compute_nmpcs(
     
     nmpcs = pd.DataFrame() if force else load_dataframe(out_file,return_empty=True)
     obj_values = pd.DataFrame() if force else load_dataframe(objective_out_file,return_empty=True)
-    obj_values['communityObjective'] = None if obj_values.empty else obj_values[obj_values.columns[0]]
+    obj_values['communityBiomass'] = None if obj_values.empty else obj_values[obj_values.columns[0]]
 
     try:
         models = [load_model(samples)]
