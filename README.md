@@ -19,7 +19,7 @@ If you're running python 3.8.*, you should be able to just use `pip install cple
 To create multi-species community models with **pymgpipe**, you need two things to start-
 
 -  Folder with individual taxa models (either in `.mat` or `.xml` format)
--  Relative abundance matrix (as a `.csv`) with samples as **columns** and taxa as **rows**. Taxa names should correspond to file names within taxa folder.
+-  Relative abundance matrix (as a `.csv`) with samples as **columns** and taxa as **rows**. Taxa names should correspond to file names within taxa folder (excluding extension)
 
 Examples of both can be found in the  `examples/` folder
 
