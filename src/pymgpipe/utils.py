@@ -2,8 +2,6 @@ import os
 import optlang
 import re
 import pandas as pd
-import sys
-from contextlib import contextmanager
 import warnings
 import logging
 from .io import *
@@ -16,17 +14,6 @@ class InfeasibleModelException(Exception):
 class Constants:
     EX_REGEX = '^(Diet_)?(?i)EX_((?!biomass|community).)*(_m|\[u\]|\[d\]|\[fe\])'
     EX_REGEX_MULTI_SAMPLE = '^EX_.*_m_.*$'
-
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:  
-            yield
-        finally:
-            sys.stdout = old_stdout
-
 
 def solve_model(
     model,

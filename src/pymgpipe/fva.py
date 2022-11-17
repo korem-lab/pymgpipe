@@ -52,7 +52,6 @@ def regularFVA(
 
     parallel = False if threads <= 1 else parallel
 
-    # _func = _gurobi_worker if solver=='gurobi' else _optlang_worker <- might speed things up?
     _func = _optlang_worker
     if parallel:
         print('Starting parallel FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
@@ -63,7 +62,7 @@ def regularFVA(
         _pool_init(model)
         res = map(_func, reactions_to_run)
 
-    for result in tqdm.tqdm(res,total=len(reactions_to_run)):
+    for result in res:
         result_df.append(result)
 
         out_df = pd.DataFrame.from_records(result_df,index='id')

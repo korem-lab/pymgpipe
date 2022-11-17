@@ -16,7 +16,7 @@ def build(
         rel_threshold=1e-6,
         solver='gurobi',
         coupling_constraints=True,
-        fecal_diet_compartments=True
+        diet_fecal_compartments=True
     ):
     if not solver:
         solver = [
@@ -99,7 +99,7 @@ def build(
         _add_exchanges(
             multi_species_model,
             model.reactions,
-            fecal_diet_compartments
+            diet_fecal_compartments
         )
         multi_species_model.solver.update()  # to avoid dangling refs due to lazy add
         
@@ -117,7 +117,7 @@ def build(
     l_biomass = cobra.Metabolite(id='microbeBiomass[u]',compartment='u')
     multi_species_model.add_metabolites([l_biomass])
 
-    if fecal_diet_compartments:
+    if diet_fecal_compartments:
         _add_fecal_exchange(multi_species_model,l_biomass)
     else:
         _add_lumen_exchange(multi_species_model,l_biomass)

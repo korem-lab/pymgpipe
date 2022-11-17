@@ -9,7 +9,8 @@ setup(
         'tqdm',
     ],
     url='https://github.com/korem-lab/pymgpipe',
-    packages=['pymgpipe','mseFBA'],
+    package_dir={'pymgpipe':'src/pymgpipe'},
+    packages=['pymgpipe'],
     package_data = {
         'pymgpipe': ['resources/samples/*.mps','resources/diets/*.txt'],
     }

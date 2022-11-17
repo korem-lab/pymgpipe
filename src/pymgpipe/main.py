@@ -4,7 +4,7 @@ sys.path.insert(1, '../')
 import pandas as pd
 import os
 import cobra
-from .io import load_cobra_model
+from .io import load_cobra_model, write_lp_problem
 from .sbml import write_sbml_model
 from pathlib import Path
 from pkg_resources import resource_listdir,resource_filename
@@ -29,13 +29,15 @@ def build_models(
     solver='gurobi',
     threads=int(os.cpu_count()/2),
     samples=None,
-    parallelize=True,
-    model_type='.mps',
+    parallel=True,
+    lp_type='.mps',
+    cobra_type='.xml',
     out_dir='./',
     coupling_constraints=True,
-    fecal_diet_compartments=False,
+    diet_fecal_compartments=False,
     diet=None,
-    compress=True
+    compress=True,
+    write_lp=True
 ):   
     cobra_config.solver = solver
 
@@ -45,17 +47,13 @@ def build_models(
     taxa_dir = taxa_dir+'/' if taxa_dir[-1] != '/' else taxa_dir
     out_dir = out_dir+'/' if out_dir[-1] != '/' else out_dir
 
-    model_dir = out_dir+'models/'
-    problem_dir = out_dir+'problems/'
+    model_dir=out_dir+'models/'
+    problem_dir=out_dir+'problems/'
     Path(model_dir).mkdir(exist_ok=True)
-    Path(problem_dir).mkdir(exist_ok=True)
+    if write_lp:
+        Path(problem_dir).mkdir(exist_ok=True)
 
-    formatted_coverage_file=coverage_file.split('.csv')[0]+'_formatted.csv'
-    if os.path.exists(formatted_coverage_file):
-        formatted = pd.read_csv(formatted_coverage_file,index_col=0)
-    else:
-        formatted = format_coverage_file(coverage_file,taxa_dir,out_dir)
-        formatted.to_csv(formatted_coverage_file)
+    formatted = _format_coverage_file(coverage_file,taxa_dir,out_dir)
     samples_to_run = formatted.sample_id.unique()
     taxa = formatted.strain.unique()
 
@@ -63,26 +61,24 @@ def build_models(
    
     if samples is not None:
         samples_to_run = samples if isinstance(samples,list) else [samples]
-
+    
     if len(samples_to_run)<=1:
-        parallelize=False
+        parallel=False
 
-    finished = []
-    print('Checking for finished samples...\n')
-    for s in samples_to_run:
-        model_out = model_dir+'%s.xml'%s
-        problem_out = problem_dir+s+model_type
+    threads = os.cpu_count()-1 if threads == -1 else threads
+    threads = min(threads,len(samples_to_run))
 
-        if os.path.exists(model_out) and _is_valid_sbml(model_out) and os.path.exists(problem_out) and _is_valid_lp(problem_out):
-            finished.append(s)
-
-    if len(finished)>0:
-        print('Found %s completed samples, skipping those!'%(len(finished)))
-        samples_to_run = [s for s in samples_to_run if s not in finished]
-
-    if len(samples_to_run) == 0:
-        print('Finished building all samples!')
-        return
+    print('Building %s models...'%len(samples_to_run))
+    print('\n----------------Parameters----------------')
+    print('Diet/fecal compartments- %s'%str(diet_fecal_compartments).upper())
+    print('Coupling constraints- %s'%str(coupling_constraints).upper())
+    print('Parallel- %s'%str(parallel).upper())
+    print('Threads- %s'%str(threads).upper())
+    print('Solver- %s'%solver.upper())
+    print('LP type- %s'%str(lp_type.split('.')[1]).upper())
+    print('COBRA type- %s'%str(cobra_type.split('.')[1]).upper())
+    print('compress- %s'%str(compress).upper())
+    print('Output directory- %s'%str(out_dir).upper())
 
     _func = partial(
         _build_single_model,
@@ -90,20 +86,16 @@ def build_models(
         solver,
         model_dir,
         problem_dir,
-        model_type,
+        lp_type,
+        cobra_type,
         coupling_constraints,
-        fecal_diet_compartments,
+        diet_fecal_compartments,
         diet,
-        compress
+        compress,
+        write_lp
     )
-
-    print('-------------------------------------------------------------')
     
-    if parallelize:
-        threads = os.cpu_count()-1 if threads == -1 else threads
-        threads = min(threads,len(samples_to_run))
-        print('Building %s samples in parallel using %s threads...'%(len(samples_to_run),threads))
-        
+    if parallel:        
         p = Pool(threads, initializer=_mute)
         p.daemon = False
 
@@ -112,24 +104,21 @@ def build_models(
         p.close()
         p.join()
     else:
-        print('Building %s samples in series...'%(len(samples_to_run)))
         built = tqdm.tqdm(list(map(_func,samples_to_run)),total=len(samples_to_run))
-    print('-------------------------------------------------------------')
-    
+    print('-------------------------------------------------------')
     print('Finished building %s models and associated LP problems!'%len(built))    
 
-def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coupling_constraints,fecal_diet_compartments,diet,compress,sample_label):
-    model_out = model_dir+'%s.xml'%sample_label
-    problem_out = problem_dir+sample_label+model_type
-    if compress:
-        model_out = model_out + '.gz'
-        problem_out = problem_out + '.gz'
+def _build_single_model(coverage_df,solver,model_dir,problem_dir,lp_type,cobra_type,coupling_constraints,diet_fecal_compartments,diet,compress,write_lp,sample_label):
+    model_out = model_dir+'%s.%s'%(sample_label,cobra_type.split('.')[1]) if not compress else model_dir+sample_label+'.xml.gz'
+    lp_out = problem_dir+'%s.%s'%(sample_label,lp_type.split('.')[1])
 
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
     pymgpipe_model = None
 
-    if os.path.exists(model_out) and _is_valid_sbml(model_out):
+    if os.path.exists(model_out):
         pymgpipe_model = load_cobra_model(model_out)
+        if write_lp:
+            write_lp_problem(pymgpipe_model,out_file=lp_out,compress=compress,force=False)
     else:
         #pymgpipe_model = _build_com(sample_label=sample_label,tax=coverage_df,cutoff=1e-6,solver=solver)
         pymgpipe_model = build(
@@ -138,26 +127,21 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,model_type,coup
             rel_threshold=1e-6,
             solver=solver,
             coupling_constraints=coupling_constraints,
-            fecal_diet_compartments=fecal_diet_compartments
+            diet_fecal_compartments=diet_fecal_compartments
         )
         if diet is not None:
             add_diet_to_model(pymgpipe_model,diet)
         write_sbml_model(pymgpipe_model,model_out)
-
-    if not os.path.exists(problem_out) or not _is_valid_lp(problem_out):
-        try:
-            pymgpipe_model.solver.problem.write(problem_out)
-        except:
-            if compress:
-                logging.warn('Could not write LP to compressed file format, trying .7z extension')
-                pymgpipe_model.solver.problem.write(problem_out.replace('.gz','.7z'))
+        if write_lp:
+            write_lp_problem(pymgpipe_model,out_file=lp_out,compress=compress,force=True)
             
     del pymgpipe_model
     gc.collect()
     return model_out
 
-def format_coverage_file(coverage_file,taxa_dir,out_dir):
-    model_type = '.'+os.listdir(taxa_dir)[0].split('.')[1]
+def _format_coverage_file(coverage_file,taxa_dir,out_dir):
+    existing_taxa_files = {t.split('/')[-1].split('.')[0]:taxa_dir+t for t in os.listdir(taxa_dir)}
+
     coverage = pd.read_csv(coverage_file,index_col=0,header=0)
 
     conversion_file_path = out_dir+'sample_label_conversion.csv'
@@ -175,9 +159,9 @@ def format_coverage_file(coverage_file,taxa_dir,out_dir):
 
     melted = pd.melt(coverage, value_vars=coverage.columns,ignore_index=False,var_name='sample_id',value_name='abundance',)
     melted['strain']=melted.index
-    melted['file']=taxa_dir+melted.strain+model_type
+    melted['file']=melted.strain.apply(lambda x: existing_taxa_files[x] if x in existing_taxa_files else None)
 
-    missing_taxa = set([f.split('/')[-1].split('.')[0] for f in melted.file if not os.path.exists(f)])
+    missing_taxa = melted[melted.file.isna()].index.unique()
     if len(missing_taxa)>0:
         melted.drop(missing_taxa,axis='index',inplace=True)
         print('Removed %s missing taxa from coverage file-' %len(missing_taxa))

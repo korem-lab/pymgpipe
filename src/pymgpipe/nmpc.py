@@ -8,7 +8,7 @@ import tqdm
 
 
 def compute_nmpcs(
-    samples=[],
+    samples,
     out_file = 'nmpcs.csv',
     reactions=None,
     regex=None,
@@ -22,14 +22,14 @@ def compute_nmpcs(
     objective_out_file = '/'.join(out_file.split('/')[:-1])+'/community_objectives.csv' if '/' in out_file else 'community_objectives.csv'
     
     nmpcs = pd.DataFrame() if force else load_dataframe(out_file,return_empty=True)
-    obj_values = pd.DataFrame(columns=['communityObj']) if force else load_dataframe(objective_out_file,return_empty=True)
+    obj_values = pd.DataFrame() if force else load_dataframe(objective_out_file,return_empty=True)
+    obj_values['communityObjective'] = None if obj_values.empty else obj_values[obj_values.columns[0]]
 
-    if isinstance(samples,str) and os.path.isfile(samples):
-        models = [samples]
-    else:
-        models = samples if isinstance(samples,list) else [samples.split('/')[0]+'/'+m for m in os.listdir(samples.split('/')[0]+'/')]
-    models = [f for f in models if not isinstance(f,str) or f.split('/')[-1].split('.')[0] not in list(nmpcs.columns)]
-
+    try:
+        models = [load_model(samples)]
+    except:
+        models = samples if isinstance(samples,list) else [os.path.dirname(samples)+'/'+m for m in os.listdir(os.path.dirname(samples))]
+    models = [f for f in models if not isinstance(f,str) or os.path.basename(f).split('.')[0] not in list(nmpcs.columns)]
     threads = os.cpu_count()-1 if threads == -1 else threads 
 
     print('Computing NMPCs on %s models...'%len(models))
@@ -57,7 +57,7 @@ def compute_nmpcs(
         m.variables['communityBiomass'].set_bounds(0.4,1)
         set_objective(m,m.variables['communityBiomass'],direction='max')
         m.optimize()
-        
+
         obj_val = round(m.objective.value,5)
         obj_values.loc[m.name]=obj_val
         if 'ObjectiveConstraint' in m.constraints:

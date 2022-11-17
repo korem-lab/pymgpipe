@@ -76,9 +76,11 @@ def add_diet_to_model(
 
     d = get_adapted_diet(diet_df)
     logging.info('Adding %s diet to model...'%diet)
+    added = []
     for m in model.reactions:
         f_id = m.id.split('[d]')[0].split('Diet_')[-1]
         if f_id in d.index:
             r = d.loc[f_id]
             m.bounds = (float(r.lb),float(r.ub))
-    return d
+            added.append(f_id)
+    return added
