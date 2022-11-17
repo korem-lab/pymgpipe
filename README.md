@@ -6,7 +6,6 @@ https://korem-lab.github.io/pymgpipe/
 Run `pip install git+https://github.com/korem-lab/pymgpipe`<br/><br/>
 You should now just be able to `import pymgpipe`. If you get a **ModuleNotFoundError**, make sure you're using the same python environment you used with `pip`. I highly recommend using the `pyenv` package to manage python versions & environments.
 
-This will also install the `mseFBA` package, which you can access with `import mseFBA`.
 ### Additional Dependencies
 Need at least one of the following solvers-
 
@@ -23,35 +22,8 @@ To create multi-species community models with **pymgpipe**, you need two things 
 
 Examples of both can be found in the  `examples/` folder
 
-### Testing solver
-To ensure you have your solver setup correctly, you can run the following code snippet
-
-```
-from pymgpipe.test import test_pymgpipe
-test_pymgpipe(solver='gurobi')
-```
-If everything is properly configured, this will run with no fatal exceptions.
-
-### Testing model creation
-In order to test model creation using provided examples, you'll have to first create a local copy of this repository (see below). After you've done that, you can follow the example shown at `examples/workflow.ipynb`. Change the `solver` param to correspond to your solver of choice and run through the shown steps.
-
-After running all three steps, your directory should look like this
-
-```
-examples
-│   workflow.ipynb
-│   normCoverage.csv
-│   normCoverage_formatted.csv
-│   sample_label_conversion.csv
-└───problems
-│   │   ...
-└───models
-│   │   ...
-└───fva
-│   │   ...
-└───panModels
-│   │   ...
-```
+### Examples
+Run through `workflow.ipynb` in the **examples/** folder
 
 ### Creating a local copy (optional)
 If you want to mess around with this code, clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory` (if you've previously installed using github link above, you should run `pip uninstall pymgpipe` first to avoid conflicting versions). If you're having issues with dependencies, try running `pip install -r requirements.txt`
