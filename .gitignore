@@ -132,4 +132,4 @@ dmypy.json
 test/
 
 # examples
-# examples/out/*
+examples/out/*
