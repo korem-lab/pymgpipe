@@ -94,4 +94,8 @@ def add_diet_to_model(
             r = d.loc[f_id]
             m.bounds = (float(r.lb),float(r.ub))
             added.append({'id':m.id,'lb':m.lower_bound,'ub':m.upper_bound})
+    
+    model.optimize()
+    if model.solver.status == 'infeasible':
+        logging.warn('%s is infeasible with provided diet!'%model.name)
     return pd.DataFrame(added)
