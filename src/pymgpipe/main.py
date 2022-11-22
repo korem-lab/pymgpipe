@@ -18,7 +18,6 @@ from .build import build
 import re
 from .diet import *
 
-
 cobra_config = cobra.Configuration()
 cobra_config.lower_bound=-1000
 cobra_config.upper_bound=1000
@@ -113,6 +112,7 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,lp_type,cobra_t
     lp_out = problem_dir+'%s.%s'%(sample_label,lp_type.split('.')[1])
 
     coverage_df = coverage_df.loc[coverage_df.sample_id==sample_label]
+    original_id = coverage_df.original_id.unique()[0]
     pymgpipe_model = None
 
     if os.path.exists(model_out):
@@ -130,6 +130,10 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,lp_type,cobra_t
             diet_fecal_compartments=diet_fecal_compartments
         )
         if diet is not None:
+            personalized = load_dataframe(diet,return_empty=True) # try loading personlized diet
+            if original_id in personalized.columns:
+                diet = personalized[original_id].to_frame()
+        
             add_diet_to_model(pymgpipe_model,diet)
         write_sbml_model(pymgpipe_model,model_out)
         if write_lp:
@@ -152,6 +156,7 @@ def _format_coverage_file(coverage_file,taxa_dir,out_dir):
         if set(sample_conversion_dict.keys()) != set(coverage.columns):
             raise Exception('Provided label conversion file %s does not provide labels for all samples!'%conversion_file_path)
     
+    conversion_t = {v:k for k,v in sample_conversion_dict.items()}
     coverage.rename(columns=sample_conversion_dict,inplace=True)
     
     sample_conversion_dict = pd.DataFrame({'conversion':sample_conversion_dict})
@@ -160,6 +165,7 @@ def _format_coverage_file(coverage_file,taxa_dir,out_dir):
     melted = pd.melt(coverage, value_vars=coverage.columns,ignore_index=False,var_name='sample_id',value_name='abundance',)
     melted['strain']=melted.index
     melted['file']=melted.strain.apply(lambda x: existing_taxa_files[x] if x in existing_taxa_files else None)
+    melted['original_id'] = melted.sample_id.apply(lambda x: conversion_t[x])
 
     missing_taxa = melted[melted.file.isna()].index.unique()
     if len(missing_taxa)>0:

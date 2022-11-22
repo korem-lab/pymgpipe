@@ -9,6 +9,7 @@ import sys
 from .utils import *
 from optlang.interface import Objective
 from pathlib import Path
+import numpy as np
 
 def regularFVA(
     model=None,
@@ -47,23 +48,28 @@ def regularFVA(
         print('---Finished! No reactions left to run---')
         return
     
-    threads = os.cpu_count() if threads == -1 else threads
-    threads = min(threads,len(reactions_to_run))
+    if parallel is False:
+        threads=1
+        parallel=False
+    else:
+        threads = os.cpu_count() if threads == -1 or threads > os.cpu_count() else threads
+        threads = min(threads,len(reactions_to_run))
 
-    parallel = False if threads <= 1 else parallel
+        parallel = False if threads <= 1 else parallel
+
+    split_reactions = np.array_split(reactions_to_run,threads)
+    print('Starting parallel FVA with %s chunks on %s threads'%(threads,len(split_reactions)))
 
     _func = _optlang_worker
     if parallel:
-        print('Starting parallel FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
         p = Pool(processes=threads,initializer=partial(_pool_init,model))
-        res = p.imap(_func, reactions_to_run)
+        res = p.imap(_func, split_reactions)
     else:
-        print('Starting serial FVA on %s with %s reactions...'%(model.name,len(reactions_to_run)))
         _pool_init(model)
-        res = map(_func, reactions_to_run)
+        res = map(_func, split_reactions)
 
     for result in res:
-        result_df.append(result)
+        result_df = result_df + result
 
         out_df = pd.DataFrame.from_records(result_df,index='id')
         out_df.sort_index(inplace=True)
@@ -79,21 +85,23 @@ def regularFVA(
     return out_df
 
 # works for both cplex and gurobi
-def _optlang_worker(metabolite):
+def _optlang_worker(metabolites):
     global global_model
 
-    forward_var = global_model.variables[metabolite]
-    reverse_var = global_model.variables[get_reverse_id(metabolite)]
-    net = forward_var - reverse_var
-    
-    global_model.objective = Objective(net,direction='max')
-    max_sol = solve_model(model=global_model).to_dict()[global_model.name][metabolite]
+    result = []
+    for m in metabolites:
+        forward_var = global_model.variables[m]
+        reverse_var = global_model.variables[get_reverse_id(m)]
+        net = forward_var - reverse_var
+        
+        global_model.objective = Objective(net,direction='max')
+        max_sol = solve_model(model=global_model,reactions=[m]).to_dict()[global_model.name][m]
 
-    global_model.objective = Objective(net,direction='min')
-    min_sol = solve_model(model=global_model).to_dict()[global_model.name][metabolite]
+        global_model.objective = Objective(net,direction='min')
+        min_sol = solve_model(model=global_model,reactions=[m]).to_dict()[global_model.name][m]
 
-    return {'id':metabolite,'min':min_sol,'max':max_sol}
-
+        result.append({'id':m,'min':min_sol,'max':max_sol})
+    return result
 
 def _pool_init(sample_model):
     sys.stdout = open(os.devnull, 'w')  

@@ -8,9 +8,8 @@ def get_adapted_diet(diet,essential_metabolites=None):
     if not isinstance(diet,pd.DataFrame):
         raise Exception('Diet needs to be of type pd.DataFrame, received %s'%type(diet))
   
-    diet.columns = ['metab','lb']
-    diet.set_index(['metab'],inplace=True)
     adapted_diet = pd.DataFrame.copy(diet)
+    adapted_diet.columns = ['lb']
 
     adapted_diet.replace(to_replace=r'\[e\]',value=r'(e)',regex=True,inplace=True)
     adapted_diet.replace({
@@ -44,11 +43,21 @@ def get_adapted_diet(diet,essential_metabolites=None):
     adapted_diet.index = adapted_diet.index.str.split('\(e\)').str[0]
     return adapted_diet
 
+# Removes any diet
 def remove_diet(model):
     print('Removing diet from model...')
     for m in model.reactions:
         if m.id.startswith('Diet_EX_'):
             m.bounds = (-1000,1000)
+
+# Finds diet current set in model
+def get_diet(model):
+    print('Fetching diet from model...')
+    r = []
+    for m in model.reactions:
+        if m.id.startswith('Diet_EX_'):
+            r.append({'id':m.id,'lb':m.lower_bound,'ub':m.upper_bound})
+    return pd.DataFrame(r)
 
 def add_diet_to_model(
     model,
@@ -56,16 +65,17 @@ def add_diet_to_model(
 ):
     print('\nAttempting to add diet...')
     if isinstance(diet,str) and os.path.exists(diet):
-        diet_df = pd.read_csv(diet,index_col=0)
+        diet_df = load_dataframe(diet)
     elif isinstance(diet,str):
         try:
-            diet_df = pd.read_csv(resource_filename('pymgpipe','resources/diets/%s.txt'%diet), sep="\t", header=0)
+            diet_df = pd.read_csv(resource_filename('pymgpipe','resources/diets/%s.txt'%diet), sep="\t", header=0,index_col=0)
             print('Found %s diet containing %s metabolites in resources!'%(diet,len(diet_df.index))) 
         except:
             logging.warn('Skipping diet! Given diet `%s` not in list of available diets. Available diets are- %s'%(diet,[x.split('.')[0] for x in resource_listdir('pymgpipe','resources/diets/')]))
             return
     elif isinstance(diet,pd.DataFrame):
-        print('Using custom diet!')
+        print('Using custom diet with %s metabolites!'%len(diet.index))
+        diet_df = diet
     else:
         logging.warn('Diet not used- please pass in valid DataFrame, local file, or resource file name!')
         return
@@ -74,6 +84,7 @@ def add_diet_to_model(
         if m.id.startswith('Diet_EX_'):
             m.bounds = (0,1000)
 
+    diet_df = diet_df[diet_df.columns[0]].to_frame()
     d = get_adapted_diet(diet_df)
     logging.info('Adding %s diet to model...'%diet)
     added = []
@@ -82,5 +93,5 @@ def add_diet_to_model(
         if f_id in d.index:
             r = d.loc[f_id]
             m.bounds = (float(r.lb),float(r.ub))
-            added.append(f_id)
-    return added
+            added.append({'id':m.id,'lb':m.lower_bound,'ub':m.upper_bound})
+    return pd.DataFrame(added)

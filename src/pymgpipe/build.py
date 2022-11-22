@@ -47,7 +47,6 @@ def build(
         )
         taxonomy.id = taxonomy.id.replace(r"[^A-Za-z0-9_\s]+", "_", regex=True)
 
-    obj = Zero
     multi_species_model = cobra.Model(name=name)
     multi_species_model.solver=solver
     
@@ -55,7 +54,7 @@ def build(
     index = list(taxonomy.index)
     # index = track(index, description="Building") if progress else index
     logging.info('Building sample with %s taxa...'%len(index))
-    for idx in index:
+    for idx in index: # loop through taxa
         row = taxonomy.loc[idx]
         model = load_cobra_model(row.file)
         suffix = "__" + idx.replace(" ", "_").strip()
@@ -68,12 +67,12 @@ def build(
         )
         for r in model.reactions:
             if r.id.startswith('DM_'):
-                r.lower_bound=0 
+                r.lower_bound= 0 
             if r.id.startswith('sink_'):
                 r.lower_bound = -1
 
             r.global_id = clean_ids(r.id).replace('(e)','[u]')
-            r.id = r.global_id + suffix
+            r.id = r.global_id + suffix 
             r.community_id = idx
             # avoids https://github.com/opencobra/cobrapy/issues/926
             r._compartments = None
@@ -88,14 +87,7 @@ def build(
             m.community_id = idx
         logging.info("adding reactions for {} to community".format(idx))
         multi_species_model.add_reactions(model.reactions)
-        o = multi_species_model.solver.interface.Objective.clone(
-            model.objective, model=multi_species_model.solver
-        )
-        obj += o.expression * row.abundance
-        taxa_obj = multi_species_model.problem.Constraint(
-            o.expression, name="objective_" + idx, lb=0.0
-        )
-        multi_species_model.add_cons_vars([taxa_obj])
+ 
         _add_exchanges(
             multi_species_model,
             model.reactions,
@@ -103,11 +95,6 @@ def build(
         )
         multi_species_model.solver.update()  # to avoid dangling refs due to lazy add
         
-    # var to track coupling constraints
-    cp_var = multi_species_model.problem.Variable(name='coupled',type='binary')
-    cp_var.lb = cp_var.ub =  int(coupling_constraints)
-    multi_species_model.add_cons_vars(cp_var)
-
     if coupling_constraints:
         try:
             add_coupling_constraints(multi_species_model)
@@ -177,7 +164,7 @@ def _add_exchanges(
 
             if fecal_diet:
                 _add_fecal_exchange(model,lumen_m)
-                _add_diet_exchange(model, lumen_m)
+                _add_diet_exchange(model,lumen_m)
             else:
                 _add_lumen_exchange(model,lumen_m)
         else:
