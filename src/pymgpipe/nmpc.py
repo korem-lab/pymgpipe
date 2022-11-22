@@ -58,13 +58,13 @@ def compute_nmpcs(
             raise Exception('Could not find communityBiomass variable in model!')
         m.variables['communityBiomass'].set_bounds(0.4,1)
         set_objective(m,m.variables['communityBiomass'],direction='max')
-        try:
-            m.optimize()
-            obj_val = round(m.objective.value,5)
-        except:
-            logging.warn('Cannot solve %s model!'%m.name)
+       
+        m.optimize()
+        if m.status == 'infeasible':
+            logging.warn('%s model is infeasible!'%m.name)
             continue
-
+        
+        obj_val = round(m.objective.value,5)
         obj_values.loc[m.name]=obj_val
         if 'ObjectiveConstraint' in m.constraints:
             m.remove(m.constraints['ObjectiveConstraint'])
