@@ -22,6 +22,7 @@ def compute_nmpcs(
     diet_fecal_compartments=True,
     force=False
 ):
+    out_dir = out_dir.split('/')[0]+'/'
     Path(out_dir).mkdir(exist_ok=True)
 
     out_file = out_dir+out_file
