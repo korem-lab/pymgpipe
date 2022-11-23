@@ -5,11 +5,14 @@ from .utils import *
 import cobra
 from collections import namedtuple
 import tqdm
-
+from pathlib import Path
 
 def compute_nmpcs(
     samples,
+    out_dir='./',
     out_file = 'nmpcs.csv',
+    objective_out_file = 'community_objectives.csv',
+    fluxes_out_file = 'all_fluxes.csv',
     reactions=None,
     regex=None,
     ex_only=True,
@@ -19,8 +22,11 @@ def compute_nmpcs(
     diet_fecal_compartments=True,
     force=False
 ):
-    objective_out_file = '/'.join(out_file.split('/')[:-1])+'/community_objectives.csv' if '/' in out_file else 'community_objectives.csv'
-    fluxes_out_file = '/'.join(out_file.split('/')[:-1])+'/all_fluxes.csv' if '/' in out_file else 'all_fluxes.csv'
+    Path(out_dir).mkdir(exist_ok=True)
+
+    out_file = out_dir+out_file
+    objective_out_file = out_dir+objective_out_file
+    fluxes_out_file = out_dir+fluxes_out_file
 
     nmpcs = pd.DataFrame() if force else load_dataframe(out_file,return_empty=True)
     all_fluxes = pd.DataFrame() if force else load_dataframe(fluxes_out_file,return_empty=True)
