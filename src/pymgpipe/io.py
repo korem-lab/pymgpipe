@@ -61,7 +61,7 @@ def load_model(path, solver='gurobi'):
     elif not isinstance(path,str):
         raise Exception('Expected string, received %s'%type(path))
 
-    if not os.path.exists(path):
+    if not os.path.isfile(path):
         raise Exception('Could not find model at %s'%path)
 
     print('Loading model from %s...'%path)
