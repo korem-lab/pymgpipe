@@ -22,7 +22,8 @@ def compute_nmpcs(
     diet_fecal_compartments=True,
     force=False
 ):
-    out_dir = out_dir.split('/')[0]+'/'
+    if not os.path.isdir(out_dir):
+        raise Exception('Provided out directory %s is not a valid directory!'%out_dir)
     Path(out_dir).mkdir(exist_ok=True)
 
     out_file = out_dir+out_file
