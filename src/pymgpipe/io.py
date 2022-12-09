@@ -6,6 +6,7 @@ import pickle
 import optlang
 import logging
 from contextlib import contextmanager
+from .sbml import write_sbml_model
 
 class UnsupportedSolverException(Exception):
     def __init__(self, msg='Unrecognized solver. Supported solvers include gurobi and cplex', *args, **kwargs):
@@ -29,6 +30,14 @@ _read_funcs = {
     ".pickle": lambda fn: pickle.load(open(fn, "rb")),
 }
 
+_write_funcs = {
+    ".xml": write_sbml_model,
+    ".gz": write_sbml_model,
+    ".mat": cobra.io.save_matlab_model,
+    ".json": cobra.io.save_json_model,
+    ".pickle": lambda fn: pickle.dump(open(fn, "wb")),
+}
+
 _model_interfaces = {
     "cplex": optlang.cplex_interface,
     "gurobi": optlang.gurobi_interface
@@ -49,9 +58,18 @@ def load_cobra_model(file,solver='gurobi'):
     
     return model
 
+def write_cobra_model(model, file):
+    _, ext = path.splitext(file)
+    write_func = _write_funcs[ext]
+    try:
+        with suppress_stdout():
+            write_func(model,file)
+    except:
+        raise Exception('Error writing cobra model to %s'%file)
+
+
 # Loads either LP file or cobra file and returns optlang model representing underlying optimization problem
 # RETURNS- optlang model
-
 def load_model(path, solver='gurobi'):
     if isinstance(path,cobra.Model):
         path.solver.name = path.name

@@ -4,8 +4,7 @@ sys.path.insert(1, '../')
 import pandas as pd
 import os
 import cobra
-from .io import load_cobra_model, write_lp_problem
-from .sbml import write_sbml_model
+from .io import load_cobra_model, write_lp_problem, write_cobra_model
 from pathlib import Path
 from pkg_resources import resource_listdir,resource_filename
 
@@ -135,7 +134,7 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,lp_type,cobra_t
                 diet = personalized[original_id].to_frame()
         
             add_diet_to_model(pymgpipe_model,diet)
-        write_sbml_model(pymgpipe_model,model_out)
+        write_cobra_model(pymgpipe_model,model_out)
         if write_lp:
             write_lp_problem(pymgpipe_model,out_file=lp_out,compress=compress,force=True)
             
