@@ -133,3 +133,5 @@ test/
 
 # examples
 examples/out/*
+
+.DS_Store

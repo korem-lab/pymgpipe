@@ -68,7 +68,7 @@ def get_reactions(model,reactions=None,regex=None):
     model = load_model(model)
     r = []
     if reactions is not None and len(reactions)>0:
-        if isinstance(reactions[0],optlang.gurobi_interface.Variable) or isinstance(reactions[0],optlang.cplex_interface.Variable):
+        if isinstance(reactions[0],optlang.interface.Variable):
             r = [k for k in reactions if k.name in model.variables]
         elif isinstance(reactions[0],str):
             r = [model.variables[k] for k in reactions if k in model.variables]

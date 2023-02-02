@@ -12,6 +12,6 @@ setup(
     package_dir={'pymgpipe':'src/pymgpipe'},
     packages=['pymgpipe'],
     package_data = {
-        'pymgpipe': ['resources/diets/*.txt'],
+        'pymgpipe': ['resources/diets/*.txt', 'resources/models/*', 'resources/problems/*', 'resources/taxaModels/*'],
     }
 )

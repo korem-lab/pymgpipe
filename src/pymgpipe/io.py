@@ -38,11 +38,19 @@ _write_funcs = {
     ".pickle": lambda fn: pickle.dump(open(fn, "wb")),
 }
 
-_model_interfaces = {
-    "cplex": optlang.cplex_interface,
-    "gurobi": optlang.gurobi_interface
-}
+def show_availible_solvers():
+    return [k.lower() for k,v in optlang.available_solvers.items() if v]
 
+def _get_optlang_interface(solver):
+    available_solvers = show_availible_solvers()
+    if solver not in available_solvers:
+        raise Exception('Provided solver %s not available. Available solvers are %s'%(solver, available_solvers))
+    elif solver == 'gurobi':
+        return optlang.gurobi_interface
+    elif solver == 'cplex':
+        return optlang.cplex_interface
+    else:
+        raise Exception('Provided solver %s is unsupported. Solver must either be `gurobi` or `cplex`.'%solver)
 # Loads cobra file and returns cobrapy model
 # RETURNS- cobra model
 def load_cobra_model(file,solver='gurobi'):
@@ -67,7 +75,6 @@ def write_cobra_model(model, file):
     except:
         raise Exception('Error writing cobra model to %s'%file)
 
-
 # Loads either LP file or cobra file and returns optlang model representing underlying optimization problem
 # RETURNS- optlang model
 def load_model(path, solver='gurobi'):
@@ -91,7 +98,7 @@ def load_model(path, solver='gurobi'):
         else:
             raise UnsupportedSolverException
         try:
-            optlang_model = _model_interfaces[solver].Model(problem=model,name=path.split('/')[-1].split('.')[0])
+            optlang_model = _get_optlang_interface(solver).Model(problem=model,name=path.split('/')[-1].split('.')[0])
         except:
             raise Exception('Unable to create optlang %s model, try switching solver'%solver.upper())
     except:

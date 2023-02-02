@@ -10,6 +10,9 @@ from .utils import load_cobra_model
 from .coupling import add_coupling_constraints
 import re
 
+
+# Build function adapted from MICOM (C. Diener, 2020)
+# https://github.com/micom-dev/micom/blob/1f8e4dd2ba9fc4cfba3526610f268f39ceaaac30/micom/workflows/build.py#L41
 def build(
         taxonomy,
         name,

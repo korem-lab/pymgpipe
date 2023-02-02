@@ -145,7 +145,7 @@ def _build_single_model(coverage_df,solver,model_dir,problem_dir,lp_type,cobra_t
 def _format_coverage_file(coverage_file,taxa_dir,out_dir):
     existing_taxa_files = {t.split('/')[-1].split('.')[0]:taxa_dir+t for t in os.listdir(taxa_dir)}
 
-    coverage = pd.read_csv(coverage_file,index_col=0,header=0)
+    coverage = load_dataframe(coverage_file)
 
     conversion_file_path = out_dir+'sample_label_conversion.csv'
     if not os.path.exists(conversion_file_path):
