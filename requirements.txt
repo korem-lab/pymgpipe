@@ -9,3 +9,4 @@ packaging==21.3
 pandas==1.4.3
 setuptools==56.0.0
 tqdm==4.64.0
+python_libsbml==5.19.2

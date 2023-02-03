@@ -192,6 +192,7 @@ F_REPLACE = {
     F_GROUP_REV: _f_group_rev,
 }
 
+
 # -----------------------------------------------------------------------------
 # Write SBML
 # -----------------------------------------------------------------------------
@@ -309,7 +310,10 @@ def _model_to_sbml(cobra_model, f_replace=None, units=True):
                 if cobra_creator.get("email", None):
                     creator.setEmail(cobra_creator["email"])
 
-                _check(history.addCreator(creator), "adding creator to ModelHistory.")
+                _check(
+                    history.addCreator(creator),
+                    "adding creator to ModelHistory.",
+                )
 
         # TODO: Will be implemented as part of
         #  https://github.com/opencobra/cobrapy/issues/810
@@ -337,10 +341,16 @@ def _model_to_sbml(cobra_model, f_replace=None, units=True):
     )
     _create_parameter(model, pid=ZERO_BOUND_ID, value=0, sbo=SBO_DEFAULT_FLUX_BOUND)
     _create_parameter(
-        model, pid=BOUND_MINUS_INF, value=-float("Inf"), sbo=SBO_DEFAULT_FLUX_BOUND
+        model,
+        pid=BOUND_MINUS_INF,
+        value=-float("Inf"),
+        sbo=SBO_DEFAULT_FLUX_BOUND,
     )
     _create_parameter(
-        model, pid=BOUND_PLUS_INF, value=float("Inf"), sbo=SBO_DEFAULT_FLUX_BOUND
+        model,
+        pid=BOUND_PLUS_INF,
+        value=float("Inf"),
+        sbo=SBO_DEFAULT_FLUX_BOUND,
     )
 
     # Compartments
@@ -487,7 +497,9 @@ def _model_to_sbml(cobra_model, f_replace=None, units=True):
     # write groups
     if len(cobra_model.groups) > 0:
         doc.enablePackage(
-            "http://www.sbml.org/sbml/level3/version1/groups/version1", "groups", True
+            "http://www.sbml.org/sbml/level3/version1/groups/version1",
+            "groups",
+            True,
         )
         doc.setPackageRequired("groups", False)
         model_group = model.getPlugin(
@@ -647,7 +659,8 @@ def _check(value, message):
             LOGGER.error("Error encountered trying to <" + message + ">.")
             LOGGER.error(
                 "LibSBML error code {}: {}".format(
-                    str(value), libsbml.OperationReturnValue_toString(value).strip()
+                    str(value),
+                    libsbml.OperationReturnValue_toString(value).strip(),
                 )
             )
     else:
@@ -876,7 +889,6 @@ def _sbase_annotations(sbase, annotation):
 
     # rdf_items = []
     for provider, data in annotation_data.items():
-
         # set SBOTerm
         if provider in ["SBO", "sbo"]:
             if provider == "SBO":
@@ -884,7 +896,10 @@ def _sbase_annotations(sbase, annotation):
                     "'SBO' provider is deprecated, " "use 'sbo' provider instead"
                 )
             sbo_term = data[0][1]
-            _check(sbase.setSBOTerm(sbo_term), "Setting SBOTerm: {}".format(sbo_term))
+            _check(
+                sbase.setSBOTerm(sbo_term),
+                "Setting SBOTerm: {}".format(sbo_term),
+            )
 
             # FIXME: sbo should also be written as CVTerm
             continue
