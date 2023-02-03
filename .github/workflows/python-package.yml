@@ -26,7 +26,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        export GRB_LICENSE_FILE=tests/gurobi.lic
         python -m pip install --upgrade pip
         python -m pip install . -U
         python -m pip install flake8 pytest
@@ -35,6 +34,10 @@ jobs:
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Set up gurobi license
+      run: |
+        export GRB_LICENSE_FILE=tests/gurobi.lic
+        gurobi_cl --server=10.116.208.2
     - name: Test with pytest
       run: |
         pytest
