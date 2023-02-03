@@ -10,7 +10,6 @@ from functools import partial
 from .utils import (
     InfeasibleModelException,
     get_reactions,
-    UnsupportedSolverException,
     Constants,
     get_reverse_id,
 )
@@ -20,6 +19,7 @@ from .io import (
     _get_optlang_interface,
     load_model,
     suppress_stdout,
+    UnsupportedSolverException
 )
 from optlang.interface import *
 
