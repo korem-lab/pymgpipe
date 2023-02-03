@@ -8,7 +8,6 @@ import sys
 from multiprocessing import Pool
 from functools import partial
 from .utils import (
-    suppress_stdout,
     InfeasibleModelException,
     get_reactions,
     UnsupportedSolverException,
@@ -20,6 +19,7 @@ from .io import (
     _load_gurobi_model,
     _get_optlang_interface,
     load_model,
+    suppress_stdout,
 )
 from optlang.interface import *
 
