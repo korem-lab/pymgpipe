@@ -118,7 +118,7 @@ def build(
         {m: -float(taxonomy.abundance[m.community_id]) for m in biomass_metabs}
     )
     biomass.add_metabolites({l_biomass: 1})
-    multi_species_model.add_reaction(biomass)
+    multi_species_model.add_reactions([biomass])
 
     multi_species_model.objective = biomass
     multi_species_model.solver.update()
