@@ -7,7 +7,7 @@ from micom.util import (
     compartment_id,
     COMPARTMENT_RE,
 )
-from .utils import load_cobra_model
+from .io import load_cobra_model
 from .coupling import add_coupling_constraints
 
 
