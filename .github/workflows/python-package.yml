@@ -38,7 +38,6 @@ jobs:
       run: |
         conda install -c gurobi gurobi
         export GRB_LICENSE_FILE=tests/gurobi.lic
-        gurobi_cl --license
     - name: Test with pytest
       run: |
         pytest
