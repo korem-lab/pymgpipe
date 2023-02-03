@@ -35,6 +35,11 @@ def test_build():
     with check:
         assert isinstance(pymgpipe_model, cobra.Model)
 
+    with check:
+        assert (
+            "fe" in pymgpipe_model.compartments and "d" in pymgpipe_model.compartments
+        )
+
     built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
     true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
     assert built_abundances == true_abundances

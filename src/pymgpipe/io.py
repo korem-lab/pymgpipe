@@ -62,6 +62,8 @@ def _get_optlang_interface(solver):
         return optlang.gurobi_interface
     elif solver == "cplex":
         return optlang.cplex_interface
+    elif solver == "glpk":
+        return optlang.glpk_interface
     else:
         raise Exception(
             "Provided solver %s is unsupported. Solver must either be `gurobi` or `cplex`."
@@ -149,7 +151,7 @@ def write_lp_problem(model, out_file=None, compress=True, force=True):
         model.solver.problem.write(out_file)
     except Exception:
         if compress:
-            logging.warn(
+            logging.warning(
                 "Could not write LP to compressed file format, trying .7z extension"
             )
             model.solver.problem.write(out_file.replace(".gz", ".7z"))

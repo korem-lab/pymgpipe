@@ -91,7 +91,7 @@ def compute_nmpcs(
 
         m.optimize()
         if m.status == "infeasible":
-            logging.warn("%s model is infeasible!" % m.name)
+            logging.warning("%s model is infeasible!" % m.name)
             continue
 
         obj_val = round(m.objective.value, 5)
@@ -122,7 +122,7 @@ def compute_nmpcs(
                     write_to_file=False,
                 )
             except Exception:
-                logging.warn("Cannot solve %s model!" % m.name)
+                logging.warning("Cannot solve %s model!" % m.name)
                 continue
         if res is None:
             return

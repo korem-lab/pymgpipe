@@ -293,7 +293,7 @@ def add_diet_to_model(model, diet):
                 % (diet, len(diet_df.index))
             )
         except Exception:
-            logging.warn(
+            logging.warning(
                 "Skipping diet! Given diet `%s` not in list of available diets. Available diets are- %s"
                 % (
                     diet,
@@ -308,7 +308,7 @@ def add_diet_to_model(model, diet):
         print("Using custom diet with %s metabolites!" % len(diet.index))
         diet_df = diet
     else:
-        logging.warn(
+        logging.warning(
             "Diet not used- please pass in valid DataFrame, local file, or resource file name!"
         )
         return
@@ -330,6 +330,6 @@ def add_diet_to_model(model, diet):
 
     model.optimize()
     if model.solver.status == "infeasible":
-        logging.warn("%s is infeasible with provided diet!" % model.name)
+        logging.warning("%s is infeasible with provided diet!" % model.name)
 
     return pd.DataFrame(added)

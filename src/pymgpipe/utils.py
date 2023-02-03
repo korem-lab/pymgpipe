@@ -98,7 +98,7 @@ def get_reactions(model, reactions=None, regex=None):
     else:
         r = [k for k in model.variables if "reverse" not in k.name]
     if len(r) == 0:
-        logging.warn("Returning 0 reactions from model!")
+        logging.warning("Returning 0 reactions from model!")
     return r
 
 

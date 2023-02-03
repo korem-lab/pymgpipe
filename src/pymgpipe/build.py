@@ -98,7 +98,7 @@ def build(
         try:
             add_coupling_constraints(multi_species_model)
         except Exception:
-            logging.warn("Failed to add coupling constraints!")
+            logging.warning("Failed to add coupling constraints!")
 
     l_biomass = cobra.Metabolite(id="microbeBiomass[u]", compartment="u")
     multi_species_model.add_metabolites([l_biomass])
