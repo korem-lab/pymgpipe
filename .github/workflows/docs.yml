@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@v1
     - uses: ammaraskar/sphinx-action@master
       with:
-        docs-folder: "sphinx-build -b html src/pymgpipe docs/_build"
+        docs-folder: "docs/"
     - name: Commit documentation changes
       run: |
         git clone https://github.com/korem-lab/pymgpipe.git --branch gh-pages --single-branch gh-pages
