@@ -19,7 +19,7 @@ from .io import (
     _get_optlang_interface,
     load_model,
     suppress_stdout,
-    UnsupportedSolverException
+    UnsupportedSolverException,
 )
 from optlang.interface import *
 
