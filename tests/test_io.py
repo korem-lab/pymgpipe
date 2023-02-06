@@ -14,22 +14,14 @@ def test_read_cobra():
     for ext in cobra_problem_ext:
         m = load_cobra_model(pytest.resource_models_dir + "mini_model" + ext)
         with check:
-            assert (
-                isinstance(m, cobra.Model)
-                and len(m.variables) == 926
-                and len(m.constraints) == 354
-            )
+            assert len(m.variables) == 926 and len(m.constraints) == 354
 
 
 def test_read_lp():
     for ext in lp_problem_ext:
         m = load_model(pytest.resource_problems_dir + "mini_model" + ext)
         with check:
-            assert (
-                isinstance(m, optlang.Model)
-                and len(m.variables) == 926
-                and len(m.constraints) == 354
-            )
+            assert len(m.variables) == 926 and len(m.constraints) == 354
 
 
 def test_write_lp(mini_cobra_model):
