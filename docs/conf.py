@@ -7,9 +7,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import os, sys
-import pymgpipe
 
 sys.path.append(os.path.abspath("../src/"))
+import pymgpipe
 
 project = "pymgpipe"
 copyright = "2023, Yoli Meydan, Federico Baldini, Tal Korem"
