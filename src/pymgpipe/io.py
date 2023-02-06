@@ -138,7 +138,8 @@ def load_model(path, solver="gurobi"):
 
 def write_lp_problem(model, out_file=None, compress=True, force=True):
     out_file = "./" + model.name + ".xml" if out_file is None else out_file
-    if compress:
+
+    if compress and not (out_file.endswith(".gz") or out_file.endswith(".7z")):
         out_file = out_file + ".gz"
     if not force and os.path.basename(out_file).split(".")[0] in [
         f.split(".")[0] for f in os.listdir(os.path.dirname(out_file))

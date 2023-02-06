@@ -108,7 +108,9 @@ def build(
     else:
         _add_lumen_exchange(multi_species_model, l_biomass)
 
-    biomass_metabs = multi_species_model.metabolites.query(re.compile("^biomass.*"))
+    biomass_metabs = multi_species_model.metabolites.query(
+        re.compile("^biomass.*", re.IGNORECASE)
+    )
     biomass = cobra.Reaction(
         id="communityBiomass",
         lower_bound=0.4,

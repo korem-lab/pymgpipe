@@ -91,7 +91,7 @@ def get_reactions(model, reactions=None, regex=None):
             r = [
                 k
                 for k in model.variables
-                if re.match(regex, k.name) and "reverse" not in k.name
+                if re.match(regex, k.name, re.IGNORECASE) and "reverse" not in k.name
             ]
         except re.error:
             raise Exception("Invalid regex- %s" % regex)

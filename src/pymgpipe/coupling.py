@@ -1,5 +1,6 @@
-import re
 import cobra
+import re
+from .utils import get_reactions, get_reverse_var
 
 
 def remove_coupling_constraints(com):
@@ -13,34 +14,37 @@ def remove_coupling_constraints(com):
 
 
 def add_coupling_constraints(com, u_const=0.01, C_const=400):
+    if isinstance(com, cobra.Model):
+        com = com.solver
     remove_coupling_constraints(com)
     biomass_rxns = {
-        r.community_id: r for r in com.reactions.query(re.compile("^biomass.*"))
+        b.name.split("__")[-1]: b for b in get_reactions(com, regex="^biomass.*")
     }
 
     consts = []
     target_reactions = [
         r
-        for r in com.reactions
+        for r in com.variables
         if not (
-            r.id.startswith("EX_")
-            or r.id.startswith("Diet_EX_")
-            or r.id.startswith("DUt_")
-            or r.id.startswith("UFEt")
-            or "biomass" in r.id
-            or "community" in r.id.lower()
+            r.name.startswith("EX_")
+            or r.name.startswith("Diet_EX_")
+            or r.name.startswith("DUt_")
+            or r.name.startswith("UFEt")
+            or "biomass" in r.name.lower()
+            or "community" in r.name.lower()
+            or "reverse" in r.name.lower()
         )
     ]
     for r in target_reactions:
-        taxon = r.community_id
-        abundance = com.variables[biomass_rxns[taxon].id]
+        taxon = r.name.split("__")[-1]
+        abundance = biomass_rxns[taxon]
 
-        forward = r.forward_variable
-        reverse = r.reverse_variable
+        forward = r
+        reverse = get_reverse_var(com, forward)
 
         if forward.ub > 0:
             consts.append(
-                com.solver.interface.Constraint(
+                com.interface.Constraint(
                     forward - (abundance * C_const),
                     ub=u_const,
                     name="%s_cp" % forward.name,
@@ -48,7 +52,7 @@ def add_coupling_constraints(com, u_const=0.01, C_const=400):
             )
         if reverse.ub > 0:
             consts.append(
-                com.solver.interface.Constraint(
+                com.interface.Constraint(
                     reverse - (abundance * C_const),
                     ub=u_const,
                     name="%s_cp" % reverse.name,
@@ -56,5 +60,5 @@ def add_coupling_constraints(com, u_const=0.01, C_const=400):
             )
 
     print("\nAdding coupling constraints for %s variables..." % len(consts))
-    com.solver.add(consts)
-    com.solver.update()
+    com.add(consts)
+    com.update()

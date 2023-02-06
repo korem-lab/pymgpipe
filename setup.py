@@ -16,7 +16,7 @@ setup(
             "resources/diets/*.txt",
             "resources/models/*",
             "resources/problems/*",
-            "resources/taxaModels/*",
+            "resources/miniTaxa/*",
         ],
     },
 )
