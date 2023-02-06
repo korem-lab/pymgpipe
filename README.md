@@ -1,4 +1,4 @@
-## [pymgpipe](https://korem-lab.github.io/pymgpipe/)
+## [pymgpipe](https://korem-lab.github.io/pymgpipe/) [![Python package](https://github.com/korem-lab/pymgpipe/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/korem-lab/pymgpipe/actions/workflows/python-package.yml)
 
 https://korem-lab.github.io/pymgpipe/
 
