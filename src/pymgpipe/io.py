@@ -87,6 +87,7 @@ def load_cobra_model(file, solver="gurobi"):
     return model
 
 
+# Warning- COBRA won't save any additional custom constraints to the model (i.e. coupling constraints)
 def write_cobra_model(model, file):
     _, ext = path.splitext(file)
     write_func = _write_funcs[ext]
