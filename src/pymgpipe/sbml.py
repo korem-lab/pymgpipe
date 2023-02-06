@@ -45,11 +45,7 @@ from cobra.core.gene import ast2str, parse_gpr
 from cobra.manipulation.validate import check_metabolite_compartment_formula
 from cobra.util.solver import linear_reaction_coefficients, set_objective
 
-
-try:
-    from cStringIO import StringIO  # Python 2
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 
 class CobraSBMLError(Exception):
