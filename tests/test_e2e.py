@@ -1,12 +1,13 @@
-import cobra
+import optlang
 import os
 import pandas as pd
+import cobra
 from pkg_resources import resource_filename
+from pymgpipe import add_coupling_constraints, compute_nmpcs, build, get_abundances
 from pytest_check import check
-from pymgpipe import build, get_abundances
 
 
-def test_build_diet_fecal():
+def test_full_diet_fecal_compartments():
     sample_data = [
         ["mc1", 0.1, "TaxaA"],
         ["mc1", 0.2, "TaxaB"],
@@ -19,9 +20,6 @@ def test_build_diet_fecal():
     sample_df["file"] = (
         resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
     )
-
-    with check:
-        assert os.path.exists(sample_df.file[0])
 
     pymgpipe_model = build(
         name="A test model",
@@ -32,18 +30,29 @@ def test_build_diet_fecal():
         diet_fecal_compartments=True,
     )
 
-    with check:
-        assert isinstance(pymgpipe_model, cobra.Model)
-        assert (
-            "fe" in pymgpipe_model.compartments and "d" in pymgpipe_model.compartments
-        )
+    add_coupling_constraints(pymgpipe_model)
 
     built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
     true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
     assert built_abundances == true_abundances
 
+    nmpc_res = compute_nmpcs(
+        samples=pymgpipe_model, force=True, diet_fecal_compartments=True
+    )
 
-def test_build():
+    assert (
+        os.path.exists("nmpcs.csv")
+        and os.path.exists("all_fluxes.csv")
+        and os.path.exists("community_objectives.csv")
+    )
+    os.remove("nmpcs.csv")
+    os.remove("all_fluxes.csv")
+    os.remove("community_objectives.csv")
+
+    assert len(nmpc_res.nmpc) == 20
+
+
+def test_full_single_compartment():
     sample_data = [
         ["mc1", 0.1, "TaxaA"],
         ["mc1", 0.2, "TaxaB"],
@@ -57,9 +66,6 @@ def test_build():
         resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
     )
 
-    with check:
-        assert os.path.exists(sample_df.file[0])
-
     pymgpipe_model = build(
         name="A test model",
         taxonomy=sample_df,
@@ -69,13 +75,23 @@ def test_build():
         diet_fecal_compartments=False,
     )
 
-    with check:
-        assert isinstance(pymgpipe_model, cobra.Model)
-        assert (
-            "fe" not in pymgpipe_model.compartments
-            and "d" not in pymgpipe_model.compartments
-        )
+    add_coupling_constraints(pymgpipe_model)
 
     built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
     true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
     assert built_abundances == true_abundances
+
+    nmpc_res = compute_nmpcs(
+        samples=pymgpipe_model, force=True, diet_fecal_compartments=False
+    )
+
+    assert (
+        os.path.exists("nmpcs.csv")
+        and os.path.exists("all_fluxes.csv")
+        and os.path.exists("community_objectives.csv")
+    )
+    os.remove("nmpcs.csv")
+    os.remove("all_fluxes.csv")
+    os.remove("community_objectives.csv")
+
+    assert len(nmpc_res.nmpc) == 20

@@ -23,7 +23,7 @@ def test_personlized_diet(mini_cobra_model):
         ["EX_gln__L(e)", 44.78],
         ["EX_pyr(e)", 26.32],
     ]
-    diet = pd.DataFrame(data=my_diet, columns=["Reaction", "small_sample_model"])
+    diet = pd.DataFrame(data=my_diet, columns=["Reaction", "flux"])
     diet.set_index(["Reaction"], inplace=True)
     remove_diet(mini_cobra_model)
     added = add_diet_to_model(mini_cobra_model, diet)

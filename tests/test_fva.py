@@ -1,7 +1,7 @@
-import pytest
 import optlang
 import os
-from pymgpipe import get_reactions, regularFVA, compute_nmpcs, load_model
+import pandas as pd
+from pymgpipe import get_reactions, regularFVA, compute_nmpcs
 
 
 def test_fva(mini_optlang_model):
