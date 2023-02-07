@@ -42,7 +42,7 @@ jobs:
       run: |
         pytest
     - name: Update semantic version
-    - uses: paulhatch/semantic-version@v5.0.2
+      uses: paulhatch/semantic-version@v5.0.2
       with:
         # The prefix to use to identify tags
         tag_prefix: "v"
