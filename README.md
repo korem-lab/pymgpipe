@@ -1,5 +1,5 @@
 ## [pymgpipe](https://korem-lab.github.io/pymgpipe/) 
-[![Python package](https://github.com/korem-lab/pymgpipe/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/korem-lab/pymgpipe/actions/workflows/python-package.yml)[![Docs](https://github.com/korem-lab/pymgpipe/actions/workflows/docs.yml/badge.svg)](https://github.com/korem-lab/pymgpipe/actions/workflows/docs.yml)
+[![Python package](https://github.com/korem-lab/pymgpipe/actions/workflows/python-package.yml/badge.svg?branch=main)](https://github.com/korem-lab/pymgpipe/actions/workflows/python-package.yml) [![Docs](https://github.com/korem-lab/pymgpipe/actions/workflows/docs.yml/badge.svg)](https://github.com/korem-lab/pymgpipe/actions/workflows/docs.yml)
 
 https://korem-lab.github.io/pymgpipe/
 
