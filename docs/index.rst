@@ -10,7 +10,7 @@ Welcome to pymgpipe's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   modules
+   pymgpipe
 
 Indices and tables
 ==================
