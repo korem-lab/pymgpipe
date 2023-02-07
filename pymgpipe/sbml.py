@@ -332,8 +332,7 @@ def _model_to_sbml(cobra_model, f_replace=None, units=True):
 
     min_value = config.lower_bound
     max_value = config.upper_bound
-    # a change
-    print("hi")
+
     _create_parameter(
         model, pid=LOWER_BOUND_ID, value=min_value, sbo=SBO_DEFAULT_FLUX_BOUND
     )
