@@ -2,9 +2,14 @@ from pkg_resources import resource_filename
 from pymgpipe import *
 
 
-def test_add_diet(mini_cobra_model):
+def test_add_diet_cobra(mini_cobra_model):
     added = add_diet_to_model(mini_cobra_model, "AverageEuropeanDiet")
-    assert not added.empty
+    assert len(added) == 10
+
+
+def test_add_diet_optlang(mini_optlang_model):
+    added = add_diet_to_model(mini_optlang_model, "AverageEuropeanDiet")
+    assert len(added) == 10
 
 
 def test_remove_diet(mini_cobra_model):
