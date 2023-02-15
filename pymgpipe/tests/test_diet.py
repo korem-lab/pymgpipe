@@ -4,7 +4,6 @@ from pymgpipe import *
 
 def test_add_diet(mini_cobra_model):
     added = add_diet_to_model(mini_cobra_model, "AverageEuropeanDiet")
-    get_adapted_diet
     assert not added.empty
 
 
@@ -25,8 +24,9 @@ def test_personlized_diet(mini_cobra_model):
     ]
     diet = pd.DataFrame(data=my_diet, columns=["Reaction", "flux"])
     diet.set_index(["Reaction"], inplace=True)
+
     remove_diet(mini_cobra_model)
-    added = add_diet_to_model(mini_cobra_model, diet)
+    add_diet_to_model(mini_cobra_model, diet)
 
     expected_bounds = [
         ["Diet_EX_h2o[d]", -35.59, -28.472],
@@ -37,8 +37,6 @@ def test_personlized_diet(mini_cobra_model):
     expected = pd.DataFrame(data=expected_bounds, columns=["id", "lb", "ub"])
     expected.set_index("id", inplace=True)
 
-    assert (
-        expected.round(2)
-        .sort_index()
-        .equals(added.loc[added.ub != 0].set_index("id").round(2).sort_index())
-    )
+    added_diet = get_diet(mini_cobra_model).set_index("id").loc[expected.index]
+
+    assert expected.round(2).equals(added_diet.loc[expected.index].round(2))
