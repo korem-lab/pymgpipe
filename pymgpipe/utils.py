@@ -5,6 +5,7 @@ import pandas as pd
 import warnings
 import logging
 from .io import load_model
+from math import isinf
 
 warnings.filterwarnings("ignore")
 
@@ -72,7 +73,7 @@ def _get_fluxes_from_model(model, reactions=None, regex=None, threshold=1e-5):
     return fluxes
 
 
-def get_reactions(model, reactions=None, regex=None):
+def get_reactions(model, reactions=None, regex=None, include_reverse=False):
     model = load_model(model)
     r = []
     if reactions is not None and len(reactions) > 0:
@@ -91,12 +92,19 @@ def get_reactions(model, reactions=None, regex=None):
             r = [
                 k
                 for k in model.variables
-                if re.match(regex, k.name, re.IGNORECASE) and "reverse" not in k.name
+                if re.match(regex, k.name, re.IGNORECASE)
+                and (
+                    "reverse" not in k.name if not include_reverse else include_reverse
+                )
             ]
         except re.error:
             raise Exception("Invalid regex- %s" % regex)
     else:
-        r = [k for k in model.variables if "reverse" not in k.name]
+        r = [
+            k
+            for k in model.variables
+            if ("reverse" not in k.name if not include_reverse else include_reverse)
+        ]
     if len(r) == 0:
         logging.warning("Returning 0 reactions from model!")
     return r
@@ -208,3 +216,45 @@ def load_dataframe(m, return_empty=False):
         raise Exception(
             "_load_dataframe can only take a string or dataframe, received %s" % type(m)
         )
+
+
+def set_reaction_bounds(model, id, lb, ub):
+    try:
+        forward = (
+            id if isinstance(id, optlang.interface.Variable) else model.variables[id]
+        )
+        reverse = get_reverse_var(model, forward)
+    except:
+        raise Exception("Could not find %s in model" % id)
+
+    if lb > 0:
+        forward.set_bounds(
+            lb=None if isinf(lb) else lb,
+            ub=None if isinf(ub) else ub,
+        )
+        reverse.set_bounds(lb=0, ub=0)
+    elif ub < 0:
+        forward.set_bounds(lb=0, ub=0)
+        reverse.set_bounds(
+            lb=None if isinf(ub) else -ub,
+            ub=None if isinf(lb) else -lb,
+        )
+    else:
+        forward.set_bounds(lb=0, ub=None if isinf(ub) else ub)
+        reverse.set_bounds(lb=0, ub=None if isinf(lb) else -lb)
+    lower, upper = get_reaction_bounds(model, id)
+    assert lower == lb and upper == ub
+
+
+def get_reaction_bounds(model, id):
+    try:
+        forward = (
+            id if isinstance(id, optlang.interface.Variable) else model.variables[id]
+        )
+        reverse = get_reverse_var(model, forward)
+    except:
+        raise Exception("Could not find %s in model" % id)
+
+    lower = forward.lb - reverse.ub
+    upper = forward.ub - reverse.lb
+    return (lower, upper)

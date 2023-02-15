@@ -1,8 +1,16 @@
 import pandas as pd
 import os
 import logging
+import cobra
 from pkg_resources import resource_listdir, resource_filename
-from .utils import load_dataframe
+from .utils import (
+    load_dataframe,
+    get_reactions,
+    get_reverse_var,
+    set_reaction_bounds,
+    get_reaction_bounds,
+)
+from .io import load_model
 
 
 def get_adapted_diet(diet, essential_metabolites=None):
@@ -260,23 +268,27 @@ def get_adapted_diet(diet, essential_metabolites=None):
 
 # Removes any diet
 def remove_diet(model):
+    model = load_model(model)
     print("Removing diet from model...")
-    for m in model.reactions:
-        if m.id.startswith("Diet_EX_"):
-            m.bounds = (-1000, 1000)
+    for d in get_reactions(model, regex="Diet_EX_.*"):
+        set_reaction_bounds(model, d, -1000, 1000)
 
 
 # Finds diet current set in model
 def get_diet(model):
+    model = load_model(model)
     print("Fetching diet from model...")
-    r = []
-    for m in model.reactions:
-        if m.id.startswith("Diet_EX_"):
-            r.append({"id": m.id, "lb": m.lower_bound, "ub": m.upper_bound})
-    return pd.DataFrame(r)
+
+    diet = []
+    for f in get_reactions(model, regex="Diet_EX_.*"):
+        lower, upper = get_reaction_bounds(model, f)
+        diet.append({"id": f.name, "lb": lower, "ub": upper})
+    return pd.DataFrame(diet)
 
 
 def add_diet_to_model(model, diet):
+    model = load_model(model)
+
     print("\nAttempting to add diet...")
     if isinstance(diet, str) and os.path.exists(diet):
         diet_df = load_dataframe(diet)
@@ -313,23 +325,28 @@ def add_diet_to_model(model, diet):
         )
         return
 
-    for m in model.reactions:
-        if m.id.startswith("Diet_EX_"):
-            m.bounds = (0, 1000)
+    diet_reactions = get_reactions(model, regex="Diet_EX_.*")
+    for d in diet_reactions:
+        set_reaction_bounds(model, d, 0, 1000)
 
     diet_df = diet_df[diet_df.columns[0]].to_frame()
     d = get_adapted_diet(diet_df)
+
     logging.info("Adding %s diet to model..." % diet)
     added = []
-    for m in model.reactions:
-        f_id = m.id.split("[d]")[0].split("Diet_")[-1]
-        if f_id in d.index:
-            r = d.loc[f_id]
-            m.bounds = (float(r.lb), float(r.ub))
-            added.append({"id": m.id, "lb": m.lower_bound, "ub": m.upper_bound})
+
+    diet_reactions = {
+        f.name.split("[d]")[0].split("Diet_")[-1]: f for f in diet_reactions
+    }
+    for ex, row in d.iterrows():
+        if ex in diet_reactions:
+            f = diet_reactions[ex]
+            set_reaction_bounds(model, f, row.lb, row.ub)
+
+            added.append({"id": f.name, "lb": row.lb, "ub": row.ub})
 
     model.optimize()
-    if model.solver.status == "infeasible":
+    if model.status == "infeasible":
         logging.warning("%s is infeasible with provided diet!" % model.name)
 
     return pd.DataFrame(added)
