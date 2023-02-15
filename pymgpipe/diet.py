@@ -349,4 +349,7 @@ def add_diet_to_model(model, diet):
     if model.status == "infeasible":
         logging.warning("%s is infeasible with provided diet!" % model.name)
 
+    if len(added) == 0:
+        logging.warning('Zero metabolites from diet were found within model!')
+
     return pd.DataFrame(added)
