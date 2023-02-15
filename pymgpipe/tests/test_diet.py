@@ -39,4 +39,4 @@ def test_personlized_diet(mini_cobra_model):
 
     added_diet = get_diet(mini_cobra_model).set_index("id").loc[expected.index]
 
-    assert expected.round(2).equals(added_diet.loc[expected.index].round(2))
+    assert expected.round(3).equals(added_diet.loc[expected.index].round(3))
