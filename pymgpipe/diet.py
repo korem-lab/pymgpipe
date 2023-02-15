@@ -286,7 +286,7 @@ def get_diet(model):
     return pd.DataFrame(diet)
 
 
-def add_diet_to_model(model, diet):
+def add_diet_to_model(model, diet, force_uptake=True):
     model = load_model(model)
 
     print("\nAttempting to add diet...")
@@ -341,7 +341,10 @@ def add_diet_to_model(model, diet):
     for ex, row in d.iterrows():
         if ex in diet_reactions:
             f = diet_reactions[ex]
-            set_reaction_bounds(model, f, row.lb, row.ub)
+            if force_uptake:
+                set_reaction_bounds(model, f, row.lb, row.ub)
+            else:
+                set_reaction_bounds(model, f, row.lb, 0)
 
             added.append({"id": f.name, "lb": row.lb, "ub": row.ub})
 
@@ -350,6 +353,6 @@ def add_diet_to_model(model, diet):
         logging.warning("%s is infeasible with provided diet!" % model.name)
 
     if len(added) == 0:
-        logging.warning('Zero metabolites from diet were found within model!')
+        logging.warning("Zero metabolites from diet were found within model!")
 
     return pd.DataFrame(added)
