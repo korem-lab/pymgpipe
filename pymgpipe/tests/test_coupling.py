@@ -4,6 +4,9 @@ from pytest_check import check
 
 
 def test_add_coupling_optlang(mini_optlang_model):
+    remove_coupling_constraints(mini_optlang_model)
+    assert len([k for k in mini_optlang_model.constraints if re.match(".*_cp$", k.name)]) == 0
+
     add_coupling_constraints(mini_optlang_model)
 
     added = [k for k in mini_optlang_model.constraints if re.match(".*_cp$", k.name)]
@@ -11,6 +14,9 @@ def test_add_coupling_optlang(mini_optlang_model):
 
 
 def test_add_coupling_cobra(mini_cobra_model):
+    remove_coupling_constraints(mini_cobra_model)
+    assert len([k for k in mini_cobra_model.constraints if re.match(".*_cp$", k.name)]) == 0
+    
     add_coupling_constraints(mini_cobra_model)
 
     added = [k for k in mini_cobra_model.constraints if re.match(".*_cp$", k.name)]

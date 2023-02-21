@@ -4,6 +4,10 @@ import cobra
 import gc
 import tqdm
 import pandas as pd
+import logging
+import matplotlib.pyplot as plt 
+import numpy as np
+import time
 from pathlib import Path
 from multiprocessing import Pool
 from functools import partial
@@ -11,6 +15,7 @@ from .build import build
 from .diet import add_diet_to_model
 from .io import load_cobra_model, write_lp_problem, write_cobra_model
 from .utils import load_dataframe
+from .metrics import compute_diversity_metrics
 
 cobra_config = cobra.Configuration()
 cobra_config.lower_bound = -1000
@@ -32,7 +37,9 @@ def build_models(
     diet=None,
     compress=True,
     write_lp=True,
+    compute_metrics=True
 ):
+    start = time.time()
     cobra_config.solver = solver
 
     gc.disable()
@@ -90,22 +97,44 @@ def build_models(
         diet,
         compress,
         write_lp,
+        compute_metrics
     )
 
     if parallel:
         p = Pool(threads, initializer=_mute)
         p.daemon = False
 
-        built = list(
+        metrics = list(
             tqdm.tqdm(p.imap(_func, samples_to_run), total=len(samples_to_run))
         )
-
         p.close()
         p.join()
     else:
-        built = tqdm.tqdm(list(map(_func, samples_to_run)), total=len(samples_to_run))
+        metrics = tqdm.tqdm(list(map(_func, samples_to_run)), total=len(samples_to_run))
+
+    if compute_metrics:
+        try:
+            abundance_df = pd.DataFrame({m['sample']:m['reaction_abundance'] for m in metrics})
+            abundance_df.to_csv(out_dir+'reaction_abundance.csv')
+
+            abundance_df[abundance_df > 0] = 1
+            abundance_df.to_csv(out_dir+'reaction_content.csv')
+
+            unique_reactions = [(len(m['taxa']),len(m['unique_reactions'])) for m in metrics]
+
+            plt.scatter(*zip(*unique_reactions))
+            plt.xlabel('# Taxa', fontsize=12)
+            plt.ylabel('# Unique Reactions', fontsize=12)
+            plt.xticks(np.arange(0,max([r[0] for r in unique_reactions])+1,1))
+            plt.title('Metabolic Diversity')
+            plt.savefig(out_dir+'metabolic_diversity.png')
+        except Exception as e:
+            logging.warn('Ran into problem while saving metrics...skipping this step!\n%s'%e)
+            pass
+        
     print("-------------------------------------------------------")
-    print("Finished building %s models and associated LP problems!" % len(built))
+    print("Finished building %s models and associated LP problems!" % len(metrics))
+    print('Process took %s minutes to run...'%round((time.time()-start)/60,3))
 
 
 def _build_single_model(
@@ -120,6 +149,7 @@ def _build_single_model(
     diet,
     compress,
     write_lp,
+    compute_metrics,
     sample_label,
 ):
     model_out = (
@@ -132,7 +162,7 @@ def _build_single_model(
     coverage_df = coverage_df.loc[coverage_df.sample_id == sample_label]
     original_id = coverage_df.original_id.unique()[0]
     pymgpipe_model = None
-
+    metrics = None
     if os.path.exists(model_out):
         pymgpipe_model = load_cobra_model(model_out)
         if write_lp:
@@ -140,7 +170,6 @@ def _build_single_model(
                 pymgpipe_model, out_file=lp_out, compress=compress, force=False
             )
     else:
-        # pymgpipe_model = _build_com(sample_label=sample_label,tax=coverage_df,cutoff=1e-6,solver=solver)
         pymgpipe_model = build(
             name=sample_label,
             taxonomy=coverage_df,
@@ -157,15 +186,21 @@ def _build_single_model(
                 diet = personalized[original_id].to_frame()
 
             add_diet_to_model(pymgpipe_model, diet)
+
         write_cobra_model(pymgpipe_model, model_out)
         if write_lp:
             write_lp_problem(
                 pymgpipe_model, out_file=lp_out, compress=compress, force=True
             )
 
+    if compute_metrics:
+        metrics = compute_diversity_metrics(pymgpipe_model)
+        if metrics is None or len(metrics)==0:
+            logging.warning('Unable to compute diversity metrics for %s'%pymgpipe_model.name)
+
     del pymgpipe_model
     gc.collect()
-    return model_out
+    return metrics
 
 
 def _format_coverage_file(coverage_file, taxa_dir, out_dir):
@@ -224,125 +259,6 @@ def _format_coverage_file(coverage_file, taxa_dir, out_dir):
     melted.rename({"index": "id"}, axis="columns", inplace=True)
 
     return melted
-
-
-# def _build_com(sample_label, tax, cutoff, solver):
-#     from micom.community import Community
-
-#     com = Community(taxonomy=tax, progress=False, rel_threshold=cutoff, solver=solver,name=sample_label)
-#     _add_pymgpipe_constraints(com=com,solver=solver)
-#     com.solver.update()
-#     return com
-
-# def _add_pymgpipe_constraints(file=None,com=None,solver='gurobi'):
-#     cobra_config = cobra.Configuration()
-#     cobra_config.solver = solver
-
-#     if com is None:
-#         if file is None:
-#             raise Exception('Need to pass in either file or model!')
-#         try:
-#             com = pickle.load(file)
-#         except Exception as e:
-#             return None
-
-#     com.solver = solver
-
-#     # RESETTING COEFS OF METAB EXCHANGE REACTIONS TO 1
-#     exchange_reactions = [r for r in com.reactions if 'EX_' in r.id and 'biomass' not in r.id]
-#     for react in exchange_reactions:
-#         react.bounds = (-1000,1000)
-
-#         metabs_to_remove = {metab[0]: metab[1] for metab in react.metabolites.items() if metab[1] != -1}
-#         metabs_to_add = {metab[0]: 1.0 for metab in react.metabolites.items() if metab[1] != -1}
-
-#         react.subtract_metabolites(metabs_to_remove)
-#         react.add_metabolites(metabs_to_add)
-
-#     abundances = com.abundances.to_dict()
-#     biomass_reactions = _get_biomass_reactions(com)
-
-#     biomass_and_biomass_exchange_reactions = [r for r in com.reactions if 'biomass' in r.id]
-#     for reaction in biomass_and_biomass_exchange_reactions:
-#         microbe = reaction.id.split('__')[1]
-#         abundance = abundances[microbe]
-#         reaction.bounds=(abundance,abundance)
-
-#     com.solver.remove(com.solver.constraints.community_objective_equality)
-#     com.solver.remove(com.solver.variables.community_objective)
-
-#     expr = sum([r.flux_expression for r in biomass_reactions])
-#     objective_constraint = com.problem.Constraint(name='objective_constraint',expression=expr,lb=0,ub=1000)
-#     com.solver.add(objective_constraint)
-#     com.objective = com.problem.Objective(expression=expr,direction='max')
-
-#     _add_real_coupling_constraints(com)
-
-#     return com
-
-# def _add_coupling_constraints(com,u_const=0.01,C_const=400):
-#     abundances = _get_model_abundances(com)
-#     target_reactions = [r for r in com.reactions if not (('EX_' in r.id and '(e)' not in r.id and '[e]' not in r.id) or 'biomass' in r.id or 'Community' in r.id)]
-#     for r in target_reactions:
-#         split = ('___' if '___' in r.id else '__')
-#         taxon = r.id.split(split)[1]
-#         abundance = abundances[taxon]
-#         lb = (-abundance*C_const) - u_const if r.lower_bound != 0 else 0
-#         ub = (abundance*C_const) + u_const if r.upper_bound != 0 else 0
-
-#         r.bounds = (lb,ub)
-
-# def _add_real_coupling_constraints(com,u_const=0.01,C_const=400):
-#     biomass_rxns= {r.community_id:r for r in com.reactions.query(re.compile('^biomass.*'))}
-
-#     consts = []
-#     target_reactions = [r for r in com.reactions if not (('EX_' in r.id and '(e)' not in r.id and '[e]' not in r.id) or 'biomass' in r.id or 'Community' in r.id)]
-#     for r in target_reactions:
-#         taxon = r.community_id
-#         abundance = com.variables[biomass_rxns[taxon].id]
-
-#         forward = r.forward_variable
-#         reverse = r.reverse_variable
-
-#         consts.append(com.solver.interface.Constraint(forward-(abundance*C_const),ub=u_const,name='%s_cp'%forward.name))
-#         consts.append(com.solver.interface.Constraint(reverse-(abundance*C_const),ub=u_const,name='%s_cp'%reverse.name))
-
-#     com.solver.add(consts)
-#     com.solver.update()
-
-# def _get_model_abundances(com):
-#     abundances = {}
-#     bms_rxns = _get_biomass_reactions(com)
-
-#     for r in bms_rxns:
-#         taxon = r.id.split('__')[1]
-#         abundances[taxon] = r.lower_bound
-#     return abundances
-
-# def _get_biomass_reactions(com):
-#     return [r for r in com.reactions if 'biomass' in r.id and 'EX' not in r.id]
-
-
-def _is_valid_lp(file):
-    with open(file, "rb") as fh:
-        fh.seek(-1024, 2)
-        last = fh.readlines()[-1].decode()
-        if file.endswith(".lp"):
-            return last.strip() == "End"
-        elif file.endswith(".mps"):
-            return last.strip() == "ENDATA"
-        else:
-            raise Exception(
-                "Unrecognized LP file at %s. Must be either .lp or .mps!" % file
-            )
-
-
-def _is_valid_sbml(file):
-    with open(file, "rb") as fh:
-        fh.seek(-1024, 2)
-        last = fh.readlines()[-1].decode()
-        return last.strip() == "</sbml>"
-
 
 def _mute():
     sys.stdout = open(os.devnull, "w")

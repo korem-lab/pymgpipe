@@ -5,6 +5,7 @@ import cobra
 from pkg_resources import resource_filename
 from pymgpipe import add_coupling_constraints, compute_nmpcs, build, get_abundances
 from pytest_check import check
+import re
 
 
 def test_full_diet_fecal_compartments():
@@ -31,6 +32,7 @@ def test_full_diet_fecal_compartments():
     )
 
     add_coupling_constraints(pymgpipe_model)
+    assert len([k for k in pymgpipe_model.constraints if re.match(".*_cp$", k.name)]) > 0
 
     built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
     true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
@@ -76,6 +78,7 @@ def test_full_single_compartment():
     )
 
     add_coupling_constraints(pymgpipe_model)
+    assert len([k for k in pymgpipe_model.constraints if re.match(".*_cp$", k.name)]) > 0
 
     built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
     true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
