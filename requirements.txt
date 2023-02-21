@@ -13,3 +13,4 @@ python_libsbml==5.19.2
 pytest==7.1.2
 pytest-check==2.1.2
 sphinx_rtd_theme==1.1.1
+matplotlib==3.7.0
