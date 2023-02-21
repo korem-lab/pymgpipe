@@ -3,6 +3,7 @@ import tqdm
 import logging
 import pandas as pd
 import optlang
+import time
 from collections import namedtuple
 from pathlib import Path
 from .fva import regularFVA
@@ -25,6 +26,7 @@ def compute_nmpcs(
     diet_fecal_compartments=True,
     force=False,
 ):
+    start = time.time()
     out_dir = out_dir + "/" if out_dir[-1] != "/" else out_dir
     Path(out_dir).mkdir(exist_ok=True)
 
@@ -151,4 +153,9 @@ def compute_nmpcs(
         all_fluxes.to_csv(fluxes_out_file)
 
     res = namedtuple("res", "nmpc objectives fluxes")
+    
+    print("-------------------------------------------------------")
+    print('Finished computing NMPCs!')
+    print('Process took %s minutes to run...'%round((time.time()-start)/60,3))
+
     return res(nmpcs, obj_values, all_fluxes)

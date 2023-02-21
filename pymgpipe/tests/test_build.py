@@ -4,6 +4,7 @@ import pandas as pd
 from pkg_resources import resource_filename
 from pytest_check import check
 from pymgpipe import build, get_abundances
+import re
 
 
 def test_build_diet_fecal():
@@ -28,7 +29,7 @@ def test_build_diet_fecal():
         taxonomy=sample_df,
         rel_threshold=1e-6,
         solver="gurobi",
-        coupling_constraints=False,
+        coupling_constraints=True,
         diet_fecal_compartments=True,
     )
 
@@ -37,6 +38,7 @@ def test_build_diet_fecal():
         assert (
             "fe" in pymgpipe_model.compartments and "d" in pymgpipe_model.compartments
         )
+        assert len([k for k in pymgpipe_model.constraints if re.match(".*_cp$", k.name)]) > 0
 
     built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
     true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
@@ -65,7 +67,7 @@ def test_build():
         taxonomy=sample_df,
         rel_threshold=1e-6,
         solver="gurobi",
-        coupling_constraints=False,
+        coupling_constraints=True,
         diet_fecal_compartments=False,
     )
 
@@ -75,6 +77,8 @@ def test_build():
             "fe" not in pymgpipe_model.compartments
             and "d" not in pymgpipe_model.compartments
         )
+        assert len([k for k in pymgpipe_model.constraints if re.match(".*_cp$", k.name)]) > 0
+
 
     built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
     true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
