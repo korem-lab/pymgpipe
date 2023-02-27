@@ -1,0 +1,8 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.10, pytest-7.1.2, pluggy-1.0.0
+rootdir: /home/runner/work/pymgpipe/pymgpipe
+plugins: anyio-3.6.2, check-2.1.2, cov-4.0.0
+collected 0 items
+
+------ generated xml file: /home/runner/work/pymgpipe/pymgpipe/pytest.xml ------
+============================ no tests ran in 0.01s =============================
