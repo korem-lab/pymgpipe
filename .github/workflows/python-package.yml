@@ -71,7 +71,7 @@ jobs:
         enable_prerelease_mode: true
     - name: Build coverage file
       run: |
-        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app pymgpipe/tests/ | tee pytest-coverage.txt
+        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=pymgpipe | tee pytest-coverage.txt
     - name: Pytest coverage comment
       if: ${{ github.ref == 'refs/heads/main' }}
       id: coverageComment

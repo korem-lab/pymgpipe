@@ -1,0 +1,72 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.10.9, pytest-7.1.2, pluggy-1.0.0
+rootdir: /Users/yolimeydan/Documents/Columbia/pymgpipe
+plugins: anyio-3.5.0, check-2.1.2, cov-4.0.0
+collected 20 items
+
+pymgpipe/tests/test_build.py ..                                          [ 10%]
+pymgpipe/tests/test_coupling.py ....                                     [ 30%]
+pymgpipe/tests/test_diet.py .....                                        [ 55%]
+pymgpipe/tests/test_e2e.py ..                                            [ 65%]
+pymgpipe/tests/test_fva.py ...                                           [ 80%]
+pymgpipe/tests/test_io.py ....                                           [100%]
+
+=============================== warnings summary ===============================
+../../../opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/cobra/io/dict.py:71
+  /Users/yolimeydan/opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/cobra/io/dict.py:71: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    value: Union[str, np.float, np.bool, Set, Dict]
+
+../../../opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/cobra/io/dict.py:71
+  /Users/yolimeydan/opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/cobra/io/dict.py:71: DeprecationWarning: `np.bool` is a deprecated alias for the builtin `bool`. To silence this warning, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    value: Union[str, np.float, np.bool, Set, Dict]
+
+pymgpipe/tests/test_build.py: 2475 warnings
+pymgpipe/tests/test_coupling.py: 2802 warnings
+pymgpipe/tests/test_e2e.py: 2477 warnings
+pymgpipe/tests/test_fva.py: 2 warnings
+pymgpipe/tests/test_io.py: 2832 warnings
+  /Users/yolimeydan/opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/optlang/interface.py:1474: DeprecationWarning: Deprecated, pass a TempConstr or use Model.addLConstr
+    self._add_constraints(add_constr)
+
+pymgpipe/tests/test_e2e.py::test_full_diet_fecal_compartments
+  /Users/yolimeydan/opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/pymgpipe/utils.py:91: DeprecationWarning: Flags not at the start of the expression '^(Diet_)?(?i)EX_((?!' (truncated) but at position 9
+    re.compile(regex)
+
+pymgpipe/tests/test_e2e.py::test_full_diet_fecal_compartments
+  /Users/yolimeydan/opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/pymgpipe/utils.py:95: DeprecationWarning: Flags not at the start of the expression '^(Diet_)?(?i)EX_((?!' (truncated) but at position 9
+    if re.match(regex, k.name, re.IGNORECASE)
+
+pymgpipe/tests/test_io.py: 2010 warnings
+  /Users/yolimeydan/opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/cobra/io/dict.py:89: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    if isinstance(value, np.float):
+
+pymgpipe/tests/test_io.py: 1085 warnings
+  /Users/yolimeydan/opt/anaconda3/envs/pymgpipe/lib/python3.10/site-packages/cobra/io/dict.py:91: DeprecationWarning: `np.bool` is a deprecated alias for the builtin `bool`. To silence this warning, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    if isinstance(value, np.bool):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/yolimeydan/Documents/Columbia/pymgpipe/pytest.xml -
+
+---------- coverage: platform darwin, python 3.10.9-final-0 ----------
+Name                   Stmts   Miss  Cover   Missing
+----------------------------------------------------
+pymgpipe/__init__.py       6      6     0%   1-6
+pymgpipe/build.py        145    145     0%   1-256
+pymgpipe/coupling.py      30     30     0%   1-64
+pymgpipe/diet.py          83     83     0%   1-358
+pymgpipe/fva.py           72     72     0%   1-135
+pymgpipe/io.py           106    106     0%   1-177
+pymgpipe/main.py         137    137     0%   1-289
+pymgpipe/metrics.py       22     22     0%   1-33
+pymgpipe/nmpc.py          90     90     0%   1-161
+pymgpipe/utils.py        165    165     0%   1-281
+----------------------------------------------------
+TOTAL                   1086    856    21%
+
+7 files skipped due to complete coverage.
+
+===================== 20 passed, 13687 warnings in 36.61s ======================
