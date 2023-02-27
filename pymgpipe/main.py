@@ -39,16 +39,28 @@ def build_models(
     write_lp=True,
     compute_metrics=True
 ):
-    """Build community COBRA models using mgpipe-like constraints.
+    """Build community COBRA models using mgpipe-like compartments and constraints.
 
     This function is pymgpipe's main model building function, and can be used to build models for either one or multiple samples
 
     Args:
-        coverage_file (pandas.DataFrame|str): Description of arg1
-        arg2 (str): Description of arg2
+        coverage_file (pandas.DataFrame | str): Abundance matrix with taxa as rows and samples as columns
+        taxa_dir (str): Directory containing individual strain/species taxa models (file names corresponding to index of coverage matrix)
+        out_dir (str): Directory to save output of this function (models, LP problems, etc.), defaults to cwd
+        diet_fecal_compartments (bool): Build models with mgpipe's diet/fecal compartmentalization, defaults to False
+        coupling_constraints (bool): Add mgpipe's abundance coupling constraints to internal reactions, defaults to True
+        solver (str): LP solver (gurobi or cplex) used to solve models, defaults to gurobi
+        parallel (bool): Samples will be built in parallel if set to True
+        threads (int): Number of threads to use if building in parallel
+        lp_type (str): File type for LP problem (either .mps or .lp), defaults to .mps
+        cobra_type (str): File type for COBRA model (.xml, .mat, .json), defaults to .xml
+        compress (bool): Models and LP problems will be saved as compressed files if set to True, defaults to True
+        write_lp (bool): LP problems saved to problems/ directory, defaults to True
+        compute_metrics (bool): Compute diversity metrics for built models, defaults to True
 
-    Returns:
-        bool: Description of return value
+    Notes:
+        COBRA models written to *out_dir/models/*
+        LP problems written to *out_dir/problems/*
 
     """
      
