@@ -1,4 +1,4 @@
-cobra==0.26.2
+# cobra==0.26.2
 cplex==22.1.0.0
 docplex==2.23.222
 gurobipy==9.5.2

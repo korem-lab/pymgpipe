@@ -6,8 +6,6 @@ import pickle
 import optlang
 import logging
 from contextlib import contextmanager
-from .sbml import write_sbml_model
-
 
 class UnsupportedSolverException(Exception):
     def __init__(
@@ -39,8 +37,8 @@ _read_funcs = {
 }
 
 _write_funcs = {
-    ".xml": write_sbml_model,
-    ".gz": write_sbml_model,
+    ".xml": cobra.io.write_sbml_model,
+    ".gz": cobra.io.write_sbml_model,
     ".mat": cobra.io.save_matlab_model,
     ".json": cobra.io.save_json_model,
     ".pickle": lambda fn: pickle.dump(open(fn, "wb")),
