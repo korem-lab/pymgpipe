@@ -1,0 +1,58 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.10, pytest-7.1.2, pluggy-1.0.0
+rootdir: /home/runner/work/pymgpipe/pymgpipe
+plugins: anyio-3.6.2, check-2.1.2, cov-4.0.0
+collected 20 items
+
+pymgpipe/tests/test_build.py ..                                          [ 10%]
+pymgpipe/tests/test_coupling.py ....                                     [ 30%]
+pymgpipe/tests/test_diet.py .....                                        [ 55%]
+pymgpipe/tests/test_e2e.py ..                                            [ 65%]
+pymgpipe/tests/test_fva.py ...                                           [ 80%]
+pymgpipe/tests/test_io.py ....                                           [100%]WARNING: Failed to generate report: No data to report.
+
+
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/cobra/io/dict.py:71
+  /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/cobra/io/dict.py:71: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    value: Union[str, np.float, np.bool, Set, Dict]
+
+../../../../../opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/cobra/io/dict.py:71
+  /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/cobra/io/dict.py:71: DeprecationWarning: `np.bool` is a deprecated alias for the builtin `bool`. To silence this warning, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    value: Union[str, np.float, np.bool, Set, Dict]
+
+pymgpipe/tests/test_build.py: 2475 warnings
+pymgpipe/tests/test_coupling.py: 2802 warnings
+pymgpipe/tests/test_e2e.py: 2477 warnings
+pymgpipe/tests/test_fva.py: 2 warnings
+pymgpipe/tests/test_io.py: 2832 warnings
+  /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/optlang/interface.py:1474: DeprecationWarning: Deprecated, pass a TempConstr or use Model.addLConstr
+    self._add_constraints(add_constr)
+
+pymgpipe/tests/test_e2e.py::test_full_diet_fecal_compartments
+  /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/pymgpipe/utils.py:91: DeprecationWarning: Flags not at the start of the expression '^(Diet_)?(?i)EX_((?!' (truncated) but at position 9
+    re.compile(regex)
+
+pymgpipe/tests/test_e2e.py::test_full_diet_fecal_compartments
+  /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/pymgpipe/utils.py:95: DeprecationWarning: Flags not at the start of the expression '^(Diet_)?(?i)EX_((?!' (truncated) but at position 9
+    if re.match(regex, k.name, re.IGNORECASE)
+
+pymgpipe/tests/test_io.py: 2010 warnings
+  /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/cobra/io/dict.py:89: DeprecationWarning: `np.float` is a deprecated alias for the builtin `float`. To silence this warning, use `float` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.float64` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    if isinstance(value, np.float):
+
+pymgpipe/tests/test_io.py: 1085 warnings
+  /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/cobra/io/dict.py:91: DeprecationWarning: `np.bool` is a deprecated alias for the builtin `bool`. To silence this warning, use `bool` by itself. Doing this will not modify any behavior and is safe. If you specifically wanted the numpy scalar type, use `np.bool_` here.
+  Deprecated in NumPy 1.20; for more details and guidance: https://numpy.org/devdocs/release/1.20.0-notes.html#deprecations
+    if isinstance(value, np.bool):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------ generated xml file: /home/runner/work/pymgpipe/pymgpipe/pytest.xml ------
+
+---------- coverage: platform linux, python 3.10.10-final-0 ----------
+
+===================== 20 passed, 13687 warnings in 22.25s ======================
