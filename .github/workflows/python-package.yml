@@ -29,7 +29,6 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install . -U
         python -m pip install flake8 pytest pytest-cov
-        python -m pip uninstall -y cobra
         python -m pip install 'cobra @ git+https://github.com/opencobra/cobrapy@devel'
         pip install -r requirements.txt
     - name: Lint with flake8
@@ -71,7 +70,7 @@ jobs:
         enable_prerelease_mode: true
     - name: Build coverage file
       run: |
-        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
+        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app pymgpipe/tests/ | tee pytest-coverage.txt
     - name: Pytest coverage comment
       if: ${{ github.ref == 'refs/heads/main' }}
       id: coverageComment
