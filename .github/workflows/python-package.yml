@@ -29,6 +29,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install . -U
         python -m pip install flake8 pytest pytest-cov
+        python -m pip uninstall -y cobra
         python -m pip install 'cobra @ git+https://github.com/opencobra/cobrapy@devel'
         pip install -r requirements.txt
     - name: Lint with flake8
@@ -82,6 +83,8 @@ jobs:
       if: ${{ github.ref == 'refs/heads/main' }}
       run: |
         sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n\${{ steps.coverageComment.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
+        rm pytest.xml
+        rm pytest-coverage.txt
     - name: Commit & Push changes to Readme
       if: ${{ github.ref == 'refs/heads/main' }}
       uses: actions-js/push@master
