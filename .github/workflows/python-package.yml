@@ -28,7 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install . -U
-        python -m pip install flake8 pytest
+        python -m pip install flake8 pytest pytest-cov
         python -m pip uninstall -y cobra
         python -m pip install 'cobra @ git+https://github.com/opencobra/cobrapy@devel'
         pip install -r requirements.txt
@@ -69,3 +69,23 @@ jobs:
         # Prevents pre-v1.0.0 version from automatically incrementing the major version.
         # If enabled, when the major version is 0, major releases will be treated as minor and minor as patch. Note that the version_type output is unchanged.
         enable_prerelease_mode: true
+    - name: Build coverage file
+        run: |
+          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
+    - name: Pytest coverage comment
+      if: ${{ github.ref == 'refs/heads/main' }}
+      id: coverageComment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./pytest-coverage.txt
+        junitxml-path: ./pytest.xml
+    - name: Update Readme with Coverage Html
+      if: ${{ github.ref == 'refs/heads/main' }}
+      run: |
+        sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n\${{ steps.coverageComment.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
+    - name: Commit & Push changes to Readme
+      if: ${{ github.ref == 'refs/heads/main' }}
+      uses: actions-js/push@master
+      with:
+        message: Update coverage on Readme
+        github_token: ${{ secrets.GITHUB_TOKEN }}
