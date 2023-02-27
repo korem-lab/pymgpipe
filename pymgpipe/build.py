@@ -13,7 +13,7 @@ from .coupling import add_coupling_constraints
 
 # Build function adapted from MICOM (C. Diener, 2020)
 # https://github.com/micom-dev/micom/blob/1f8e4dd2ba9fc4cfba3526610f268f39ceaaac30/micom/workflows/build.py#L41
-def build(
+def _build(
     taxonomy,
     name,
     rel_threshold=1e-6,
@@ -21,18 +21,6 @@ def build(
     coupling_constraints=True,
     diet_fecal_compartments=True,
 ):
-    """Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-
-    Returns:
-        bool: Description of return value
-
-    """
     if not solver:
         solver = [
             s

@@ -3,7 +3,8 @@ import os
 import pandas as pd
 import cobra
 from pkg_resources import resource_filename
-from pymgpipe import add_coupling_constraints, compute_nmpcs, build, get_abundances
+from pymgpipe import add_coupling_constraints, compute_nmpcs, get_abundances
+from pymgpipe.build import _build
 from pytest_check import check
 import re
 
@@ -22,7 +23,7 @@ def test_full_diet_fecal_compartments():
         resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
     )
 
-    pymgpipe_model = build(
+    pymgpipe_model = _build(
         name="A test model",
         taxonomy=sample_df,
         rel_threshold=1e-6,
@@ -68,7 +69,7 @@ def test_full_single_compartment():
         resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
     )
 
-    pymgpipe_model = build(
+    pymgpipe_model = _build(
         name="A test model",
         taxonomy=sample_df,
         rel_threshold=1e-6,

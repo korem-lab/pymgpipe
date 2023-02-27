@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from multiprocessing import Pool
 from functools import partial
-from .build import build
+from .build import _build
 from .diet import add_diet_to_model
 from .io import load_cobra_model, write_lp_problem, write_cobra_model
 from .utils import load_dataframe
@@ -39,15 +39,19 @@ def build_models(
     write_lp=True,
     compute_metrics=True
 ):
-    """Example function with PEP 484 type annotations.
+    """Build community COBRA models using mgpipe-like constraints.
+
+    This function is pymgpipe's main model building function, and can be used to build models for either one or multiple samples
 
     Args:
-        param1: The first parameter.
-        param2: The second parameter.
+        coverage_file (pandas.DataFrame|str): Description of arg1
+        arg2 (str): Description of arg2
 
     Returns:
-        The return value. True for success, False otherwise.
+        bool: Description of return value
+
     """
+     
     start = time.time()
     cobra_config.solver = solver
 
@@ -179,7 +183,7 @@ def _build_single_model(
                 pymgpipe_model, out_file=lp_out, compress=compress, force=False
             )
     else:
-        pymgpipe_model = build(
+        pymgpipe_model = _build(
             name=sample_label,
             taxonomy=coverage_df,
             rel_threshold=1e-6,
