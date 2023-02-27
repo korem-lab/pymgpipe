@@ -39,6 +39,15 @@ def build_models(
     write_lp=True,
     compute_metrics=True
 ):
+    """Example function with PEP 484 type annotations.
+
+    Args:
+        param1: The first parameter.
+        param2: The second parameter.
+
+    Returns:
+        The return value. True for success, False otherwise.
+    """
     start = time.time()
     cobra_config.solver = solver
 
