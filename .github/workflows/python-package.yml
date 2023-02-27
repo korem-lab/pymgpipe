@@ -70,8 +70,8 @@ jobs:
         # If enabled, when the major version is 0, major releases will be treated as minor and minor as patch. Note that the version_type output is unchanged.
         enable_prerelease_mode: true
     - name: Build coverage file
-        run: |
-          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
+      run: |
+        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=app tests/ | tee pytest-coverage.txt
     - name: Pytest coverage comment
       if: ${{ github.ref == 'refs/heads/main' }}
       id: coverageComment
