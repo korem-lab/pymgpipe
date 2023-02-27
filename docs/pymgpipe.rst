@@ -4,14 +4,6 @@ pymgpipe package
 Submodules
 ----------
 
-pymgpipe.build module
----------------------
-
-.. automodule:: pymgpipe.build
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 pymgpipe.coupling module
 ------------------------
 
@@ -56,14 +48,6 @@ pymgpipe.nmpc module
 --------------------
 
 .. automodule:: pymgpipe.nmpc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-pymgpipe.sbml module
---------------------
-
-.. automodule:: pymgpipe.sbml
    :members:
    :undoc-members:
    :show-inheritance:
