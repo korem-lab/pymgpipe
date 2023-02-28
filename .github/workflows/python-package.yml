@@ -73,7 +73,6 @@ jobs:
       run: |
         echo '[run]\nomit =\n\tpymgpipe/tests/*\n\tpymgpipe/__init__.py' > .coveragerc
         pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=pymgpipe pymgpipe/tests/ | tee pytest-coverage.txt
-        rm .coverage*
     - name: Pytest coverage comment
       if: ${{ github.ref == 'refs/heads/main' }}
       id: coverageComment
