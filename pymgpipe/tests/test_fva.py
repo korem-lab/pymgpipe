@@ -4,7 +4,7 @@ import pandas as pd
 from pymgpipe import get_reactions, regularFVA, compute_nmpcs
 
 
-def test_fva(mini_optlang_model):
+def test_regularFVA(mini_optlang_model):
     ex_reactions = [r.name for r in get_reactions(mini_optlang_model, regex="EX_.*")]
     fva_res = regularFVA(mini_optlang_model, ex_reactions)
 
