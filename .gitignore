@@ -132,6 +132,7 @@ dmypy.json
 test/
 pytest-coverage.txt
 pytest.xml 
+*.coverage*
 
 # examples
 examples/out/*
