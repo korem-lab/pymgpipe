@@ -46,7 +46,7 @@ def test_build_diet_fecal():
     assert built_abundances == true_abundances
 
 
-def test_build_models():
+def test_build():
     sample_data = [
         ["mc1", 0.1, "TaxaA"],
         ["mc1", 0.2, "TaxaB"],
