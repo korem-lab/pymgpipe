@@ -107,10 +107,12 @@ def _optlang_worker(metabolites):
 
     result = []
     for m in metabolites:
-        forward_var = global_model.variables[m]
-        reverse_var = global_model.variables[get_reverse_id(m)]
-        net = forward_var - reverse_var
+        net = global_model.variables[m]
 
+        reverse_id = get_reverse_id(m)
+        if reverse_id in global_model.variables:
+            net -= global_model.variables[reverse_id]
+        
         global_model.objective = Objective(net, direction="max")
         max_sol = solve_model(model=global_model, reactions=[m]).to_dict()[
             global_model.name

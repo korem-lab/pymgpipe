@@ -14,7 +14,7 @@ from functools import partial
 from .build import _build
 from .diet import add_diet_to_model
 from .io import load_cobra_model, write_lp_problem, write_cobra_model
-from .utils import load_dataframe
+from .utils import load_dataframe, remove_reverse_vars
 from .metrics import compute_diversity_metrics
 
 cobra_config = cobra.Configuration()
@@ -34,6 +34,7 @@ def build_models(
     out_dir="./",
     coupling_constraints=True,
     diet_fecal_compartments=False,
+    remove_reverse_vars_from_lp=False,
     diet=None,
     compress=True,
     write_lp=True,
@@ -119,6 +120,7 @@ def build_models(
         cobra_type,
         coupling_constraints,
         diet_fecal_compartments,
+        remove_reverse_vars_from_lp,
         diet,
         compress,
         write_lp,
@@ -171,6 +173,7 @@ def _build_single_model(
     cobra_type,
     coupling_constraints,
     diet_fecal_compartments,
+    remove_reverse_vars_from_lp,
     diet,
     compress,
     write_lp,
@@ -214,6 +217,11 @@ def _build_single_model(
 
         write_cobra_model(pymgpipe_model, model_out)
         if write_lp:
+            if remove_reverse_vars_from_lp:
+                logging.warning('Removing variables!')
+                remove_reverse_vars(pymgpipe_model)
+                logging.warning('Done removing variables!')
+
             write_lp_problem(
                 pymgpipe_model, out_file=lp_out, compress=compress, force=True
             )

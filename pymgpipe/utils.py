@@ -26,7 +26,7 @@ def solve_model(
     solver="gurobi",
     verbosity=0,
     presolve=True,
-    method="auto",
+    method="primal",
     flux_threshold=1e-5,
     ex_only=True,
 ):
@@ -41,7 +41,7 @@ def solve_model(
     try:
         model.optimize()
     except Exception as e:
-        raise Exception(f"Error when optimizing model, make sure model is valid- ${e}")
+        raise Exception(f"Error when optimizing model, make sure model is valid or try setting solve method to `auto`- ${e}")
 
     if model.status == "infeasible":
         raise InfeasibleModelException("%s is infeasible!" % model.name)
@@ -62,11 +62,10 @@ def _get_fluxes_from_model(model, reactions=None, regex=None, threshold=1e-5):
     for forward in get_reactions(model, reactions, regex):
         r_id = get_reverse_id(forward.name)
         if r_id not in model.variables:
-            continue
-
-        reverse = model.variables[r_id]
-
-        flux = float(forward.primal - reverse.primal)
+            flux = float(forward.primal)
+        else:
+            reverse = model.variables[r_id]
+            flux = float(forward.primal - reverse.primal)
         flux = 0 if flux == -0.0 else flux
         flux = flux if abs(flux) > threshold else 0
         fluxes[forward.name] = flux
@@ -109,6 +108,10 @@ def get_reactions(model, reactions=None, regex=None, include_reverse=False):
         logging.warning("Returning 0 reactions from model!")
     return r
 
+def get_net_reactions(model, reactions=None, regex=None):
+    rxns = get_reactions(model,reactions,regex,include_reverse=True)
+    net = {rxns[i].name:rxns[i]-rxns[i+1] for i in range(0,len(rxns),2)}
+    return net 
 
 def constrain_reactions(model, flux_map, threshold=0.0):
     model = load_model(model)
@@ -143,6 +146,23 @@ def set_objective(model, obj_expression, direction="min"):
             "Failed to add objective to %s- %s\n%s" % (model.name, e, obj_expression)
         )
 
+def remove_reverse_vars(model):
+    model = load_model(model) 
+    
+    to_remove=[]
+    num_vars = len(model.variables)
+    print('Removing reverse variables...')
+    for i in range(0,num_vars,2):
+        f = model.variables[i]
+        r = model.variables[i+1]
+        assert r.name.split('_reverse')[0]==f.name, 'Could not find any reverse variables in model!'
+
+        f.lb = f.lb - r.ub
+        f.ub = f.ub - r.lb
+        to_remove.append(r)
+    print('Removed %s out of %s total variables!'%(len(to_remove),num_vars))
+    model.remove(to_remove)
+    model.update()
 
 def get_reverse_id(id):
     import hashlib
