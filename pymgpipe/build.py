@@ -10,7 +10,6 @@ from micom.util import (
 from .io import load_cobra_model
 from .coupling import add_coupling_constraints
 
-
 # Build function adapted from MICOM (C. Diener, 2020)
 # https://github.com/micom-dev/micom/blob/1f8e4dd2ba9fc4cfba3526610f268f39ceaaac30/micom/workflows/build.py#L41
 def _build(
@@ -125,7 +124,6 @@ def _build(
     multi_species_model.objective = biomass
     multi_species_model.solver.update()
     return multi_species_model
-
 
 def _add_exchanges(model, reactions, fecal_diet):
     """Add exchange reactions for a new model."""

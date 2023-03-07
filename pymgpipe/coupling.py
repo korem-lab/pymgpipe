@@ -40,25 +40,33 @@ def add_coupling_constraints(com, u_const=0.01, C_const=400):
         abundance = biomass_rxns[taxon]
 
         forward = r
-        reverse = get_reverse_var(com, forward)
-
+        forward_const = com.interface.Constraint(
+            forward - (abundance * C_const),
+            ub=u_const,
+            name="%s_cp" % forward.name,
+        )
         if forward.ub > 0:
-            consts.append(
-                com.interface.Constraint(
-                    forward - (abundance * C_const),
-                    ub=u_const,
-                    name="%s_cp" % forward.name,
-                )
-            )
-        if reverse.ub > 0:
-            consts.append(
-                com.interface.Constraint(
-                    reverse - (abundance * C_const),
-                    ub=u_const,
-                    name="%s_cp" % reverse.name,
-                )
-            )
+            consts.append(forward_const)
 
+        try:
+            reverse = get_reverse_var(com, forward)
+            reverse_const = com.interface.Constraint(
+                reverse - (abundance * C_const),
+                ub=u_const,
+                name="%s_cp" % reverse.name,
+            )
+            if reverse.ub > 0:
+                consts.append(reverse_const)
+        except:
+            # Catch if no reverse variables in model
+            reverse_const = com.interface.Constraint(
+                forward + (abundance * C_const),
+                lb=-u_const,
+                name="%s_l_cp" % forward.name,
+            )
+            if forward.lb < 0:
+                consts.append(reverse_const)
+                
     print("\nAdding coupling constraints for %s variables..." % len(consts))
     com.add(consts)
     com.update()
