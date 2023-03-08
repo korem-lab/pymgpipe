@@ -146,23 +146,36 @@ def set_objective(model, obj_expression, direction="min"):
             "Failed to add objective to %s- %s\n%s" % (model.name, e, obj_expression)
         )
 
-def remove_reverse_vars(model):
+def remove_reverse_vars(model,hard_remove=False):
     model = load_model(model) 
+    if 'coupled' in model.variables: # fix for issue w/ older version of models
+        model.remove('coupled')
     
     to_remove=[]
     num_vars = len(model.variables)
-    print('Removing reverse variables...')
-    for i in range(0,num_vars,2):
+    print('Collecting reverse variables...')
+    for i in range(0,num_vars,2): # faster than searching for reverse variables
         f = model.variables[i]
         r = model.variables[i+1]
-        assert r.name.split('_reverse')[0]==f.name, 'Could not find any reverse variables in model!'
+        assert r.name.split('_reverse')[0]==f.name, f'Could not find reverse variable for {f.name} in model!'
 
         f.lb = f.lb - r.ub
         f.ub = f.ub - r.lb
         to_remove.append(r)
-    print('Removed %s out of %s total variables!'%(len(to_remove),num_vars))
-    model.remove(to_remove)
     model.update()
+    if hard_remove:
+        print('Removing %s reverse variables...'%len(to_remove))
+        model.remove(to_remove)
+        model.update()
+        print('Removed %s out of %s total variables!'%(len(to_remove),num_vars))
+    else:
+        print('Restricting bounds of %s reverse variables...'%len(to_remove))
+        for v in to_remove:
+            v.lb = 0 
+            v.ub = 0
+        model.update()
+        print('Set bounds of %s out of %s variables to 0!'%(len(to_remove),num_vars))
+
 
 def get_reverse_id(id):
     import hashlib

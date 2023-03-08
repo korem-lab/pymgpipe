@@ -2,11 +2,15 @@ import os
 import pandas as pd
 import csv
 import pathlib
+from .io import load_model
+from .utils import get_reactions, Constants
 
+VFFVA_PATH = '/Users/yolimeydan/Documents/Columbia/VFFVA'
 def veryFastFVA(
         nCores, 
         nThreads, 
         model, 
+        ex_only=True,
         scaling=0, 
         memAff='none', 
         schedule='dynamic', 
@@ -50,6 +54,14 @@ def veryFastFVA(
     # Set schedule and chunk size parameters
     os.environ["OMP_SCHEDUELE"] = schedule+str(nChunk)
 
+    var_dict = {i:v.name for i,v in enumerate(load_model(model).variables)}
+    var_inv_dict = {v:k for k,v in var_dict.items()}
+
+    if ex_only:
+        ex = [var_inv_dict[r.name] for r in get_reactions(model,regex=Constants.EX_REGEX)]
+        ex_indices = ex
+        print('Running on %s exchange reactions!'%len(ex))
+
     # Set reactions to optimize
     if ex!=[]:
         with open('rxns.csv', 'w', newline='') as myfile:
@@ -64,15 +76,17 @@ def veryFastFVA(
 
     # Fetch results
     resultFile = model[:-4] + 'output.csv'
-    if os.path.exists(resultFile):
+    if not os.path.exists(resultFile):
         raise Exception('Ran into issue when running VFFVA, could not find results file...')
     results = pd.read_csv(resultFile)
-    minFlux = results.minFlux
-    maxFlux = results.maxFlux
 
     # remove result file
     os.system('rm '+resultFile)
     if ex!='':
         os.system('rm '+ex)
 
-    return minFlux,maxFlux
+    results.rename(var_dict,axis=0,inplace=True)
+    results.index.rename('id',inplace=True)
+    results.sort_index(inplace=True)
+
+    return results
