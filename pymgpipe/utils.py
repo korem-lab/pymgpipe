@@ -4,6 +4,7 @@ import re
 import pandas as pd
 import warnings
 import logging
+import time
 from .io import load_model
 from math import isinf
 
@@ -147,6 +148,7 @@ def set_objective(model, obj_expression, direction="min"):
         )
 
 def remove_reverse_vars(model,hard_remove=False):
+    start = time.time()
     model = load_model(model) 
     if 'coupled' in model.variables: # fix for issue w/ older version of models
         model.remove('coupled')
@@ -167,14 +169,14 @@ def remove_reverse_vars(model,hard_remove=False):
         print('Removing %s reverse variables...'%len(to_remove))
         model.remove(to_remove)
         model.update()
-        print('Removed %s out of %s total variables!'%(len(to_remove),num_vars))
+        print('Removed %s out of %s total variables in %s minutes!'%(len(to_remove),num_vars,round((time.time()-start)/60,3)))
     else:
         print('Restricting bounds of %s reverse variables...'%len(to_remove))
         for v in to_remove:
             v.lb = 0 
             v.ub = 0
         model.update()
-        print('Set bounds of %s out of %s variables to 0!'%(len(to_remove),num_vars))
+        print('Set bounds of %s out of %s variables to 0 in %s minutes!'%(len(to_remove),num_vars,round((time.time()-start)/60,3)))
 
 
 def get_reverse_id(id):
@@ -252,13 +254,17 @@ def load_dataframe(m, return_empty=False):
 
 
 def set_reaction_bounds(model, id, lb, ub):
+    forward = (
+        id if isinstance(id, optlang.interface.Variable) else model.variables[id]
+    )
     try:
-        forward = (
-            id if isinstance(id, optlang.interface.Variable) else model.variables[id]
-        )
         reverse = get_reverse_var(model, forward)
     except:
-        raise Exception("Could not find %s in model" % id)
+        # Reverse variable doesn't exist, much simpler
+        forward.set_bounds(lb=lb,ub=ub)
+        lower, upper = get_reaction_bounds(model, id)
+        assert lower == lb and upper == ub
+        return
 
     if lb > 0:
         forward.set_bounds(
@@ -280,13 +286,13 @@ def set_reaction_bounds(model, id, lb, ub):
 
 
 def get_reaction_bounds(model, id):
+    forward = (
+        id if isinstance(id, optlang.interface.Variable) else model.variables[id]
+    )
     try:
-        forward = (
-            id if isinstance(id, optlang.interface.Variable) else model.variables[id]
-        )
         reverse = get_reverse_var(model, forward)
     except:
-        raise Exception("Could not find %s in model" % id)
+        return (forward.lb, forward.ub)
 
     lower = forward.lb - reverse.ub
     upper = forward.ub - reverse.lb

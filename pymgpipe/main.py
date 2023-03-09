@@ -36,6 +36,8 @@ def build_models(
     diet_fecal_compartments=False,
     remove_reverse_vars_from_lp=False,
     diet=None,
+    essential_metabolites=None, 
+    micronutrients=None,
     compress=True,
     write_lp=True,
     compute_metrics=True
@@ -122,6 +124,8 @@ def build_models(
         diet_fecal_compartments,
         remove_reverse_vars_from_lp,
         diet,
+        essential_metabolites,
+        micronutrients,
         compress,
         write_lp,
         compute_metrics
@@ -175,6 +179,8 @@ def _build_single_model(
     diet_fecal_compartments,
     remove_reverse_vars_from_lp,
     diet,
+    essential_metabolites, 
+    micronutrients,
     compress,
     write_lp,
     compute_metrics,
@@ -213,7 +219,7 @@ def _build_single_model(
             if original_id in personalized.columns:
                 diet = personalized[original_id].to_frame()
 
-            add_diet_to_model(pymgpipe_model, diet)
+            add_diet_to_model(pymgpipe_model, diet, essential_metabolites, micronutrients)
 
         write_cobra_model(pymgpipe_model, model_out)
         if write_lp:
