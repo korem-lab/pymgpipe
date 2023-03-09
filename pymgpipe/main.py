@@ -221,7 +221,7 @@ def _build_single_model(
         if metrics is None or len(metrics)==0:
             logging.warning('Unable to compute diversity metrics for %s'%pymgpipe_model.name)
 
-    if force or not os.path.exists(lp_out):
+    if force or (not os.path.exists(lp_out) and not os.path.exists(lp_out+'.gz') and not os.path.exists(lp_out+'.7z')):
         # ----- START OPTLANG MODIFICATIONS -----
         if diet is not None:
             add_diet_to_model(pymgpipe_model, diet, force_uptake, essential_metabolites, micronutrients)
@@ -240,7 +240,8 @@ def _build_single_model(
                 logging.warning("Failed to add coupling constraints!")
 
         write_lp_problem(pymgpipe_model, out_file=lp_out, compress=compress, force=True)
-
+    else:
+        logging.info('Skipping %s because LP problem already exists!'%sample_label)
     del pymgpipe_model
     gc.collect()
     return metrics
