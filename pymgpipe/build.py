@@ -8,7 +8,6 @@ from micom.util import (
     COMPARTMENT_RE,
 )
 from .io import load_cobra_model
-from .coupling import add_coupling_constraints
 
 # Build function adapted from MICOM (C. Diener, 2020)
 # https://github.com/micom-dev/micom/blob/1f8e4dd2ba9fc4cfba3526610f268f39ceaaac30/micom/workflows/build.py#L41
@@ -17,7 +16,6 @@ def _build(
     name,
     rel_threshold=1e-6,
     solver="gurobi",
-    coupling_constraints=True,
     diet_fecal_compartments=True,
 ):
     if not solver:
@@ -92,12 +90,6 @@ def _build(
 
         _add_exchanges(multi_species_model, model.reactions, diet_fecal_compartments)
         multi_species_model.solver.update()  # to avoid dangling refs due to lazy add
-
-    if coupling_constraints:
-        try:
-            add_coupling_constraints(multi_species_model)
-        except Exception:
-            logging.warning("Failed to add coupling constraints!")
 
     l_biomass = cobra.Metabolite(id="microbeBiomass[u]", compartment="u")
     multi_species_model.add_metabolites([l_biomass])

@@ -15,6 +15,7 @@ from .build import _build
 from .diet import add_diet_to_model
 from .io import load_cobra_model, write_lp_problem, write_cobra_model
 from .utils import load_dataframe, remove_reverse_vars
+from .coupling import add_coupling_constraints
 from .metrics import compute_diversity_metrics
 
 cobra_config = cobra.Configuration()
@@ -39,9 +40,10 @@ def build_models(
     diet=None,
     essential_metabolites=None, 
     micronutrients=None,
+    force_uptake=True,
     compress=True,
-    write_lp=True,
-    compute_metrics=True
+    compute_metrics=True,
+    force=False
 ):
     """Build community COBRA models using mgpipe-like compartments and constraints.
 
@@ -59,7 +61,6 @@ def build_models(
         lp_type (str): File type for LP problem (either .mps or .lp), defaults to .mps
         cobra_type (str): File type for COBRA model (.xml, .mat, .json), defaults to .xml
         compress (bool): Models and LP problems will be saved as compressed files if set to True, defaults to True
-        write_lp (bool): LP problems saved to problems/ directory, defaults to True
         compute_metrics (bool): Compute diversity metrics for built models, defaults to True
 
     Notes:
@@ -80,8 +81,7 @@ def build_models(
     model_dir = out_dir + "models/"
     problem_dir = out_dir + "problems/"
     Path(model_dir).mkdir(exist_ok=True)
-    if write_lp:
-        Path(problem_dir).mkdir(exist_ok=True)
+    Path(problem_dir).mkdir(exist_ok=True)
 
     formatted = _format_coverage_file(coverage_file, taxa_dir, out_dir)
     samples_to_run = formatted.sample_id.unique()
@@ -128,9 +128,10 @@ def build_models(
         diet,
         essential_metabolites,
         micronutrients,
+        force_uptake,
         compress,
-        write_lp,
-        compute_metrics
+        compute_metrics,
+        force
     )
 
     if parallel:
@@ -184,9 +185,10 @@ def _build_single_model(
     diet,
     essential_metabolites, 
     micronutrients,
+    force_uptake,
     compress,
-    write_lp,
     compute_metrics,
+    force,
     sample_label,
 ):
     model_out = (
@@ -197,48 +199,47 @@ def _build_single_model(
     lp_out = problem_dir + "%s.%s" % (sample_label, lp_type.split(".")[1])
 
     coverage_df = coverage_df.loc[coverage_df.sample_id == sample_label]
-    original_id = coverage_df.original_id.unique()[0]
+
     pymgpipe_model = None
     metrics = None
-    if os.path.exists(model_out):
+
+    if not force and os.path.exists(model_out):
         pymgpipe_model = load_cobra_model(model_out)
-        if write_lp:
-            write_lp_problem(
-                pymgpipe_model, out_file=lp_out, compress=compress, force=False
-            )
     else:
         pymgpipe_model = _build(
             name=sample_label,
             taxonomy=coverage_df,
             rel_threshold=1e-6,
             solver=solver,
-            coupling_constraints=coupling_constraints,
             diet_fecal_compartments=diet_fecal_compartments,
         )
-        if diet is not None:
-            personalized = load_dataframe(
-                diet, return_empty=True
-            )  # try loading personlized diet
-            if original_id in personalized.columns:
-                diet = personalized[original_id].to_frame()
-
-            add_diet_to_model(pymgpipe_model, diet, essential_metabolites, micronutrients)
-
+        force = True 
         write_cobra_model(pymgpipe_model, model_out)
-        if write_lp:
-            if remove_reverse_vars_from_lp:
-                logging.warning('Removing variables!')
-                remove_reverse_vars(pymgpipe_model,hard_remove)
-                logging.warning('Done removing variables!')
-
-            write_lp_problem(
-                pymgpipe_model, out_file=lp_out, compress=compress, force=True
-            )
 
     if compute_metrics:
         metrics = compute_diversity_metrics(pymgpipe_model)
         if metrics is None or len(metrics)==0:
             logging.warning('Unable to compute diversity metrics for %s'%pymgpipe_model.name)
+
+    if force or not os.path.exists(lp_out):
+        # ----- START OPTLANG MODIFICATIONS -----
+        if diet is not None:
+            add_diet_to_model(pymgpipe_model, diet, force_uptake, essential_metabolites, micronutrients)
+
+        if remove_reverse_vars_from_lp:
+            try:
+                logging.info('Removing variables!')
+                remove_reverse_vars(pymgpipe_model,hard_remove)
+            except Exception:
+                logging.warning('Failed to remove reverse variables!')
+
+        if coupling_constraints:
+            try:
+                add_coupling_constraints(pymgpipe_model)
+            except Exception:
+                logging.warning("Failed to add coupling constraints!")
+
+        write_lp_problem(pymgpipe_model, out_file=lp_out, compress=compress, force=True)
 
     del pymgpipe_model
     gc.collect()
