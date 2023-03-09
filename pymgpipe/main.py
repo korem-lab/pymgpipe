@@ -35,6 +35,7 @@ def build_models(
     coupling_constraints=True,
     diet_fecal_compartments=False,
     remove_reverse_vars_from_lp=False,
+    hard_remove=False,
     diet=None,
     essential_metabolites=None, 
     micronutrients=None,
@@ -123,6 +124,7 @@ def build_models(
         coupling_constraints,
         diet_fecal_compartments,
         remove_reverse_vars_from_lp,
+        hard_remove,
         diet,
         essential_metabolites,
         micronutrients,
@@ -178,6 +180,7 @@ def _build_single_model(
     coupling_constraints,
     diet_fecal_compartments,
     remove_reverse_vars_from_lp,
+    hard_remove,
     diet,
     essential_metabolites, 
     micronutrients,
@@ -225,7 +228,7 @@ def _build_single_model(
         if write_lp:
             if remove_reverse_vars_from_lp:
                 logging.warning('Removing variables!')
-                remove_reverse_vars(pymgpipe_model)
+                remove_reverse_vars(pymgpipe_model,hard_remove)
                 logging.warning('Done removing variables!')
 
             write_lp_problem(
