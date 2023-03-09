@@ -148,7 +148,7 @@ def write_lp_problem(model, out_file=None, compress=True, force=True):
 
     # some computers cant compress to gz
     try:
-        model.solver.problem.write(out_file)
+        load_model(model).problem.write(out_file)
     except Exception:
         if compress:
             logging.warning(

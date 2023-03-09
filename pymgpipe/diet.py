@@ -301,6 +301,10 @@ def add_diet_to_model(model, diet, force_uptake=True, essential_metabolites=None
             )
         else:
             raise Exception('Unrecognized diet file format for %s- must be .txt or .csv!'%diet)
+        
+        # In case of personalized diets
+        if model.name in diet_df.columns:
+            diet = diet_df[model.name].to_frame()
     elif isinstance(diet, str):
         try:
             diet_df = pd.read_csv(
@@ -363,6 +367,7 @@ def add_diet_to_model(model, diet, force_uptake=True, essential_metabolites=None
 
             added.append({"id": f.name, "lb": row.lb, "ub": row.ub})
 
+    print('Checking diet feasibility...\n')
     model.optimize()
     if model.status == "infeasible":
         logging.warning("%s is infeasible with provided diet!" % model.name)
