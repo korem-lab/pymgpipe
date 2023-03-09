@@ -13,7 +13,7 @@ from .utils import (
 from .io import load_model
 
 
-def get_adapted_diet(diet, essential_metabolites=None):
+def get_adapted_diet(diet, essential_metabolites=None, micronutrients=None):
     if not isinstance(diet, pd.DataFrame):
         raise Exception(
             "Diet needs to be of type pd.DataFrame, received %s" % type(diet)
@@ -32,9 +32,7 @@ def get_adapted_diet(diet, essential_metabolites=None):
         inplace=True,
     )
 
-    essential_metabolites = (
-        essential_metabolites
-        if essential_metabolites is not None
+    essential_metabolites = essential_metabolites if essential_metabolites is not None \
         else [
             "EX_12dgr180(e)",
             "EX_26dap_M(e)",
@@ -184,7 +182,7 @@ def get_adapted_diet(diet, essential_metabolites=None):
             "EX_gam(e)",
             "EX_mantr(e)",
         ]
-    )
+    
     for m in essential_metabolites:
         if (
             m not in diet.index
@@ -218,39 +216,40 @@ def get_adapted_diet(diet, essential_metabolites=None):
     if "EX_chol(e)" not in adapted_diet.index:
         adapted_diet.loc["EX_chol(e)"] = [41.251]
 
-    micro_nutrients = [
-        "EX_adocbl(e)",
-        "EX_vitd2(e)",
-        "EX_vitd3(e)",
-        "EX_psyl(e)",
-        "EX_gum(e)",
-        "EX_bglc(e)",
-        "EX_phyQ(e)",
-        "EX_fol(e)",
-        "EX_5mthf(e)",
-        "EX_q10(e)",
-        "EX_retinol_9_cis(e)",
-        "EX_pydxn(e)",
-        "EX_pydam(e)",
-        "EX_pydx(e)",
-        "EX_pheme(e)",
-        "EX_ribflv(e)",
-        "EX_thm(e)",
-        "EX_avite1(e)",
-        "EX_na1(e)",
-        "EX_cl(e)",
-        "EX_k(e)",
-        "EX_pi(e)",
-        "EX_zn2(e)",
-        "EX_cu2(e)",
-    ]
+    micronutrients = micronutrients if micronutrients is not None \
+        else [
+            "EX_adocbl(e)",
+            "EX_vitd2(e)",
+            "EX_vitd3(e)",
+            "EX_psyl(e)",
+            "EX_gum(e)",
+            "EX_bglc(e)",
+            "EX_phyQ(e)",
+            "EX_fol(e)",
+            "EX_5mthf(e)",
+            "EX_q10(e)",
+            "EX_retinol_9_cis(e)",
+            "EX_pydxn(e)",
+            "EX_pydam(e)",
+            "EX_pydx(e)",
+            "EX_pheme(e)",
+            "EX_ribflv(e)",
+            "EX_thm(e)",
+            "EX_avite1(e)",
+            "EX_na1(e)",
+            "EX_cl(e)",
+            "EX_k(e)",
+            "EX_pi(e)",
+            "EX_zn2(e)",
+            "EX_cu2(e)",
+        ]
 
     adapted_diet.lb = -adapted_diet.lb
     adapted_diet["ub"] = 0.8 * adapted_diet.lb
     adapted_diet["ub"].loc[~adapted_diet.index.isin(list(diet.index))] = 0
 
     adapted_diet.loc[
-        (adapted_diet.index.isin(set(micro_nutrients)))
+        (adapted_diet.index.isin(set(micronutrients)))
         & (abs(adapted_diet["lb"]) <= 0.1),
         "lb",
     ] = (
@@ -286,12 +285,22 @@ def get_diet(model):
     return pd.DataFrame(diet)
 
 
-def add_diet_to_model(model, diet, force_uptake=True):
+def add_diet_to_model(model, diet, force_uptake=True, essential_metabolites=None, micronutrients=None):
     model = load_model(model)
 
     print("\nAttempting to add diet...")
     if isinstance(diet, str) and os.path.exists(diet):
-        diet_df = load_dataframe(diet)
+        if diet.endswith('.csv'):
+            diet_df = load_dataframe(diet)
+        elif diet.endswith('.txt'):
+            diet_df = pd.read_csv(
+                diet,
+                sep="\t",
+                header=0,
+                index_col=0,
+            )
+        else:
+            raise Exception('Unrecognized diet file format for %s- must be .txt or .csv!'%diet)
     elif isinstance(diet, str):
         try:
             diet_df = pd.read_csv(
@@ -330,7 +339,13 @@ def add_diet_to_model(model, diet, force_uptake=True):
         set_reaction_bounds(model, d, 0, 1000)
 
     diet_df = diet_df[diet_df.columns[0]].to_frame()
-    d = get_adapted_diet(diet_df)
+
+    if essential_metabolites is not None:
+        print('Using custom set of essential metabolites...')
+    if micronutrients is not None:
+        print('Using custom set of micronutrients...')
+
+    d = get_adapted_diet(diet_df, essential_metabolites, micronutrients)
 
     logging.info("Adding %s diet to model..." % diet)
     added = []

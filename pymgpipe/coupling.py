@@ -16,6 +16,9 @@ def remove_coupling_constraints(com):
 def add_coupling_constraints(com, u_const=0.01, C_const=400):
     if isinstance(com, cobra.Model):
         com = com.solver
+    if 'coupled' in com.variables: # fixing some bug from old version of models
+        com.remove('coupled')
+
     remove_coupling_constraints(com)
     biomass_rxns = {
         b.name.split("__")[-1]: b for b in get_reactions(com, regex="^biomass.*")
