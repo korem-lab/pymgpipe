@@ -13,7 +13,9 @@ from .utils import (
 from .io import load_model
 
 
-def get_adapted_diet(diet, essential_metabolites=None, micronutrients=None):
+def get_adapted_diet(
+    diet, essential_metabolites=None, micronutrients=None, vaginal=False
+):
     if not isinstance(diet, pd.DataFrame):
         raise Exception(
             "Diet needs to be of type pd.DataFrame, received %s" % type(diet)
@@ -32,7 +34,116 @@ def get_adapted_diet(diet, essential_metabolites=None, micronutrients=None):
         inplace=True,
     )
 
-    essential_metabolites = essential_metabolites if essential_metabolites is not None \
+    essential_metabolites = (
+        [
+            "EX_12dgr180(e)",
+            "EX_26dap_M(e)",
+            "EX_2dmmq8(e)",
+            "EX_2obut(e)",
+            "EX_3mop(e)",
+            "EX_4abz(e)",
+            "EX_4hbz(e)",
+            "EX_ac(e)",
+            "EX_acgam(e)",
+            "EX_acmana(e)",
+            "EX_acnam(e)",
+            "EX_ade(e)",
+            "EX_adn(e)",
+            "EX_adocbl(e)",
+            "EX_adpcbl(e)",
+            "EX_ala_D(e)",
+            "EX_ala_L(e)",
+            "EX_amet(e)",
+            "EX_amp(e)",
+            "EX_arab_D(e)",
+            "EX_arab_L(e)",
+            "EX_arg_L(e)",
+            "EX_asn_L(e)",
+            "EX_btn(e)",
+            "EX_ca2(e)",
+            "EX_cbl1(e)",
+            "EX_cgly(e)",
+            "EX_chor(e)",
+            "EX_chsterol(e)",
+            "EX_cit(e)",
+            "EX_cl(e)",
+            "EX_cobalt2(e)",
+            "EX_csn(e)",
+            "EX_cu2(e)",
+            "EX_cys_L(e)",
+            "EX_cytd(e)",
+            "EX_dad_2(e)",
+            "EX_dcyt(e)",
+            "EX_ddca(e)",
+            "EX_dgsn(e)",
+            "EX_fald(e)",
+            "EX_fe2(e)",
+            "EX_fe3(e)",
+            "EX_fol(e)",
+            "EX_for(e)",
+            "EX_gal(e)",
+            "EX_glc_D(e)",
+            "EX_gln_L(e)",
+            "EX_glu_L(e)",
+            "EX_gly(e)",
+            "EX_glyc(e)",
+            "EX_glyc3p(e)",
+            "EX_gsn(e)",
+            "EX_gthox(e)",
+            "EX_gthrd(e)",
+            "EX_gua(e)",
+            "EX_h(e)",
+            "EX_h2o(e)",
+            "EX_h2s(e)",
+            "EX_his_L(e)",
+            "EX_hxan(e)",
+            "EX_ile_L(e)",
+            "EX_k(e)",
+            "EX_lanost(e)",
+            "EX_leu_L(e)",
+            "EX_lys_L(e)",
+            "EX_malt(e)",
+            "EX_met_L(e)",
+            "EX_mg2(e)",
+            "EX_mn2(e)",
+            "EX_mqn7(e)",
+            "EX_mqn8(e)",
+            "EX_nac(e)",
+            "EX_ncam(e)",
+            "EX_nmn(e)",
+            "EX_no2(e)",
+            "EX_ocdca(e)",
+            "EX_ocdcea(e)",
+            "EX_orn(e)",
+            "EX_phe_L(e)",
+            "EX_pheme(e)",
+            "EX_pi(e)",
+            "EX_pnto_R(e)",
+            "EX_pro_L(e)",
+            "EX_ptrc(e)",
+            "EX_pydx(e)",
+            "EX_pydxn(e)",
+            "EX_q8(e)",
+            "EX_rib_D(e)",
+            "EX_ribflv(e)",
+            "EX_ser_L(e)",
+            "EX_sheme(e)",
+            "EX_so4(e)",
+            "EX_spmd(e)",
+            "EX_thm(e)",
+            "EX_thr_L(e)",
+            "EX_thymd(e)",
+            "EX_trp_L(e)",
+            "EX_ttdca(e)",
+            "EX_tyr_L(e)",
+            "EX_ura(e)",
+            "EX_val_L(e)",
+            "EX_xan(e)",
+            "EX_xyl_D(e)",
+            "EX_zn2(e)",
+            "EX_sucr(e)",
+        ]
+        if vaginal
         else [
             "EX_12dgr180(e)",
             "EX_26dap_M(e)",
@@ -182,41 +293,71 @@ def get_adapted_diet(diet, essential_metabolites=None, micronutrients=None):
             "EX_gam(e)",
             "EX_mantr(e)",
         ]
-    
+    )
+
     for m in essential_metabolites:
         if (
             m not in diet.index
         ):  # this is a bug, this should be checking adapated_diet.index to account for renamed metabolites
             adapted_diet.loc[m] = [0.1]
 
-    unmapped_metabs = [
-        "EX_asn_L(e)",
-        "EX_gln_L(e)",
-        "EX_crn(e)",
-        "EX_elaid(e)",
-        "EX_hdcea(e)",
-        "EX_dlnlcg(e)",
-        "EX_adrn(e)",
-        "EX_hco3(e)",
-        "EX_sprm(e)",
-        "EX_carn(e)",
-        "EX_7thf(e)",
-        "EX_Lcystin(e)",
-        "EX_hista(e)",
-        "EX_orn(e)",
-        "EX_ptrc(e)",
-        "EX_creat(e)",
-        "EX_cytd(e)",
-        "EX_so4(e)",
-    ]
-    for m in unmapped_metabs:
-        if m not in diet.index:
-            adapted_diet.loc[m] = [50]
+    if not vaginal:
+        unmapped_metabs = [
+            "EX_asn_L(e)",
+            "EX_gln_L(e)",
+            "EX_crn(e)",
+            "EX_elaid(e)",
+            "EX_hdcea(e)",
+            "EX_dlnlcg(e)",
+            "EX_adrn(e)",
+            "EX_hco3(e)",
+            "EX_sprm(e)",
+            "EX_carn(e)",
+            "EX_7thf(e)",
+            "EX_Lcystin(e)",
+            "EX_hista(e)",
+            "EX_orn(e)",
+            "EX_ptrc(e)",
+            "EX_creat(e)",
+            "EX_cytd(e)",
+            "EX_so4(e)",
+        ]
+        for m in unmapped_metabs:
+            if m not in diet.index:
+                adapted_diet.loc[m] = [50]
 
-    if "EX_chol(e)" not in adapted_diet.index:
-        adapted_diet.loc["EX_chol(e)"] = [41.251]
+        if "EX_chol(e)" not in adapted_diet.index:
+            adapted_diet.loc["EX_chol(e)"] = [41.251]
 
-    micronutrients = micronutrients if micronutrients is not None \
+    micronutrients = (
+        [
+            "EX_adocbl(e)",
+            "EX_vitd2(e)",
+            "EX_vitd3(e)",
+            "EX_psyl(e)",
+            "EX_gum(e)",
+            "EX_bglc(e)",
+            "EX_phyQ(e)",
+            "EX_fol(e)",
+            "EX_5mthf(e)",
+            "EX_q10(e)",
+            "EX_retinol_9_cis(e)",
+            "EX_pydxn(e)",
+            "EX_pydam(e)",
+            "EX_pydx(e)",
+            "EX_pheme(e)",
+            "EX_ribflv(e)",
+            "EX_thm(e)",
+            "EX_avite1(e)",
+            "EX_pnto_R(e)",
+            "EX_na1(e)",
+            "EX_cl(e)",
+            "EX_k(e)",
+            "EX_pi(e)",
+            "EX_zn2(e)",
+            "EX_cu2(e)",
+        ]
+        if vaginal
         else [
             "EX_adocbl(e)",
             "EX_vitd2(e)",
@@ -243,6 +384,7 @@ def get_adapted_diet(diet, essential_metabolites=None, micronutrients=None):
             "EX_zn2(e)",
             "EX_cu2(e)",
         ]
+    )
 
     adapted_diet.lb = -adapted_diet.lb
     adapted_diet["ub"] = 0.8 * adapted_diet.lb
@@ -260,6 +402,10 @@ def get_adapted_diet(diet, essential_metabolites=None, micronutrients=None):
         & (abs(adapted_diet["lb"]) < 1),
         "lb",
     ] = -1
+
+    if vaginal:
+        adapted_diet.loc['EX_cytd(e)','lb']=-10
+        adapted_diet.loc['EX_ttdca(e)','lb']=-1
 
     adapted_diet.index = adapted_diet.index.str.split("\(e\)").str[0]
     return adapted_diet
@@ -285,14 +431,16 @@ def get_diet(model):
     return pd.DataFrame(diet)
 
 
-def add_diet_to_model(model, diet, force_uptake=True, essential_metabolites=None, micronutrients=None):
+def add_diet_to_model(
+    model, diet, force_uptake=True, essential_metabolites=None, micronutrients=None, vaginal=False
+):
     model = load_model(model)
 
     print("\nAttempting to add diet...")
     if isinstance(diet, str) and os.path.exists(diet):
-        if diet.endswith('.csv'):
+        if diet.endswith(".csv"):
             diet_df = load_dataframe(diet)
-        elif diet.endswith('.txt'):
+        elif diet.endswith(".txt"):
             diet_df = pd.read_csv(
                 diet,
                 sep="\t",
@@ -300,8 +448,10 @@ def add_diet_to_model(model, diet, force_uptake=True, essential_metabolites=None
                 index_col=0,
             )
         else:
-            raise Exception('Unrecognized diet file format for %s- must be .txt or .csv!'%diet)
-        
+            raise Exception(
+                "Unrecognized diet file format for %s- must be .txt or .csv!" % diet
+            )
+
         # In case of personalized diets
         if model.name in diet_df.columns:
             diet = diet_df[model.name].to_frame()
@@ -345,11 +495,11 @@ def add_diet_to_model(model, diet, force_uptake=True, essential_metabolites=None
     diet_df = diet_df[diet_df.columns[0]].to_frame()
 
     if essential_metabolites is not None:
-        print('Using custom set of essential metabolites...')
+        print("Using custom set of essential metabolites...")
     if micronutrients is not None:
-        print('Using custom set of micronutrients...')
+        print("Using custom set of micronutrients...")
 
-    d = get_adapted_diet(diet_df, essential_metabolites, micronutrients)
+    d = get_adapted_diet(diet_df, essential_metabolites, micronutrients, vaginal)
 
     logging.info("Adding %s diet to model..." % diet)
     added = []
@@ -367,7 +517,7 @@ def add_diet_to_model(model, diet, force_uptake=True, essential_metabolites=None
 
             added.append({"id": f.name, "lb": row.lb, "ub": row.ub})
 
-    print('Checking diet feasibility...\n')
+    print("Checking diet feasibility...\n")
     model.optimize()
     if model.status == "infeasible":
         logging.warning("%s is infeasible with provided diet!" % model.name)

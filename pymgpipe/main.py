@@ -223,15 +223,15 @@ def _build_single_model(
 
     if force or (not os.path.exists(lp_out) and not os.path.exists(lp_out+'.gz') and not os.path.exists(lp_out+'.7z')):
         # ----- START OPTLANG MODIFICATIONS -----
-        if diet is not None:
-            add_diet_to_model(pymgpipe_model, diet, force_uptake, essential_metabolites, micronutrients)
-
         if remove_reverse_vars_from_lp:
             try:
                 logging.info('Removing variables!')
                 remove_reverse_vars(pymgpipe_model,hard_remove)
             except Exception:
                 logging.warning('Failed to remove reverse variables!')
+
+        if diet is not None:
+            add_diet_to_model(pymgpipe_model, diet, force_uptake, essential_metabolites, micronutrients)
 
         if coupling_constraints:
             try:

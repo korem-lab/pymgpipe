@@ -25,6 +25,7 @@ def compute_nmpcs(
     parallel=True,
     diet_fecal_compartments=True,
     force=False,
+    threshold=1e-5,
 ):
     start = time.time()
     out_dir = out_dir + "/" if out_dir[-1] != "/" else out_dir
@@ -91,7 +92,8 @@ def compute_nmpcs(
         m.variables["communityBiomass"].set_bounds(0.4, 1)
         set_objective(m, m.variables["communityBiomass"], direction="max")
 
-        m.optimize()
+        with suppress_stdout():
+            m.optimize()
         if m.status == "infeasible":
             logging.warning("%s model is infeasible!" % m.name)
             continue
@@ -122,6 +124,7 @@ def compute_nmpcs(
                     threads=threads,
                     parallel=parallel,
                     write_to_file=False,
+                    threshold=threshold
                 )
             except Exception:
                 logging.warning("Cannot solve %s model!" % m.name)
