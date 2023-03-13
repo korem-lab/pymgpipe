@@ -26,6 +26,7 @@ def regularFVA(
     write_to_file=False,
     out_dir="fva/",
     parallel=True,
+    threshold=1e-5,
 ):
     gc.enable()
 
@@ -76,7 +77,7 @@ def regularFVA(
         % (threads, len(split_reactions))
     )
 
-    _func = _optlang_worker
+    _func = partial(_optlang_worker, threshold)
     if parallel:
         p = Pool(processes=threads, initializer=partial(_pool_init, model))
         res = p.imap(_func, split_reactions)
@@ -102,7 +103,7 @@ def regularFVA(
 
 
 # works for both cplex and gurobi
-def _optlang_worker(metabolites):
+def _optlang_worker(threshold, metabolites):
     global global_model
 
     result = []
@@ -114,12 +115,12 @@ def _optlang_worker(metabolites):
             net -= global_model.variables[reverse_id]
         
         global_model.objective = Objective(net, direction="max")
-        max_sol = solve_model(model=global_model, reactions=[m]).to_dict()[
+        max_sol = solve_model(model=global_model, reactions=[m], flux_threshold=threshold).to_dict()[
             global_model.name
         ][m]
 
         global_model.objective = Objective(net, direction="min")
-        min_sol = solve_model(model=global_model, reactions=[m]).to_dict()[
+        min_sol = solve_model(model=global_model, reactions=[m], flux_threshold=threshold).to_dict()[
             global_model.name
         ][m]
 
