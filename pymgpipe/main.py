@@ -38,6 +38,7 @@ def build_models(
     remove_reverse_vars_from_lp=False,
     hard_remove=False,
     diet=None,
+    vaginal=False,
     essential_metabolites=None, 
     micronutrients=None,
     force_uptake=True,
@@ -126,6 +127,7 @@ def build_models(
         remove_reverse_vars_from_lp,
         hard_remove,
         diet,
+        vaginal,
         essential_metabolites,
         micronutrients,
         force_uptake,
@@ -183,6 +185,7 @@ def _build_single_model(
     remove_reverse_vars_from_lp,
     hard_remove,
     diet,
+    vaginal,
     essential_metabolites, 
     micronutrients,
     force_uptake,
@@ -231,7 +234,7 @@ def _build_single_model(
                 logging.warning('Failed to remove reverse variables!')
 
         if diet is not None:
-            add_diet_to_model(pymgpipe_model, diet, force_uptake, essential_metabolites, micronutrients)
+            add_diet_to_model(pymgpipe_model, diet, force_uptake, essential_metabolites, micronutrients, vaginal)
 
         if coupling_constraints:
             try:
