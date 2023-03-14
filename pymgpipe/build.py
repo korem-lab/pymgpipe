@@ -62,8 +62,7 @@ def _build(
         for ex in ex_metabolites:
             if 'EX_%s(e)'%ex.id.split('[e]')[0] not in model.reactions:                
                 missing.append(_get_missing_exchange(ex))
-        if missing is not None:
-            assert True == False, len(missing)
+        if len(missing) > 0:
             logging.warn('Adding %s missing exchange reactions to taxa model!'%len(missing))
             model.add_reactions(missing)
 
