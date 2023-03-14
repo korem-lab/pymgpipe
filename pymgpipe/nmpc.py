@@ -26,6 +26,7 @@ def compute_nmpcs(
     diet_fecal_compartments=True,
     force=False,
     threshold=1e-5,
+    write_to_file=True,
 ):
     start = time.time()
     out_dir = out_dir + "/" if out_dir[-1] != "/" else out_dir
@@ -151,9 +152,10 @@ def compute_nmpcs(
             nmpc.name = m.name
 
         nmpcs = pd.concat([nmpcs, nmpc], axis=1)
-        nmpcs.to_csv(out_file)
-        obj_values.to_csv(objective_out_file)
-        all_fluxes.to_csv(fluxes_out_file)
+        if write_to_file:
+            nmpcs.to_csv(out_file)
+            obj_values.to_csv(objective_out_file)
+            all_fluxes.to_csv(fluxes_out_file)
 
     res = namedtuple("res", "nmpc objectives fluxes")
     
