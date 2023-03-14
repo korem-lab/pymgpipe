@@ -57,6 +57,16 @@ def _build(
     for idx in index:  # loop through taxa
         row = taxonomy.loc[idx]
         model = load_cobra_model(row.file)
+        ex_metabolites = [m for m in model.metabolites if '[e]' in m.id]
+        missing = []
+        for ex in ex_metabolites:
+            if 'EX_%s(e)'%ex.id.split('[e]')[0] not in model.reactions:                
+                missing.append(_get_missing_exchange(ex))
+        if missing is not None:
+            assert True == False, len(missing)
+            logging.warn('Adding %s missing exchange reactions to taxa model!'%len(missing))
+            model.add_reactions(missing)
+
         suffix = "__" + idx.replace(" ", "_").strip()
         logging.info("converting IDs for {}".format(idx))
         external = cobra.medium.find_external_compartment(model)
@@ -244,3 +254,13 @@ def _add_diet_exchange(model, met):
     d_tr.community_id = "diet/lumen"
 
     model.add_reactions([d_ex, d_tr])
+
+def _get_missing_exchange(metab):
+    ex = cobra.Reaction(
+        id='EX_%s(e)'%metab.id.split('[e]')[0],
+        name='%s exchange'%metab.name,
+        lower_bound=-1000,
+        upper_bound=1000,
+        subsystem='Exchange/demand reaction')
+    ex.add_metabolites({metab:-1})
+    return ex

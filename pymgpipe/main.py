@@ -255,11 +255,7 @@ def _format_coverage_file(coverage_file, taxa_dir, out_dir):
     coverage = load_dataframe(coverage_file)
 
     conversion_file_path = out_dir + "sample_label_conversion.csv"
-    if not os.path.exists(conversion_file_path):
-        sample_conversion_dict = {
-            v: "mc" + str(i + 1) for i, v in enumerate(coverage.columns)
-        }
-    else:
+    try:
         sample_conversion_dict = (
             pd.read_csv(conversion_file_path, index_col=0).iloc[:, 0].to_dict()
         )
@@ -267,8 +263,12 @@ def _format_coverage_file(coverage_file, taxa_dir, out_dir):
             raise Exception(
                 "Provided label conversion file %s does not provide labels for all samples!"
                 % conversion_file_path
-            )
-
+        )
+    except:
+        sample_conversion_dict = {
+            v: "mc" + str(i + 1) for i, v in enumerate(sorted(coverage.columns))
+        }
+    
     conversion_t = {v: k for k, v in sample_conversion_dict.items()}
     coverage.rename(columns=sample_conversion_dict, inplace=True)
 
