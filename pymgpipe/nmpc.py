@@ -36,13 +36,13 @@ def compute_nmpcs(
     objective_out_file = out_dir + objective_out_file
     fluxes_out_file = out_dir + fluxes_out_file
 
-    nmpcs = pd.DataFrame() if force else load_dataframe(out_file, return_empty=True)
+    nmpcs = pd.DataFrame() if force or not write_to_file else load_dataframe(out_file, return_empty=True)
     all_fluxes = (
-        pd.DataFrame() if force else load_dataframe(fluxes_out_file, return_empty=True)
+        pd.DataFrame() if force or not write_to_file else load_dataframe(fluxes_out_file, return_empty=True)
     )
     obj_values = (
         pd.DataFrame()
-        if force
+        if force or not write_to_file
         else load_dataframe(objective_out_file, return_empty=True)
     )
     obj_values["communityBiomass"] = (
