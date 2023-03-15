@@ -68,7 +68,8 @@ def _get_fluxes_from_model(model, reactions=None, regex=None, threshold=1e-5):
             reverse = model.variables[r_id]
             flux = float(forward.primal - reverse.primal)
         flux = 0 if flux == -0.0 else flux
-        flux = flux if abs(flux) > threshold else 0
+        if threshold is not None:
+            flux = flux if abs(flux) > threshold else 0
         fluxes[forward.name] = flux
     return fluxes
 

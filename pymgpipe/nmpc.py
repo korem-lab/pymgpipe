@@ -9,6 +9,7 @@ from pathlib import Path
 from .fva import regularFVA
 from .utils import load_dataframe, load_model, set_objective
 from .io import suppress_stdout
+from .vffva import veryFastFVA
 
 
 def compute_nmpcs(
@@ -27,7 +28,13 @@ def compute_nmpcs(
     force=False,
     threshold=1e-5,
     write_to_file=True,
+    fva_type="regular",
+    obj_optimality=100,
 ):
+    assert fva_type == "regular" or fva_type == "fast", (
+        "FVA type must be either `regular` or `fast`! Received %s" % fva_type
+    )
+
     start = time.time()
     out_dir = out_dir + "/" if out_dir[-1] != "/" else out_dir
     Path(out_dir).mkdir(exist_ok=True)
@@ -36,9 +43,15 @@ def compute_nmpcs(
     objective_out_file = out_dir + objective_out_file
     fluxes_out_file = out_dir + fluxes_out_file
 
-    nmpcs = pd.DataFrame() if force or not write_to_file else load_dataframe(out_file, return_empty=True)
+    nmpcs = (
+        pd.DataFrame()
+        if force or not write_to_file
+        else load_dataframe(out_file, return_empty=True)
+    )
     all_fluxes = (
-        pd.DataFrame() if force or not write_to_file else load_dataframe(fluxes_out_file, return_empty=True)
+        pd.DataFrame()
+        if force or not write_to_file
+        else load_dataframe(fluxes_out_file, return_empty=True)
     )
     obj_values = (
         pd.DataFrame()
@@ -51,6 +64,11 @@ def compute_nmpcs(
 
     try:
         models = [load_model(samples)]
+
+        # Skip models that already exist
+        if models[0].name in list(nmpcs.columns) and not force:
+            print("NMPCs for %s already exist in file!" % models[0].name)
+            return
     except Exception:
         models = (
             samples
@@ -60,12 +78,14 @@ def compute_nmpcs(
                 for m in os.listdir(os.path.dirname(samples))
             ]
         )
-    models = [
-        f
-        for f in models
-        if not isinstance(f, str)
-        or os.path.basename(f).split(".")[0] not in list(nmpcs.columns)
-    ]
+
+        # Skip models that already exist
+        models = [
+            f
+            for f in models
+            if not isinstance(f, str)
+            or os.path.basename(f).split(".")[0] not in list(nmpcs.columns)
+        ]
     threads = os.cpu_count() - 1 if threads == -1 else threads
 
     print("Computing NMPCs on %s models..." % len(models))
@@ -80,6 +100,11 @@ def compute_nmpcs(
     print("------------------------------------------")
 
     for s in tqdm.tqdm(models, total=len(models)):
+        if fva_type == "fast":
+            assert isinstance(
+                s, str
+            ), "For fast fva, `samples` param must be directory or list of model paths."
+            model_path = s
         with suppress_stdout():
             m = load_model(path=s, solver=solver)
             if not isinstance(m, optlang.interface.Model):
@@ -93,43 +118,53 @@ def compute_nmpcs(
         m.variables["communityBiomass"].set_bounds(0.4, 1)
         set_objective(m, m.variables["communityBiomass"], direction="max")
 
-        with suppress_stdout():
-            m.optimize()
-        if m.status == "infeasible":
-            logging.warning("%s model is infeasible!" % m.name)
-            continue
-
-        obj_val = round(m.objective.value, 5)
-        obj_values.loc[m.name] = obj_val
-        if "ObjectiveConstraint" in m.constraints:
-            m.remove(m.constraints["ObjectiveConstraint"])
-            m.update()
-        obj_const = m.interface.Constraint(
-            expression=m.objective.expression,
-            lb=obj_val,
-            ub=obj_val,
-            name="ObjectiveConstraint",
-        )
-        m.add(obj_const)
-        m.update()
-
         # Now perform FVA under constrained objective value
-        with suppress_stdout():
-            try:
+        try:
+            if fva_type == "regular":
+                with suppress_stdout():
+                    m.optimize()
+                if m.status == "infeasible":
+                    logging.warning("%s model is infeasible!" % m.name)
+                    continue
+
+                obj_val = round(m.objective.value, 5)
+                obj_values.loc[m.name] = obj_val
+                if "ObjectiveConstraint" in m.constraints:
+                    m.remove(m.constraints["ObjectiveConstraint"])
+                    m.update()
+                obj_const = m.interface.Constraint(
+                    expression=m.objective.expression,
+                    lb=obj_val * (obj_optimality / 100),
+                    ub=obj_val,
+                    name="ObjectiveConstraint",
+                )
+                m.add(obj_const)
+                m.update()
                 res = regularFVA(
                     m,
                     reactions=reactions,
                     regex=regex,
                     ex_only=ex_only,
                     solver=solver,
-                    threads=threads,
+                    threads=threads if parallel else 1,
                     parallel=parallel,
                     write_to_file=False,
-                    threshold=threshold
+                    threshold=threshold,
                 )
-            except Exception:
-                logging.warning("Cannot solve %s model!" % m.name)
-                continue
+            elif fva_type == "fast":
+                res = veryFastFVA(
+                    model=m,
+                    path=model_path,
+                    reactions=reactions,
+                    regex=regex,
+                    nCores=threads if parallel else 1,
+                    nThreads=1,
+                    optPerc=obj_optimality,
+                    threshold=threshold,
+                )
+        except Exception as e:
+            logging.warning(f"Cannot solve {m.name} model!\n{e}")
+            continue
         if res is None:
             return
         res["sample_id"] = m.name
@@ -158,9 +193,9 @@ def compute_nmpcs(
             all_fluxes.to_csv(fluxes_out_file)
 
     res = namedtuple("res", "nmpc objectives fluxes")
-    
+
     print("-------------------------------------------------------")
-    print('Finished computing NMPCs!')
-    print('Process took %s minutes to run...'%round((time.time()-start)/60,3))
+    print("Finished computing NMPCs!")
+    print("Process took %s minutes to run..." % round((time.time() - start) / 60, 3))
 
     return res(nmpcs, obj_values, all_fluxes)
