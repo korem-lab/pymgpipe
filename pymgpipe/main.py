@@ -259,25 +259,22 @@ def _format_coverage_file(coverage_file, taxa_dir, out_dir):
 
     conversion_file_path = out_dir + "sample_label_conversion.csv"
     try:
-        sample_conversion_dict = (
-            pd.read_csv(conversion_file_path, index_col=0).iloc[:, 0].to_dict()
-        )
+        sample_conversion_dict = pd.read_csv(conversion_file_path, index_col=0).iloc[:, 0].to_dict()
         if set(sample_conversion_dict.keys()) != set(coverage.columns):
             raise Exception(
                 "Provided label conversion file %s does not provide labels for all samples!"
                 % conversion_file_path
         )
+        conversion_t = {v: k for k, v in sample_conversion_dict.items()}
     except:
         sample_conversion_dict = {
             v: "mc" + str(i + 1) for i, v in enumerate(sorted(coverage.columns))
         }
+        pd.DataFrame({"conversion": sample_conversion_dict}).to_csv(conversion_file_path)
     
-    conversion_t = {v: k for k, v in sample_conversion_dict.items()}
+        conversion_t = {v: k for k, v in sample_conversion_dict.items()}
+
     coverage.rename(columns=sample_conversion_dict, inplace=True)
-
-    sample_conversion_dict = pd.DataFrame({"conversion": sample_conversion_dict})
-    sample_conversion_dict.to_csv(conversion_file_path)
-
     melted = pd.melt(
         coverage,
         value_vars=coverage.columns,
