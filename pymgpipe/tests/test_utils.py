@@ -6,7 +6,11 @@ def test_remove_reverse_reactions(mini_optlang_model):
     reverse_var_id = get_reverse_id(some_var.name)
     assert reverse_var_id in mini_optlang_model.variables
 
-    remove_reverse_vars(mini_optlang_model)
-    new_reactions = len(mini_optlang_model.variables)
+    remove_reverse_vars(mini_optlang_model,hard_remove=False)
+    assert len(mini_optlang_model.variables) == num_reactions and \
+        mini_optlang_model.variables[reverse_var_id].lb == 0 and mini_optlang_model.variables[reverse_var_id].ub == 0
 
-    assert new_reactions == num_reactions/2 and reverse_var_id not in mini_optlang_model.variables
+    remove_reverse_vars(mini_optlang_model,hard_remove=True)
+    assert len(mini_optlang_model.variables) == num_reactions/2 and reverse_var_id not in mini_optlang_model.variables
+
+

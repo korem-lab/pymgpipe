@@ -2,22 +2,38 @@ import os
 import pandas as pd
 import csv
 import pathlib
-from .io import load_model
+import contextlib
+from .io import load_model, suppress_stdout
 from .utils import get_reactions, Constants
 
-VFFVA_PATH = '/Users/yolimeydan/Documents/Columbia/VFFVA'
+class VFFVA(object):
+    def __init__(self):
+        self._path = None
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+
+vffva_config = VFFVA()
+
 def veryFastFVA(
         nCores, 
-        nThreads, 
-        model, 
+        nThreads,
+        path, 
+        model=None, 
         ex_only=True,
         scaling=0, 
         memAff='none', 
         schedule='dynamic', 
         nChunk=50, 
         optPerc=90, 
-        ex=[], 
-        VFFVA_PATH='your/path/to/vffva/'):
+        reactions=None,
+        regex=None,
+        threshold=1e-5):
     '''
     VFFVA performs Very Fast Flux Variability Analysis (VFFVA). VFFVA is a parallel implementation of FVA that
     allows dynamically assigning reactions to each worker depending on their computational load
@@ -45,7 +61,6 @@ def veryFastFVA(
            minFlux:          (n,1) vector of minimal flux values for each reaction.
            maxFlux:          (n,1) vector of maximal flux values for each reaction.
     '''
-    print(pathlib.Path(__file__).parent.resolve())
     status = os.system('mpirun --version')
     if status != 0:
         raise ValueError(['MPI and/or CPLEX nont installed, please follow the install guide'
@@ -54,39 +69,36 @@ def veryFastFVA(
     # Set schedule and chunk size parameters
     os.environ["OMP_SCHEDUELE"] = schedule+str(nChunk)
 
-    var_dict = {i:v.name for i,v in enumerate(load_model(model).variables)}
-    var_inv_dict = {v:k for k,v in var_dict.items()}
+    model = load_model(path if model is None else model)
+    var_dict = {i:v.name for i,v in enumerate(model.variables)}
+    var_dict_inv = {v:k for k,v in var_dict.items()}
 
-    if ex_only:
-        ex = [var_inv_dict[r.name] for r in get_reactions(model,regex=Constants.EX_REGEX)]
-        ex_indices = ex
-        print('Running on %s exchange reactions!'%len(ex))
-
+    ex_indices = [var_dict_inv[r.name] for r in get_reactions(model, reactions = reactions, regex = Constants.EX_REGEX if ex_only and regex is None else regex)]
+    print('Running on %s reactions!'%len(ex_indices))
+    
     # Set reactions to optimize
-    if ex!=[]:
-        with open('rxns.csv', 'w', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            wr.writerow(ex)
-        ex='rxns.csv'
-    else:
-        ex=''
-
+    rxns_file = 'rxns_%s.txt'%model.name
+    with open(rxns_file, "w") as f:
+        for num in ex_indices:
+            f.write(str(num) + "\n")   
+  
+    assert vffva_config.path is not None, 'Please set value of `vffva_config.path` to location of VFFVA executable'
     status = os.system('mpirun -np ' + str(nCores) + ' --bind-to ' + str(memAff) + ' -x OMP_NUM_THREADS=' + str(nThreads) +
-         f' {VFFVA_PATH}/lib/veryfastFVA ' + model + ' ' + str(optPerc) + ' ' + str(scaling) + ' ' + ex)
+        f' {vffva_config.path}/lib/veryfastFVA ' + path + ' ' + str(optPerc) + ' ' + str(scaling) + ' ' + rxns_file)
 
     # Fetch results
-    resultFile = model[:-4] + 'output.csv'
+    resultFile = path[:-4] + 'output.csv'
     if not os.path.exists(resultFile):
         raise Exception('Ran into issue when running VFFVA, could not find results file...')
-    results = pd.read_csv(resultFile)
+    results = pd.read_csv(resultFile,header=0)
 
-    # remove result file
     os.system('rm '+resultFile)
-    if ex!='':
-        os.system('rm '+ex)
+    os.system('rm '+rxns_file)
+    results.rename({i:var_dict[x] for i,x in enumerate(ex_indices) if i in results.index},axis=0,inplace=True)
 
-    results.rename(var_dict,axis=0,inplace=True)
     results.index.rename('id',inplace=True)
-    results.sort_index(inplace=True)
-
+    if threshold is not None:
+        results[abs(results)<threshold]=0
+    # results.sort_index(inplace=True)
+    results.columns=['min','max']
     return results
