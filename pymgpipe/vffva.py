@@ -99,6 +99,7 @@ def veryFastFVA(
     results.index.rename('id',inplace=True)
     if threshold is not None:
         results[abs(results)<threshold]=0
-    # results.sort_index(inplace=True)
+    
+    results.sort_index(inplace=True)
     results.columns=['min','max']
     return results
