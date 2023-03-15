@@ -90,4 +90,4 @@ jobs:
       with:
         message: Update coverage on Readme
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        force: True
+        force: true
