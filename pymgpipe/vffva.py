@@ -6,6 +6,20 @@ from .io import load_model
 from .utils import get_reactions, Constants
 
 VFFVA_PATH = '/Users/yolimeydan/Documents/Columbia/VFFVA'
+
+class VFFVA(object):
+    def __init__(self):
+        self._vffva_path = None
+
+    @property
+    def vffva_path(self):
+        return self._vffva_path
+
+    @vffva_path.setter
+    def vffva_path(self, value):
+        self._vffva_path = value
+    
+
 def veryFastFVA(
         nCores, 
         nThreads, 
