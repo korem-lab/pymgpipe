@@ -159,7 +159,6 @@ def get_adapted_diet(
             "EX_ade(e)",
             "EX_adn(e)",
             "EX_adocbl(e)",
-            "EX_adpcbl(e)",
             "EX_ala_D(e)",
             "EX_ala_L(e)",
             "EX_amet(e)",
@@ -277,21 +276,9 @@ def get_adapted_diet(
             "EX_orot(e)",
             "EX_glymet(e)",
             "EX_glyleu(e)",
-            "EX_sucr(e)",
-            "EX_sbt_D(e)",
-            "EX_akg(e)",
-            "EX_glytyr(e)",
-            "EX_glypro(e)",
-            "EX_glyphe(e)",
-            "EX_glymet(e)",
-            "EX_glyleu(e)",
-            "EX_glyglu(e)",
-            "EX_glygln(e)",
-            "EX_glyasp(e)",
-            "EX_glyasn(e)",
-            "EX_alagly(e)",
-            "EX_gam(e)",
-            "EX_mantr(e)",
+            "EX_pydx5p(e)",
+            "EX_so3(e)",
+            "EX_nh4(e)",
         ]
     )
 
@@ -404,8 +391,8 @@ def get_adapted_diet(
     ] = -1
 
     if vaginal:
-        adapted_diet.loc['EX_cytd(e)','lb']=-10
-        adapted_diet.loc['EX_ttdca(e)','lb']=-1
+        adapted_diet.loc["EX_cytd(e)", "lb"] = -10
+        adapted_diet.loc["EX_ttdca(e)", "lb"] = -1
 
     adapted_diet.index = adapted_diet.index.str.split("\(e\)").str[0]
     return adapted_diet
@@ -432,7 +419,12 @@ def get_diet(model):
 
 
 def add_diet_to_model(
-    model, diet, force_uptake=True, essential_metabolites=None, micronutrients=None, vaginal=False
+    model,
+    diet,
+    force_uptake=True,
+    essential_metabolites=None,
+    micronutrients=None,
+    vaginal=False,
 ):
     model = load_model(model)
 

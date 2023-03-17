@@ -186,7 +186,7 @@ def compute_nmpcs(
             nmpc = res["min"] + res["max"]
             nmpc.name = m.name
 
-        nmpcs = pd.concat([nmpcs, nmpc], axis=1)
+        nmpcs = pd.concat([nmpcs, nmpc], axis=1).fillna(0)
         if write_to_file:
             nmpcs.to_csv(out_file)
             obj_values.to_csv(objective_out_file)
