@@ -64,6 +64,7 @@ def build_models(
         essential_metabolites (list): List of metabolites to include as essential within the diet
         micronutrients (list): List of metabolites to include as micronutrients within diet
         force_uptake (bool): Force minimum uptake of nutrients from diet
+        diet_threshold (float): Threshold on imposed diet uptake, i.e. lb < metabolite < (threshold * lb)
         solver (str): LP solver (gurobi or cplex) used to solve models, defaults to gurobi
         parallel (bool): Samples will be built in parallel if set to True
         threads (int): Number of threads to use if building in parallel
