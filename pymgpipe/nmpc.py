@@ -61,10 +61,6 @@ def compute_nmpcs(
         If computation is cut short prematurely, this function will pick up where it left off based on which samples are already present in `out_file`. 
 
     """
-    assert fva_type == "regular" or fva_type == "fast", (
-        "FVA type must be either `regular` or `fast`! Received %s" % fva_type
-    )
-
     start = time.time()
     out_dir = out_dir + "/" if out_dir[-1] != "/" else out_dir
     Path(out_dir).mkdir(exist_ok=True)
@@ -108,46 +104,21 @@ def compute_nmpcs(
                 for m in os.listdir(os.path.dirname(samples))
             ]
         )
-
         # Skip models that already exist
-        models = [
-            f
-            for f in models
-            if not isinstance(f, str)
-            or os.path.basename(f).split(".")[0] not in list(nmpcs.columns)
-        ]
+        models = [f for f in models if force or f.split("/")[-1].split(".")[0] not in list(nmpcs.columns)]
 
     print("Computing NMPCs on %s models using %s..." % (len(models),str(fva_type)))
 
-    for s in tqdm.tqdm(models, total=len(models)):
-        if fva_type == FVA_TYPE.FAST:
-            solver = 'cplex'
-            assert isinstance(
-                s, str
-            ), "For fast fva, `samples` param must be directory or list of model paths."
-            model_path = s
-        with suppress_stdout():
-            m = load_model(path=s, solver=solver)
-            if not isinstance(m, optlang.interface.Model):
-                raise Exception("Expected optlang.Model, received %s" % type(m))
-            if not force and m.name in list(nmpcs.columns):
-                continue
-
-        # Solve for objective first
-        if "communityBiomass" not in m.variables:
-            raise Exception("Could not find communityBiomass variable in model!")
-        m.variables["communityBiomass"].set_bounds(0.4, 1)
-        set_objective(m, m.variables["communityBiomass"], direction="max")
-
-        # Now perform FVA under constrained objective value
+    for m in tqdm.tqdm(models, total=len(models)):
+        m_name = m.split("/")[-1].split(".")[0]
         try:
             res = fva(
-                m if fva_type is FVA_TYPE.REGULAR else model_path,
+                m,
+                solver=solver,
                 fva_type=fva_type,
                 reactions=reactions,
                 regex=regex,
                 ex_only=ex_only,
-                solver=solver,
                 threads=threads,
                 parallel=parallel,
                 write_to_file=False,
@@ -158,11 +129,11 @@ def compute_nmpcs(
                 schedule=schedule,
             )
         except Exception as e:
-            logging.warning(f"Cannot solve {m.name} model!\n{e}")
+            logging.warning(f"Cannot solve {m_name} model!\n{e}")
             continue
         if res is None:
             return
-        res["sample_id"] = m.name
+        res["sample_id"] = m_name
         all_fluxes = pd.concat([all_fluxes, res], axis=0)
         if diet_fecal_compartments:
             metabs = [
@@ -176,10 +147,10 @@ def compute_nmpcs(
                 d = res.loc["Diet_" + metab + "[d]"]["min"]
 
                 df[metab.split("EX_")[1]] = d + fe
-            nmpc = pd.DataFrame({m.name: df})
+            nmpc = pd.DataFrame({m_name: df})
         else:
             nmpc = res["min"] + res["max"]
-            nmpc.name = m.name
+            nmpc.name = m_name
 
         nmpcs = pd.concat([nmpcs, nmpc], axis=1).fillna(0)
         if write_to_file:

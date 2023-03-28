@@ -60,6 +60,7 @@ def fva(
             model, str
         ), "For fast FVA, `model` needs to be passed in as path to .mps file"
         path = model
+        solver = 'cplex'
 
     model = load_model(path=model, solver=solver)
     with suppress_stdout():
