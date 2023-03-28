@@ -14,7 +14,7 @@ from .io import load_model
 
 
 def get_adapted_diet(
-    diet, essential_metabolites=None, micronutrients=None, vaginal=False
+    diet, essential_metabolites=None, micronutrients=None, vaginal=False, threshold=0.8
 ):
     if not isinstance(diet, pd.DataFrame):
         raise Exception(
@@ -374,7 +374,7 @@ def get_adapted_diet(
     )
 
     adapted_diet.lb = -adapted_diet.lb
-    adapted_diet["ub"] = 0.8 * adapted_diet.lb
+    adapted_diet["ub"] = threshold * adapted_diet.lb
     adapted_diet["ub"].loc[~adapted_diet.index.isin(list(diet.index))] = 0
 
     adapted_diet.loc[
@@ -425,6 +425,8 @@ def add_diet_to_model(
     essential_metabolites=None,
     micronutrients=None,
     vaginal=False,
+    threshold=0.8,
+    check=True
 ):
     model = load_model(model)
 
@@ -491,7 +493,7 @@ def add_diet_to_model(
     if micronutrients is not None:
         print("Using custom set of micronutrients...")
 
-    d = get_adapted_diet(diet_df, essential_metabolites, micronutrients, vaginal)
+    d = get_adapted_diet(diet_df, essential_metabolites, micronutrients, vaginal, threshold)
 
     logging.info("Adding %s diet to model..." % diet)
     added = []
@@ -509,10 +511,13 @@ def add_diet_to_model(
 
             added.append({"id": f.name, "lb": row.lb, "ub": row.ub})
 
-    print("Checking diet feasibility...\n")
-    model.optimize()
-    if model.status == "infeasible":
-        logging.warning("%s is infeasible with provided diet!" % model.name)
+    if check:
+        print("Checking diet feasibility...\n")
+        model.configuration.presolve = True
+        model.configuration.lp_method = 'auto'
+        model.optimize()
+        if model.status == "infeasible":
+            logging.warning("%s is infeasible with provided diet!" % model.name)
 
     if len(added) == 0:
         logging.warning("Zero metabolites from diet were found within model!")
