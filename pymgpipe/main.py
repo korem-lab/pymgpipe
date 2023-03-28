@@ -56,6 +56,13 @@ def build_models(
         out_dir (str): Directory to save output of this function (models, LP problems, etc.), defaults to cwd
         diet_fecal_compartments (bool): Build models with mgpipe's diet/fecal compartmentalization, defaults to False
         coupling_constraints (bool): Add mgpipe's abundance coupling constraints to internal reactions, defaults to True
+        remove_reverse_vars_from_lp (bool): Remove reverse variables that are added into COBRApy models
+        hard_remove (bool): If set to True, variables will be removed entirely from models, which can be a time consuming process. Having it set to False will `remove` them by setting their bounds to 0.
+        diet (str): Name of diet or file you want to impose on models (can be one diet or personalized)
+        vaginal (bool): Impose vaginal diet constraints to support vaginal diet
+        essential_metabolites (list): List of metabolites to include as essential within the diet
+        micronutrients (list): List of metabolites to include as micronutrients within diet
+        force_uptake (bool): Force minimum uptake of nutrients from diet
         solver (str): LP solver (gurobi or cplex) used to solve models, defaults to gurobi
         parallel (bool): Samples will be built in parallel if set to True
         threads (int): Number of threads to use if building in parallel

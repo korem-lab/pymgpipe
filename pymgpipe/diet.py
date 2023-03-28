@@ -34,7 +34,7 @@ def get_adapted_diet(
         inplace=True,
     )
 
-    essential_metabolites = (
+    essential_metabolites = essential_metabolites if essential_metabolites is not None else (
         [
             "EX_12dgr180(e)",
             "EX_26dap_M(e)",
@@ -316,7 +316,7 @@ def get_adapted_diet(
         if "EX_chol(e)" not in adapted_diet.index:
             adapted_diet.loc["EX_chol(e)"] = [41.251]
 
-    micronutrients = (
+    micronutrients = micronutrients if micronutrients is not None else (
         [
             "EX_adocbl(e)",
             "EX_vitd2(e)",
