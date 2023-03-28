@@ -7,7 +7,7 @@ import time
 from collections import namedtuple
 from pathlib import Path
 from .fva import regularFVA
-from .utils import load_dataframe, load_model, set_objective
+from .utils import load_dataframe, load_model, set_objective, Constants
 from .io import suppress_stdout
 from .vffva import veryFastFVA
 
@@ -30,7 +30,34 @@ def compute_nmpcs(
     write_to_file=True,
     fva_type="regular",
     obj_optimality=100,
+    scaling=0,
 ):
+    """Compute NMPCs as well as associated reaction metrics on specified list (or directory) of samples
+
+    This function is computes NMPCs at the level of the optlang LP problem to leverage speed of low-level representation.
+    Available FVA types are `regular` and `fast`. `Fast` FVA is significantly faster, but requires both a CPLEX license and full install of the VFFVA package.
+
+    NMPCs are calculated as the max fluxes secreted by the fecal compartment (positive values only) summed with the min flux uptaken by the diet compartment (negative values only).
+    In cases where models are not build with diet/fecal compartments, NMPCs are simply calculated as the sum of the max and min fluxes.
+
+    Args:
+        samples (list | str): List of samples or directory containing samples
+        out_dir (str): Directory to output results
+        out_file (str): Name of file containing final NMPCs
+        objective_out_file (str): Name of file containing community objectives
+        fluxes_out_file (str): Name of file containing fluxes
+        reactions (list): List of reactions to run NMPCs on
+        regex (str): Regex match for list of reactions to run NMPCs on
+        diet_fecal_compartments (bool): Whether or not models are built with diet/fecal compartmentalization 
+        ex_only (bool): Compute NMPCs on exchange reactions only
+        fva_type (str): FVA type used to compute NMPCs, allowed values are `fast` and `regular`
+        obj_optimality (str): Percent of optimal objective value constrained during NMPC computation
+        write_to_file (bool): Write results to file
+
+    Notes:
+        If computation is cut short prematurely, this function will pick up where it left off based on which samples are already present in `out_file`. 
+
+    """
     assert fva_type == "regular" or fva_type == "fast", (
         "FVA type must be either `regular` or `fast`! Received %s" % fva_type
     )
@@ -161,6 +188,7 @@ def compute_nmpcs(
                     nThreads=1,
                     optPerc=obj_optimality,
                     threshold=threshold,
+                    scaling=scaling
                 )
         except Exception as e:
             logging.warning(f"Cannot solve {m.name} model!\n{e}")

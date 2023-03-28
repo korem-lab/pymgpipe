@@ -5,6 +5,7 @@ import pathlib
 import contextlib
 from .io import load_model, suppress_stdout
 from .utils import get_reactions, Constants
+import logging 
 
 class VFFVA(object):
     def __init__(self):
@@ -70,6 +71,12 @@ def veryFastFVA(
     os.environ["OMP_SCHEDUELE"] = schedule+str(nChunk)
 
     model = load_model(path if model is None else model)
+    with suppress_stdout():
+        model.optimize()
+    if model.status == "infeasible":
+        raise Exception("%s model is infeasible!" % model.name)
+        return
+    
     var_dict = {i:v.name for i,v in enumerate(model.variables)}
     var_dict_inv = {v:k for k,v in var_dict.items()}
 

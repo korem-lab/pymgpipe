@@ -1,3 +1,15 @@
+# Ignore everything in repository root 
+/*
+
+# Files to not ignore
+!/.gitignore
+!/README.md
+!/requirements.txt
+!/pymgpipe/
+!/examples/
+!/docs/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
