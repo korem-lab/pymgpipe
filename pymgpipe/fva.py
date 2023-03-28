@@ -12,9 +12,9 @@ from .utils import (
     Constants,
     get_reactions,
     get_reverse_id,
-    solve_model,
-    suppress_stdout
+    solve_model
 )
+from .io import suppress_stdout
 
 class VFFVA(object):
     def __init__(self):
@@ -210,8 +210,11 @@ def veryFastFVA(
             f.write(str(num) + "\n")   
   
     assert vffva_config.path is not None, 'Please set value of `vffva_config.path` to location of VFFVA executable'
-    status = os.system('mpirun -np ' + str(nCores) + ' --bind-to ' + str(memAff) + ' -x OMP_NUM_THREADS=' + str(nThreads) +
-        f' {vffva_config.path}/lib/veryfastFVA ' + path + ' ' + str(optPerc) + ' ' + str(scaling) + ' ' + rxns_file)
+    try:
+        status = os.system('mpirun -np ' + str(nCores) + ' --bind-to ' + str(memAff) + ' -x OMP_NUM_THREADS=' + str(nThreads) +
+            f' {vffva_config.path}/lib/veryfastFVA ' + path + ' ' + str(optPerc) + ' ' + str(scaling) + ' ' + rxns_file)
+    except:
+        raise Exception('Ran into issue when submitting VFFVA mpirun, please check installation- %s'%status)
 
     # Fetch results
     resultFile = path[:-4] + 'output.csv'
