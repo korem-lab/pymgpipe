@@ -6,7 +6,7 @@ import optlang
 import time
 from collections import namedtuple
 from pathlib import Path
-from .fva import regularFVA, veryFastFVA
+from .fva import FVA_TYPE, fva
 from .utils import load_dataframe, load_model, set_objective, Constants
 from .io import suppress_stdout
 
@@ -26,9 +26,11 @@ def compute_nmpcs(
     force=False,
     threshold=1e-5,
     write_to_file=True,
-    fva_type="regular",
-    obj_optimality=100,
+    fva_type=FVA_TYPE.REGULAR,
+    objective_percent=40,
     scaling=0,
+    mem_aff="none",
+    schedule="dynamic",
 ):
     """Compute NMPCs as well as associated reaction metrics on specified list (or directory) of samples
 
@@ -114,21 +116,11 @@ def compute_nmpcs(
             if not isinstance(f, str)
             or os.path.basename(f).split(".")[0] not in list(nmpcs.columns)
         ]
-    threads = os.cpu_count() - 1 if threads == -1 else threads
 
-    print("Computing NMPCs on %s models..." % len(models))
-    print("\n----------------Parameters----------------")
-    print("Parallel- %s" % str(parallel).upper())
-    print("Threads- %s" % str(threads).upper())
-    print("Solver- %s" % solver.upper())
-    print("Diet/fecal compartments- %s" % str(diet_fecal_compartments).upper())
-    print("Exchanges only- %s" % str(ex_only).upper())
-    print("Out file- %s" % str(out_file).upper())
-    print("Force ovewrite- %s" % str(force).upper())
-    print("------------------------------------------")
+    print("Computing NMPCs on %s models using %s..." % (len(models),str(fva_type)))
 
     for s in tqdm.tqdm(models, total=len(models)):
-        if fva_type == "fast":
+        if fva_type == FVA_TYPE.FAST:
             solver = 'cplex'
             assert isinstance(
                 s, str
@@ -149,49 +141,22 @@ def compute_nmpcs(
 
         # Now perform FVA under constrained objective value
         try:
-            if fva_type == "regular":
-                with suppress_stdout():
-                    m.optimize()
-                if m.status == "infeasible":
-                    logging.warning("%s model is infeasible!" % m.name)
-                    continue
-
-                obj_val = round(m.objective.value, 5)
-                obj_values.loc[m.name] = obj_val
-                if "ObjectiveConstraint" in m.constraints:
-                    m.remove(m.constraints["ObjectiveConstraint"])
-                    m.update()
-                obj_const = m.interface.Constraint(
-                    expression=m.objective.expression,
-                    lb=obj_val * (obj_optimality / 100),
-                    ub=obj_val,
-                    name="ObjectiveConstraint",
-                )
-                m.add(obj_const)
-                m.update()
-                res = regularFVA(
-                    m,
-                    reactions=reactions,
-                    regex=regex,
-                    ex_only=ex_only,
-                    solver=solver,
-                    threads=threads if parallel else 1,
-                    parallel=parallel,
-                    write_to_file=False,
-                    threshold=threshold,
-                )
-            elif fva_type == "fast":
-                res = veryFastFVA(
-                    model=m,
-                    path=model_path,
-                    reactions=reactions,
-                    regex=regex,
-                    nCores=threads if parallel else 1,
-                    nThreads=1,
-                    optPerc=obj_optimality,
-                    threshold=threshold,
-                    scaling=scaling
-                )
+            res = fva(
+                m if fva_type is FVA_TYPE.REGULAR else model_path,
+                fva_type=fva_type,
+                reactions=reactions,
+                regex=regex,
+                ex_only=ex_only,
+                solver=solver,
+                threads=threads,
+                parallel=parallel,
+                write_to_file=False,
+                threshold=threshold,
+                objective_percent=objective_percent,
+                scaling=scaling,
+                mem_aff=mem_aff,
+                schedule=schedule,
+            )
         except Exception as e:
             logging.warning(f"Cannot solve {m.name} model!\n{e}")
             continue

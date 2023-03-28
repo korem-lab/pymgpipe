@@ -28,7 +28,7 @@ def solve_model(
     verbosity=0,
     presolve=True,
     method="primal",
-    flux_threshold=1e-5,
+    flux_threshold=None,
     ex_only=True,
 ):
     model = load_model(model, solver)
