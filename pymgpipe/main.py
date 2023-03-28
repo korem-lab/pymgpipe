@@ -74,7 +74,7 @@ def build_models(
         compute_metrics (bool): Compute diversity metrics for built models, defaults to True
 
     Notes:
-        COBRA models written to *out_dir/models/*
+        COBRA models written to *out_dir/models/*\n
         LP problems written to *out_dir/problems/*
 
     """

@@ -6,11 +6,9 @@ import optlang
 import time
 from collections import namedtuple
 from pathlib import Path
-from .fva import regularFVA
+from .fva import regularFVA, veryFastFVA
 from .utils import load_dataframe, load_model, set_objective, Constants
 from .io import suppress_stdout
-from .vffva import veryFastFVA
-
 
 def compute_nmpcs(
     samples,
@@ -36,6 +34,7 @@ def compute_nmpcs(
 
     This function is computes NMPCs at the level of the optlang LP problem to leverage speed of low-level representation.
     Available FVA types are `regular` and `fast`. `Fast` FVA is significantly faster, but requires both a CPLEX license and full install of the VFFVA package.
+    Additionally, all problems need to be in .mps format if using `fast` FVA type. For more information, see VFFVA package- https://github.com/marouenbg/VFFVA.
 
     NMPCs are calculated as the max fluxes secreted by the fecal compartment (positive values only) summed with the min flux uptaken by the diet compartment (negative values only).
     In cases where models are not build with diet/fecal compartments, NMPCs are simply calculated as the sum of the max and min fluxes.
@@ -51,7 +50,9 @@ def compute_nmpcs(
         diet_fecal_compartments (bool): Whether or not models are built with diet/fecal compartmentalization 
         ex_only (bool): Compute NMPCs on exchange reactions only
         fva_type (str): FVA type used to compute NMPCs, allowed values are `fast` and `regular`
-        obj_optimality (str): Percent of optimal objective value constrained during NMPC computation
+        solver (str): LP solver used to compute NMPCs, allowed values are `gurobi` and `cplex`
+        obj_optimality (float): Percent of optimal objective value constrained during NMPC computation
+        threshold (float): Fluxes below threshold will be set to 0
         write_to_file (bool): Write results to file
 
     Notes:
@@ -128,6 +129,7 @@ def compute_nmpcs(
 
     for s in tqdm.tqdm(models, total=len(models)):
         if fva_type == "fast":
+            solver = 'cplex'
             assert isinstance(
                 s, str
             ), "For fast fva, `samples` param must be directory or list of model paths."
