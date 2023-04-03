@@ -45,7 +45,8 @@ def build_models(
     diet_threshold=0.8,
     compress=True,
     compute_metrics=True,
-    force=False
+    force=False,
+    sample_prefix='mc'
 ):
     """Build community COBRA models using mgpipe-like compartments and constraints.
 
@@ -93,7 +94,7 @@ def build_models(
     Path(model_dir).mkdir(exist_ok=True)
     Path(problem_dir).mkdir(exist_ok=True)
 
-    formatted = _format_coverage_file(coverage_file, taxa_dir, out_dir)
+    formatted = _format_coverage_file(coverage_file, taxa_dir, out_dir, sample_prefix)
     samples_to_run = formatted.sample_id.unique()
     taxa = formatted.strain.unique()
 
@@ -261,7 +262,7 @@ def _build_single_model(
     return metrics
 
 
-def _format_coverage_file(coverage_file, taxa_dir, out_dir):
+def _format_coverage_file(coverage_file, taxa_dir, out_dir, sample_prefix):
     existing_taxa_files = {
         t.split("/")[-1].split(".")[0]: taxa_dir + t for t in os.listdir(taxa_dir)
     }
@@ -278,9 +279,12 @@ def _format_coverage_file(coverage_file, taxa_dir, out_dir):
         )
         conversion_t = {v: k for k, v in sample_conversion_dict.items()}
     except:
-        sample_conversion_dict = {
-            v: "mc" + str(i + 1) for i, v in enumerate(sorted(coverage.columns))
-        }
+        if sample_prefix is not None:
+            sample_conversion_dict = {
+                v: sample_prefix + str(i + 1) for i, v in enumerate(sorted(coverage.columns))
+            }
+        else:
+            sample_conversion_dict = {v: v for v in sorted(coverage.columns)}
         pd.DataFrame({"conversion": sample_conversion_dict}).to_csv(conversion_file_path)
     
         conversion_t = {v: k for k, v in sample_conversion_dict.items()}
