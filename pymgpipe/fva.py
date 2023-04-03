@@ -51,7 +51,8 @@ def fva(
     scaling=0,
     mem_aff="none",
     schedule="dynamic",
-    objective_percent=100,
+    objective_percent=None,
+    force=False,
 ):
     gc.enable()
 
@@ -60,7 +61,7 @@ def fva(
             model, str
         ), "For fast FVA, `model` needs to be passed in as path to .mps file"
         path = model
-        solver = 'cplex'
+        #solver = 'cplex'
 
     model = load_model(path=model, solver=solver)
     with suppress_stdout():
@@ -73,16 +74,15 @@ def fva(
 
     reactions_to_run = [r.name for r in get_reactions(model, reactions, regex)]
 
-    result_df = pd.DataFrame()
+    out_df = pd.DataFrame()
     if write_to_file:
         out_file = out_file if out_file is not None else "%s_fva.csv" % model.name
-        result_df = load_dataframe(out_file, return_empty=True)
+        out_df = load_dataframe(out_file, return_empty=True) if not force else pd.DataFrame()
 
-        metabs_to_skip = list(result_df.index)
-        print("\nFound existing file, skipping %s metabolites..." % len(metabs_to_skip))
-
-        reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip]
-        result_df = result_df.to_dict("records")
+        metabs_to_skip = list(out_df.index)
+        if len(metabs_to_skip) > 0:
+            print("\nFound existing file, skipping %s metabolites..." % len(metabs_to_skip))
+            reactions_to_run = [r for r in reactions_to_run if r not in metabs_to_skip]
 
     if len(reactions_to_run) == 0:
         print("---Finished! No reactions left to run---")
@@ -101,24 +101,22 @@ def fva(
 
     split_reactions = np.array_split(reactions_to_run, threads)
     print(
-        "Starting parallel FVA with %s chunks on %s threads"
-        % (threads, len(split_reactions))
+        "Starting parallel FVA on %s reactions using %s chunks on %s threads...\n"
+        % (len(reactions_to_run), threads, len(split_reactions))
     )
 
     if fva_type == FVA_TYPE.REGULAR:
         # VFFVA does this automatically
-        obj_val = round(model.objective.value, 5)
-        if "ObjectiveConstraint" in model.constraints:
-            model.remove(model.constraints["ObjectiveConstraint"])
+        if objective_percent is not None:
+            print(f'Constraining objective value to {objective_percent}% of optimal value...')
+            
+            prev_bounds = {}
+            for v in model.objective.expression.free_symbols:
+                prev_bounds[v.name]=(v.lb,v.ub)
+                v.lb = float(v.primal) * (objective_percent/100)
+                print(v)
+            
             model.update()
-        obj_const = model.interface.Constraint(
-            expression=model.objective.expression,
-            lb=obj_val * (objective_percent / 100),
-            ub=obj_val,
-            name="ObjectiveConstraint",
-        )
-        model.add(obj_const)
-        model.update()
 
         _func = partial(_optlang_worker, threshold)
         if parallel:
@@ -141,8 +139,13 @@ def fva(
         except Exception:
             pass
 
-        model.remove(obj_const)
-        model.update()
+        # reset
+        if objective_percent is not None:
+            for v, (lower, upper) in prev_bounds.items():
+                model.variables[v].set_bounds(lower, upper)
+
+            model.update()
+
     elif fva_type == FVA_TYPE.FAST:
         status = os.system("mpirun --version")
         if status != 0:
@@ -155,6 +158,8 @@ def fva(
 
         # Set schedule and chunk size parameters
         os.environ["OMP_SCHEDUELE"] = schedule + str(len(split_reactions[0]))
+
+        objective_percent = objective_percent if objective_percent is not None else -1
 
         var_dict = {i: v.name for i, v in enumerate(model.variables)}
         var_dict_inv = {v: k for k, v in var_dict.items()}
@@ -188,11 +193,13 @@ def fva(
         os.system("rm " + resultFile)
         os.system("rm " + rxns_file)
         result_df.rename(
-            {i: var_dict[x] for i, x in enumerate(ex_indices) if i in out_df.index},
+            {i: var_dict[x] for i, x in enumerate(ex_indices) if i in result_df.index},
             axis=0,
             inplace=True,
         )
         result_df.index.rename("id", inplace=True)
+        result_df.columns = ['min', 'max']
+        
         out_df = pd.concat([out_df, result_df], axis=0)
     else:
         raise Exception('`fva_type` must be equal to either FVA_TYPE.REGULAR or FVA_TYPE.FAST! Received %s'%fva_type)
@@ -201,7 +208,10 @@ def fva(
         out_df[abs(out_df) < threshold] = 0
 
     out_df.sort_index(inplace=True)
-    out_df.columns = ["min", "max"]
+    out_df.columns = ['min', 'max']
+
+    if write_to_file:
+        out_df.to_csv(out_file)
 
     return out_df
 
