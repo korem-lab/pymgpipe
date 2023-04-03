@@ -1,12 +1,12 @@
 import optlang
 import os
 import pandas as pd
-from pymgpipe import get_reactions, regularFVA, compute_nmpcs
+from pymgpipe import get_reactions, fva, compute_nmpcs
 
 
 def test_regularFVA(mini_optlang_model):
     ex_reactions = [r.name for r in get_reactions(mini_optlang_model, regex="EX_.*")]
-    fva_res = regularFVA(mini_optlang_model, ex_reactions)
+    fva_res = fva(mini_optlang_model, reactions=ex_reactions)
 
     assert set(ex_reactions) == set(fva_res.index.to_list())
 

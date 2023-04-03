@@ -10,6 +10,7 @@ from .fva import FVA_TYPE, fva
 from .utils import load_dataframe, load_model, set_objective, Constants
 from .io import suppress_stdout
 
+
 def compute_nmpcs(
     samples,
     out_dir="./",
@@ -49,7 +50,7 @@ def compute_nmpcs(
         fluxes_out_file (str): Name of file containing fluxes
         reactions (list): List of reactions to run NMPCs on
         regex (str): Regex match for list of reactions to run NMPCs on
-        diet_fecal_compartments (bool): Whether or not models are built with diet/fecal compartmentalization 
+        diet_fecal_compartments (bool): Whether or not models are built with diet/fecal compartmentalization
         ex_only (bool): Compute NMPCs on exchange reactions only
         fva_type (str): FVA type used to compute NMPCs, allowed values are `fast` and `regular`
         solver (str): LP solver used to compute NMPCs, allowed values are `gurobi` and `cplex`
@@ -58,7 +59,7 @@ def compute_nmpcs(
         write_to_file (bool): Write results to file
 
     Notes:
-        If computation is cut short prematurely, this function will pick up where it left off based on which samples are already present in `out_file`. 
+        If computation is cut short prematurely, this function will pick up where it left off based on which samples are already present in `out_file`.
 
     """
     start = time.time()
@@ -105,12 +106,18 @@ def compute_nmpcs(
             ]
         )
         # Skip models that already exist
-        models = [f for f in models if force or f.split("/")[-1].split(".")[0] not in list(nmpcs.columns)]
+        models = [
+            f for f in models if force
+            or (
+                f.split("/")[-1].split(".")[0] not in list(nmpcs.columns)
+                if isinstance(f, str) else f.name not in list(nmpcs.columns)
+            )
+        ]
 
-    print("Computing NMPCs on %s models using %s..." % (len(models),str(fva_type)))
+    print("Computing NMPCs on %s models using %s..." % (len(models), str(fva_type)))
 
     for m in tqdm.tqdm(models, total=len(models)):
-        m_name = m.split("/")[-1].split(".")[0]
+        m_name = m.split("/")[-1].split(".")[0] if isinstance(m, str) else m.name
         try:
             res = fva(
                 m,
