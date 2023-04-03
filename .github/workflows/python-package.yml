@@ -90,5 +90,5 @@ jobs:
         git config --global user.email github-actions@github.com 
         git config --global user.name github-actions
         git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/korem-lab/pymgpipe
-        git commit -m 'Github Actions- Update README'
+        git commit -am 'Github Actions- Update README'
         git push --force
