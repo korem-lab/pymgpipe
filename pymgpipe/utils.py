@@ -5,7 +5,7 @@ import pandas as pd
 import warnings
 import logging
 import time
-from .io import load_model
+from .io import load_model, load_cobra_model
 from math import isinf
 
 warnings.filterwarnings("ignore")
@@ -299,6 +299,54 @@ def get_reaction_bounds(model, id):
     upper = forward.ub - reverse.lb
     return (lower, upper)
 
+def port_mgpipe_model(
+    path,
+    remove_reverse_vars=True,
+    hard_remove=True,
+):
+    from .coupling import add_coupling_constraints
+    
+    print('Loading model from %s...'%path)
+    mgpipe = load_cobra_model(path)
+
+    bms = get_reactions(mgpipe, regex=".*_biomass.*")
+    taxa = set(b.name.split("_biomass")[0] for b in bms)
+
+    print('Modifying reaction IDs, this might take some time...')
+    for r in mgpipe.reactions:
+        if any(r.id.startswith(match := t) for t in taxa):
+            reaction_name = r.id.split(match)[-1][1:]
+
+            if reaction_name.startswith('IEX'):
+                reaction_name = reaction_name[:-2]
+            new_id = f'{reaction_name}__{match}'
+            r.id = new_id
+        
+        if r.id.endswith('[d]'):
+            new_id = 'Diet_'+r.id
+            r.id = new_id
+        
+        if r.id.startswith("DM_"):
+            r.lower_bound = 0
+            
+        if r.id.startswith("sink_"):
+            r.lower_bound = -1
+
+        if r.id.startswith(('EX_','DUt_','UFEt_')):
+            r.upper_bound = 1000000
+
+    mgpipe = mgpipe.solver 
+
+    if remove_reverse_vars:
+        remove_reverse_vars(mgpipe, hard_remove=hard_remove)
+    
+    add_coupling_constraints(mgpipe)
+
+    community_bm = mgpipe.variables["communityBiomass"]
+    community_bm.lb = 0.4
+    community_bm.ub = 1
+
+    return mgpipe.solver
 
 def _is_valid_lp(file):
     with open(file, "rb") as fh:
