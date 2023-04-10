@@ -346,7 +346,7 @@ def port_mgpipe_model(
     community_bm.lb = 0.4
     community_bm.ub = 1
 
-    return mgpipe.solver
+    return mgpipe
 
 def _is_valid_lp(file):
     with open(file, "rb") as fh:
