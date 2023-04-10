@@ -301,11 +301,11 @@ def get_reaction_bounds(model, id):
 
 def port_mgpipe_model(
     path,
-    remove_reverse_vars=True,
+    remove_reverse=True,
     hard_remove=True,
 ):
     from .coupling import add_coupling_constraints
-    
+
     print('Loading model from %s...'%path)
     mgpipe = load_cobra_model(path)
 
@@ -337,7 +337,7 @@ def port_mgpipe_model(
 
     mgpipe = mgpipe.solver 
 
-    if remove_reverse_vars:
+    if remove_reverse:
         remove_reverse_vars(mgpipe, hard_remove=hard_remove)
     
     add_coupling_constraints(mgpipe)
