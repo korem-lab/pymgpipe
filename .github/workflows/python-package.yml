@@ -86,7 +86,6 @@ jobs:
         sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n\${{ steps.coverageComment.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
     - name: Commit & Push changes to Readme
       if: ${{ github.ref == 'refs/heads/main' }}
-      uses: CasperWA/push-protected@v2
+      uses: actions-js/push@master
       with:
-        token: ${{ secrets.PUSH_README }}
-        branch: main
+        github_token: ${{ secrets.PUSH_README }}
