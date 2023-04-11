@@ -86,8 +86,8 @@ jobs:
     - name: Commit & Push changes to Readme
       if: ${{ github.ref == 'refs/heads/main' }}
       run: | 
-        git config --global user.email github-actions[bot]@users.noreply.github.com
-        git config --global user.name github-actions[bot]
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
         git remote set-url origin https://x-access-token:${{ secrets.PUSH_README }}@github.com/korem-lab/pymgpipe
         git commit -am 'Github Actions- Update README'
-        git push 
+        git push --force
