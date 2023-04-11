@@ -13,3 +13,5 @@ pytest==7.1.2
 pytest-check==2.1.2
 sphinx_rtd_theme==1.1.1
 matplotlib==3.7.0
+scikit-bio==0.5.8
+scipy==1.10.0
