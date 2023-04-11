@@ -1,6 +1,5 @@
 import sys
 import os
-import cobra
 import gc
 import tqdm
 import pandas as pd
@@ -10,6 +9,7 @@ import numpy as np
 import time
 import skbio 
 import seaborn as sns 
+from cobra import Configuration
 from scipy.spatial.distance import squareform, pdist
 from pathlib import Path
 from multiprocessing import Pool
@@ -21,7 +21,7 @@ from .utils import load_dataframe, remove_reverse_vars
 from .coupling import add_coupling_constraints
 from .metrics import compute_diversity_metrics
 
-cobra_config = cobra.Configuration()
+cobra_config = Configuration()
 cobra_config.lower_bound = -1000
 cobra_config.upper_bound = 1000
 
