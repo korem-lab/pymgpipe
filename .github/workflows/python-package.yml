@@ -62,9 +62,8 @@ jobs:
     - name: Publish release 
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE }}
-      steps:
-        - uses: rymndhng/release-on-push-action@master
-          with:
-            tag_prefix: "v"
-            bump_version_scheme: minor
-            use_github_release_notes: true
+      uses: rymndhng/release-on-push-action@master
+      with:
+        tag_prefix: "v"
+        bump_version_scheme: minor
+        use_github_release_notes: true
