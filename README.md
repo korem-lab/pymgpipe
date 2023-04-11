@@ -2,7 +2,7 @@
 <!-- Pytest Coverage Comment:Begin -->
 <!-- Pytest Coverage Comment:End -->
 
-### API Docss
+### API Docs
 https://korem-lab.github.io/pymgpipe/
 
 ### Installation
