@@ -8,6 +8,9 @@ import logging
 import matplotlib.pyplot as plt 
 import numpy as np
 import time
+import skbio 
+import seaborn as sns 
+from scipy.spatial.distance import squareform, pdist
 from pathlib import Path
 from multiprocessing import Pool
 from functools import partial
@@ -175,6 +178,31 @@ def build_models(
             plt.xticks(np.arange(0,max([r[0] for r in unique_reactions])+1,1))
             plt.title('Metabolic Diversity')
             plt.savefig(out_dir+'metabolic_diversity.png')
+
+            plt.clf()
+
+            # PCoA plot of reaction presence 
+            abundance_df = abundance_df.fillna(0).T
+            distance_matrix = squareform(pdist(abundance_df, 'braycurtis'))
+            my_pcoa = skbio.stats.ordination.pcoa(distance_matrix)
+
+            pcoa_points = my_pcoa.samples
+            pcoa_points.set_index(abundance_df.index,inplace=True)
+
+            ax = sns.scatterplot(data=pcoa_points, x='PC1', y='PC2', hue=pcoa_points.index, ax=plt.gca())
+            str1 = 'PC1 ' + str(round(my_pcoa.proportion_explained[0], 3) * 100) + '% of explained variance'
+            str2 = 'PC2 ' + str(round(my_pcoa.proportion_explained[1], 3) * 100) + '% of explained variance'
+            ax.set(xlabel=str1, ylabel=str2, title='PCoA of reaction presence (braycurtis)')
+            plt.legend([],[], frameon=False)
+
+            for line in range(0,pcoa_points.shape[0]):
+                ax.text(pcoa_points['PC1'][line]+0.001, pcoa_points['PC2'][line]+0.001, 
+                pcoa_points.index[line], horizontalalignment='left', 
+                size='small', color='black', weight='light')
+
+            plt.savefig(out_dir+'reaction_pcoa.png')
+
+
         except Exception as e:
             logging.warn('Ran into problem while saving metrics...skipping this step!\n%s'%e)
             pass
