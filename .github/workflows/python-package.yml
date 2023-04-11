@@ -21,7 +21,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        token: ${{ secrets.PUSH_README }}
         persist-credentials: false 
         fetch-depth: 0 
     - name: Set up Python ${{ matrix.python-version }}
@@ -85,10 +84,8 @@ jobs:
       run: |
         sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n\${{ steps.coverageComment.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
     - name: Commit & Push changes to Readme
-      if: ${{ github.ref == 'refs/heads/main' }} && env.is-auto-commit == false
-      run: | 
-        git config user.name 'github-actions[bot]'
-        git config user.email 'github-actions[bot]@users.noreply.github.com'
-        git remote set-url origin https://x-access-token:${{ secrets.PUSH_README }}@github.com/korem-lab/pymgpipe
-        git commit -am 'Github Actions- Update README'
-        git push origin HEAD:main
+      if: ${{ github.ref == 'refs/heads/main' }} 
+      uses: actions-js/push@master
+      with:
+        github_token: ${{ secrets.PUSH_README }}
+        message: 'Update README ${date}'
