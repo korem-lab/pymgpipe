@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    if: github.actor != 'github-actions[bot]'
+    if: ${{ github.event.head_commit.message != 'Github Actions- Update README'}}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -88,4 +88,4 @@ jobs:
       uses: actions-js/push@master
       with:
         github_token: ${{ secrets.PUSH_README }}
-        message: 'Update README ${date}'
+        message: 'Github Actions- Update README'
