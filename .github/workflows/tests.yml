@@ -28,8 +28,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -e .
-        python -m pip uninstall -y cobra
-        python -m pip install 'cobra @ git+https://github.com/opencobra/cobrapy@devel'
         pip install -r requirements.txt
     - name: Lint with flake8
       run: |
