@@ -83,7 +83,7 @@ def test_full_diet_fecal_compartments():
     assert built_abundances == true_abundances
 
     nmpc_res = compute_nmpcs(
-        samples=pymgpipe_model, force=True, diet_fecal_compartments=True
+        samples=pymgpipe_model, force=True, diet_fecal_compartments=True, objective_percent=None
     )
 
     assert (
@@ -130,7 +130,7 @@ def test_full_single_compartment():
     assert built_abundances == true_abundances
 
     nmpc_res = compute_nmpcs(
-        samples=pymgpipe_model, force=True, diet_fecal_compartments=False
+        samples=pymgpipe_model, force=True, diet_fecal_compartments=False, objective_percent=None
     )
 
     assert (
@@ -169,17 +169,17 @@ def test_remove_variables():
     some_var = pymgpipe_model.variables[100]
     reverse_var_id = get_reverse_id(some_var.name)
 
-    res1 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1).nmpc
+    res1 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1, objective_percent=None).nmpc
     remove_reverse_vars(pymgpipe_model, hard_remove=False)
     
     assert pymgpipe_model.variables[reverse_var_id].lb == 0 and pymgpipe_model.variables[reverse_var_id].ub == 0
     
-    res2 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1).nmpc
+    res2 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1, objective_percent=None).nmpc
     remove_reverse_vars(pymgpipe_model, hard_remove=True)
     
     assert reverse_var_id not in pymgpipe_model.variables
     
-    res3 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1).nmpc
+    res3 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1, objective_percent=None).nmpc
     
     assert (
         len(_compare(res1, res2)) == 0

@@ -12,7 +12,7 @@ def test_regularFVA(mini_optlang_model):
 
 
 def test_nmpc(mini_optlang_model):
-    nmpc_res = compute_nmpcs(samples=mini_optlang_model, force=True)
+    nmpc_res = compute_nmpcs(samples=mini_optlang_model, force=True, objective_percent=None)
 
     assert (
         os.path.exists("nmpcs.csv")
@@ -30,7 +30,7 @@ def test_nmpc_multisample(mini_optlang_model):
     second_sample = optlang.Model.clone(mini_optlang_model)
     second_sample.name = "A second sample"
 
-    nmpc_res = compute_nmpcs(samples=[mini_optlang_model, second_sample], force=True)
+    nmpc_res = compute_nmpcs(samples=[mini_optlang_model, second_sample], force=True, objective_percent=None)
 
     assert (
         os.path.exists("nmpcs.csv")

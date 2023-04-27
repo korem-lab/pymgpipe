@@ -1,4 +1,5 @@
 cplex==22.1.0.0
+cobra==0.26.3
 docplex==2.23.222
 gurobipy==9.5.2
 micom==0.32.3
