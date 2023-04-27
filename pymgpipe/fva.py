@@ -114,6 +114,7 @@ def fva(
             for v in model.objective.expression.free_symbols:
                 prev_bounds[v.name]=(v.lb,v.ub)
                 v.lb = float(v.primal) * (objective_percent/100)
+                v.ub = float(prev_bounds[v.name][1])
                 print(v)
             
             model.update()
