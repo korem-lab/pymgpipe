@@ -245,7 +245,15 @@ def load_dataframe(m, return_empty=False):
                     "Tried to load dataframe from path that does not exist- %s" % m
                 )
 
-        return pd.read_csv(m, index_col=0)
+        try:
+            return pd.read_csv(m, index_col=0)
+        except:
+            if return_empty:
+                return pd.DataFrame()
+            else:
+                raise Exception(
+                    "Unable to read csv from path- %s" % m
+                )
     elif isinstance(m, pd.DataFrame):
         return m
     else:
