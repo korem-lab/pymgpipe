@@ -90,12 +90,15 @@ def compute_nmpcs(
     )
 
     try:
-        models = [load_model(samples)]
+        if isinstance(samples,str) and fva_type==FVA_TYPE.FAST:
+            models = [samples]
+        else:
+            models = [load_model(samples)]
 
-        # Skip models that already exist
-        if models[0].name in list(nmpcs.columns) and not force:
-            print("NMPCs for %s already exist in file!" % models[0].name)
-            return
+            # Skip models that already exist
+            if models[0].name in list(nmpcs.columns) and not force:
+                print("NMPCs for %s already exist in file!" % models[0].name)
+                return
     except Exception:
         models = (
             samples
@@ -113,7 +116,6 @@ def compute_nmpcs(
                 if isinstance(f, str) else f.name not in list(nmpcs.columns)
             )
         ]
-
     print("Computing NMPCs on %s models using %s..." % (len(models), str(fva_type)))
 
     for m in tqdm.tqdm(models, total=len(models)):
