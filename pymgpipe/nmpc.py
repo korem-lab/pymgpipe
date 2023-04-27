@@ -28,7 +28,7 @@ def compute_nmpcs(
     threshold=1e-5,
     write_to_file=True,
     fva_type=FVA_TYPE.REGULAR,
-    objective_percent=None,
+    objective_percent=100,
     scaling=0,
     mem_aff="none",
     schedule="dynamic",
