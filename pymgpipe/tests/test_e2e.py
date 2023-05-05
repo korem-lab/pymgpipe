@@ -13,7 +13,7 @@ from pymgpipe import (
     load_dataframe,
     get_reverse_id,
 )
-from pymgpipe.build import _build
+from pymgpipe.build import build
 from pytest_check import check
 import re
 import tempfile
@@ -65,7 +65,7 @@ def test_full_diet_fecal_compartments():
         resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
     )
 
-    pymgpipe_model = _build(
+    pymgpipe_model = build(
         name="A test model",
         taxonomy=sample_df,
         rel_threshold=1e-6,
@@ -112,7 +112,7 @@ def test_full_single_compartment():
         resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
     )
 
-    pymgpipe_model = _build(
+    pymgpipe_model = build(
         name="A test model",
         taxonomy=sample_df,
         rel_threshold=1e-6,
@@ -159,7 +159,7 @@ def test_remove_variables():
         resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
     )
 
-    pymgpipe_model = _build(
+    pymgpipe_model = build(
         name="A test model",
         taxonomy=sample_df,
         rel_threshold=1e-6,

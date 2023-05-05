@@ -8,7 +8,11 @@ from cobra.medium import is_boundary_type
 from .io import load_cobra_model, UnsupportedSolverException
 from .utils import load_dataframe
 
-def _build(
+import logging
+logger = logging.getLogger("cobra")
+logger.setLevel(logging.ERROR)
+
+def build(
     abundances,
     sample,
     taxa_directory,
@@ -26,15 +30,12 @@ def _build(
         raise UnsupportedSolverException
 
     sample_abundances = abundances[sample]
-    if threshold is not None:
-        below_thresh = len(sample_abundances[sample_abundances < threshold])
-        if below_thresh > 0:
-            print('Removing %s taxa with abundance below threshold %s...'%(below_thresh,threshold))
-            sample_abundances[sample_abundances < threshold] = 0
+    sample_abundances = sample_abundances[sample_abundances != 0]
 
-    if sample_abundances.sum() != 0:
-        logging.warning('Abundances for %s to not sum to 1, abundances will be re-normalized.'%sample)
-        sample_abundances = sample_abundances / sample_abundances.sum()
+    if threshold is not None:
+        sample_abundances[sample_abundances < threshold] = 0
+
+    sample_abundances = sample_abundances / sample_abundances.sum()
 
     existing_taxa_files = {
         t.split("/")[-1].split(".")[0]: os.path.join(taxa_directory,t) for t in os.listdir(taxa_directory)
@@ -60,7 +61,7 @@ def _build(
             if 'EX_%s(e)'%ex.id.split('[e]')[0] not in model.reactions:                
                 missing.append(_get_missing_exchange(ex))
         if len(missing) > 0:
-            logging.warn('Adding %s missing exchange reactions to taxa model!'%len(missing))
+            logging.warn('Adding %s missing exchange reaction(s) to %s!'%(len(missing),taxon))
             model.add_reactions(missing)
 
         # -- Reactions --

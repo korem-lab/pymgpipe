@@ -14,7 +14,7 @@ from scipy.spatial.distance import squareform, pdist
 from pathlib import Path
 from multiprocessing import Pool
 from functools import partial
-from .build import _build
+from .build import build
 from .diet import add_diet_to_model
 from .io import load_cobra_model, write_lp_problem, write_cobra_model, suppress_stdout
 from .utils import load_dataframe, remove_reverse_vars
@@ -129,7 +129,7 @@ def build_models(
     print("Output directory- %s" % str(out_dir).upper())
 
     _func = partial(
-        _build_single_model,
+        _inner,
         formatted,
         taxa_dir,
         solver,
@@ -215,7 +215,7 @@ def build_models(
     print('Process took %s minutes to run...'%round((time.time()-start)/60,3))
 
 
-def _build_single_model(
+def _inner(
     coverage_df,
     taxa_dir,
     solver,
@@ -253,7 +253,7 @@ def _build_single_model(
         pymgpipe_model = load_cobra_model(model_out)
     else:
         with suppress_stdout():
-            pymgpipe_model = _build(
+            pymgpipe_model = build(
                 sample=sample_label,
                 abundances=coverage_df,
                 taxa_directory=taxa_dir,
@@ -316,35 +316,6 @@ def _format_coverage_file(coverage_file, out_dir = './', sample_prefix = None):
         pd.DataFrame({"conversion": sample_conversion_dict}).to_csv(conversion_file_path)
     
     return coverage.rename(columns=sample_conversion_dict)
-
-    # melted = pd.melt(
-    #     coverage,
-    #     value_vars=coverage.columns,
-    #     ignore_index=False,
-    #     var_name="sample_id",
-    #     value_name="abundance",
-    # )
-    # melted["strain"] = melted.index
-    # melted["file"] = melted.strain.apply(
-    #     lambda x: existing_taxa_files[x] if x in existing_taxa_files else None
-    # )
-    # melted["original_id"] = melted.sample_id.apply(lambda x: conversion_t[x])
-
-    # missing_taxa = melted[melted.file.isna()].index.unique()
-    # if len(missing_taxa) > 0:
-    #     melted.drop(missing_taxa, axis="index", inplace=True)
-    #     print("Removed %s missing taxa from coverage file-" % len(missing_taxa))
-    #     print(missing_taxa)
-
-    # melted = melted.loc[melted.abundance != 0]
-    # melted.abundance = melted.abundance.div(
-    #     melted.groupby(["sample_id"])["abundance"].transform("sum")
-    # )
-
-    # melted.reset_index(inplace=True)
-    # melted.rename({"index": "id"}, axis="columns", inplace=True)
-
-    # return melted
 
 def _mute():
     sys.stdout = open(os.devnull, "w")

@@ -4,7 +4,7 @@ import pandas as pd
 from pkg_resources import resource_filename
 from pytest_check import check
 from pymgpipe import get_abundances
-from pymgpipe.build import _build
+from pymgpipe.build import build
 import re
 
 
@@ -25,7 +25,7 @@ def test_build_diet_fecal():
     with check:
         assert os.path.exists(sample_df.file[0])
 
-    pymgpipe_model = _build(
+    pymgpipe_model = build(
         name="A test model",
         taxonomy=sample_df,
         rel_threshold=1e-6,
@@ -61,7 +61,7 @@ def test_build():
     with check:
         assert os.path.exists(sample_df.file[0])
 
-    pymgpipe_model = _build(
+    pymgpipe_model = build(
         name="A test model",
         taxonomy=sample_df,
         rel_threshold=1e-6,
