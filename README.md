@@ -73,3 +73,6 @@ Clone and run through `workflow.ipynb` in the **examples/** folder (see below)
 ### Creating a local copy (optional)
 If you want to mess around with this code, clone repository into desired directory. Run `pip install .` from within directory, or `pip install path/to/directory` (if you've previously installed using github link above, you should run `pip uninstall pymgpipe` first to avoid conflicting versions). If you're having issues with dependencies, try running `pip install -r requirements.txt`
 
+### Attribution
+
+Please reference this
