@@ -33,7 +33,7 @@ def build(
     sample_abundances = sample_abundances[sample_abundances != 0]
 
     if threshold is not None:
-        sample_abundances[sample_abundances < threshold] = 0
+        sample_abundances = sample_abundances[sample_abundances > threshold]
 
     sample_abundances = sample_abundances / sample_abundances.sum()
 
@@ -129,7 +129,7 @@ def _add_exchanges(model, diet_fecal_compartments):
             continue 
 
         metab = (r.reactants + r.products)[0]
-        lumen_id = metab.id.split('__')[0]
+        lumen_id = metab.id.split('__'+r_taxon)[0]
         if lumen_id not in model.metabolites:
             lumen_metab = metab.copy()
             lumen_metab.id = lumen_id

@@ -10,27 +10,23 @@ import re
 
 def test_build_diet_fecal():
     sample_data = [
-        ["mc1", 0.1, "TaxaA"],
-        ["mc1", 0.2, "TaxaB"],
-        ["mc1", 0.3, "TaxaC"],
-        ["mc1", 0.4, "TaxaD"],
+        ["TaxaA", 0.1],
+        ["TaxaB", 0.2],
+        ["TaxaC", 0.3],
+        ["TaxaD", 0.4]
     ]
+    sample_data = pd.DataFrame(sample_data,columns=['','sample1'])
+    sample_data.set_index(sample_data.columns[0],inplace=True)
 
-    sample_df = pd.DataFrame(sample_data, columns=["sample_id", "abundance", "strain"])
-    sample_df["id"] = sample_df["strain"]
-    sample_df["file"] = (
-        resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
-    )
-
+    taxa_directory = resource_filename("pymgpipe", "resources/miniTaxa/")
     with check:
-        assert os.path.exists(sample_df.file[0])
+        assert os.path.exists(taxa_directory)
 
     pymgpipe_model = build(
-        name="A test model",
-        taxonomy=sample_df,
-        rel_threshold=1e-6,
-        solver="gurobi",
-        diet_fecal_compartments=True,
+        sample_data,
+        sample='sample1',
+        taxa_directory=taxa_directory,
+        diet_fecal_compartments=True
     )
 
     with check:
@@ -39,34 +35,30 @@ def test_build_diet_fecal():
             "fe" in pymgpipe_model.compartments and "d" in pymgpipe_model.compartments
         )
 
-    built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
-    true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
+    built_abundances = get_abundances(pymgpipe_model).to_dict()["sample1"]
+    true_abundances = sample_data['sample1'].to_dict()
     assert built_abundances == true_abundances
 
 
 def test_build():
     sample_data = [
-        ["mc1", 0.1, "TaxaA"],
-        ["mc1", 0.2, "TaxaB"],
-        ["mc1", 0.3, "TaxaC"],
-        ["mc1", 0.4, "TaxaD"],
+        ["TaxaA", 0.1],
+        ["TaxaB", 0.2],
+        ["TaxaC", 0.3],
+        ["TaxaD", 0.4]
     ]
+    sample_data = pd.DataFrame(sample_data,columns=['','sample1'])
+    sample_data.set_index(sample_data.columns[0],inplace=True)
 
-    sample_df = pd.DataFrame(sample_data, columns=["sample_id", "abundance", "strain"])
-    sample_df["id"] = sample_df["strain"]
-    sample_df["file"] = (
-        resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
-    )
-
+    taxa_directory = resource_filename("pymgpipe", "resources/miniTaxa/")
     with check:
-        assert os.path.exists(sample_df.file[0])
+        assert os.path.exists(taxa_directory)
 
     pymgpipe_model = build(
-        name="A test model",
-        taxonomy=sample_df,
-        rel_threshold=1e-6,
-        solver="gurobi",
-        diet_fecal_compartments=False,
+        sample_data,
+        sample='sample1',
+        taxa_directory=taxa_directory,
+        diet_fecal_compartments=False
     )
 
     with check:
@@ -76,6 +68,6 @@ def test_build():
             and "d" not in pymgpipe_model.compartments
         )
 
-    built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
-    true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
+    built_abundances = get_abundances(pymgpipe_model).to_dict()["sample1"]
+    true_abundances = sample_data['sample1'].to_dict()
     assert built_abundances == true_abundances
