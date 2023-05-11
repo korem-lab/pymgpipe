@@ -4,7 +4,7 @@ import pandas as pd
 from pkg_resources import resource_filename
 from pytest_check import check
 from pymgpipe import get_abundances
-from pymgpipe.build import build
+from pymgpipe.modeling import build
 import re
 
 

@@ -14,7 +14,7 @@ from scipy.spatial.distance import squareform, pdist
 from pathlib import Path
 from multiprocessing import Pool
 from functools import partial
-from .build import build
+from .modeling import build
 from .diet import add_diet_to_model
 from .io import load_cobra_model, write_lp_problem, write_cobra_model, suppress_stdout
 from .utils import load_dataframe, remove_reverse_vars

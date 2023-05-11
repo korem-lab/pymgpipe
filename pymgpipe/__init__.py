@@ -4,4 +4,4 @@ from .fva import *
 from .nmpc import *
 from .diet import *
 from .coupling import *
-from .build import *
+from .modeling import *

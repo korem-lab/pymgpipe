@@ -13,7 +13,7 @@ from pymgpipe import (
     load_dataframe,
     get_reverse_id,
 )
-from pymgpipe.build import build
+from pymgpipe.modeling import build
 from pytest_check import check
 import re
 import tempfile
