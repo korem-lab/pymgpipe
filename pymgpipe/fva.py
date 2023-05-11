@@ -111,9 +111,11 @@ def fva(
             print(f'Constraining objective value to {objective_percent}% of optimal value...')
             
             prev_bounds = {}
-            for v in model.objective.expression.free_symbols:
+            primals = {v:v.primal for v in model.objective.expression.free_symbols}
+            for v, value in primals.items():
                 prev_bounds[v.name]=(v.lb,v.ub)
-                v.lb = float(v.primal) * (objective_percent/100)
+                v.lb = float(value) * (objective_percent/100)
+                v.ub = float(value)
                 print(v)
             
             model.update()
