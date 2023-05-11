@@ -1,181 +1,156 @@
 import logging
 import cobra
 import re
+import os
+import time
 from optlang.symbolics import Zero
-from micom.util import (
-    clean_ids,
-    compartment_id,
-    COMPARTMENT_RE,
-)
-from .io import load_cobra_model
+from cobra.medium import is_boundary_type
+from .io import load_cobra_model, UnsupportedSolverException
+from .utils import load_dataframe
 
-# Build function adapted from MICOM (C. Diener, 2020)
-# https://github.com/micom-dev/micom/blob/1f8e4dd2ba9fc4cfba3526610f268f39ceaaac30/micom/workflows/build.py#L41
-def _build(
-    taxonomy,
-    name,
-    rel_threshold=1e-6,
+import logging
+logger = logging.getLogger("cobra")
+logger.setLevel(logging.ERROR)
+
+def build(
+    abundances,
+    sample,
+    taxa_directory,
+    threshold=1e-6,
     solver="gurobi",
     diet_fecal_compartments=True,
 ):
-    if not solver:
-        solver = [
-            s
-            for s in ["cplex", "gurobi", "osqp", "glpk"]
-            if s in cobra.util.solver.solvers
-        ][0]
-    if solver == "glpk":
-        logging.warning(
-            "No QP solver found, will use GLPK. A lot of functionality "
-            "in MICOM will require a QP solver :/"
-        )
+    abundances = load_dataframe(abundances)
+    assert sample in abundances.columns, 'Sample %s not found in abundance matrix!'%sample 
 
-    taxonomy = taxonomy.copy()
-    if "abundance" not in taxonomy.columns:
-        taxonomy["abundance"] = 1
-    taxonomy.abundance /= taxonomy.abundance.sum()
-    logging.info(
-        "{} individuals with abundances below threshold".format(
-            (taxonomy.abundance <= rel_threshold).sum()
-        )
-    )
-    taxonomy = taxonomy[taxonomy.abundance > rel_threshold]
+    if not os.path.exists(taxa_directory):
+        raise Exception('Taxa directory %s not found!'%taxa_directory)
 
-    if taxonomy.id.str.contains(r"[^A-Za-z0-9_]", regex=True).any():
-        logging.warning(
-            "Taxa IDs contain prohibited characters and will be reformatted."
-        )
-        taxonomy.id = taxonomy.id.replace(r"[^A-Za-z0-9_\s]+", "_", regex=True)
+    if solver not in ['gurobi','cplex']:
+        raise UnsupportedSolverException
 
-    multi_species_model = cobra.Model(name=name)
-    multi_species_model.solver = solver
+    sample_abundances = abundances[sample]
+    sample_abundances = sample_abundances[sample_abundances != 0]
 
-    taxonomy.set_index("id", inplace=True)
-    index = list(taxonomy.index)
-    # index = track(index, description="Building") if progress else index
-    logging.info("Building sample with %s taxa..." % len(index))
-    for idx in index:  # loop through taxa
-        row = taxonomy.loc[idx]
-        model = load_cobra_model(row.file)
+    if threshold is not None:
+        sample_abundances = sample_abundances[sample_abundances > threshold]
+
+    sample_abundances = sample_abundances / sample_abundances.sum()
+
+    existing_taxa_files = {
+        t.split("/")[-1].split(".")[0]: os.path.join(taxa_directory,t) for t in os.listdir(taxa_directory)
+    }
+    missing = [t for t in sample_abundances.index if t not in existing_taxa_files]
+    if len(missing) > 0:
+        logging.warning('Could not find associated models for %s taxa- %s\nRemoving missing taxa and renormalizing abundances.'%(len(missing),missing))
+    
+        sample_abundances.drop(missing, inplace=True)
+        sample_abundances = sample_abundances / sample_abundances.sum()
+
+    print('Building community model for %s with %s unique taxa...\n'%(sample,len(sample_abundances.index)))
+    start = time.time()
+    community_model = cobra.Model(name=sample)
+    community_model.solver = solver 
+
+    for taxon in sample_abundances.index:
+        model = load_cobra_model(existing_taxa_files[taxon])
+        taxon = taxon.replace(' ','_')
         ex_metabolites = [m for m in model.metabolites if '[e]' in m.id]
         missing = []
         for ex in ex_metabolites:
             if 'EX_%s(e)'%ex.id.split('[e]')[0] not in model.reactions:                
                 missing.append(_get_missing_exchange(ex))
         if len(missing) > 0:
-            logging.warn('Adding %s missing exchange reactions to taxa model!'%len(missing))
+            logging.warn('Adding %s missing exchange reaction(s) to %s!'%(len(missing),taxon))
             model.add_reactions(missing)
 
-        suffix = "__" + idx.replace(" ", "_").strip()
-        logging.info("converting IDs for {}".format(idx))
-        external = cobra.medium.find_external_compartment(model)
-        external = "u"
-        logging.info(
-            "Identified %s as the external compartment for %s. "
-            "If that is wrong you may be in trouble..." % (external, idx)
-        )
-        for r in model.reactions:
-            if r.id.startswith("DM_"):
-                r.lower_bound = 0
-            if r.id.startswith("sink_"):
-                r.lower_bound = -1
+        # -- Reactions --
+        for r in list(model.reactions):
+            r.id = _remove_non_alphanumeric(r.id+'__'+taxon).replace("(e)", "[u]")
 
-            r.global_id = clean_ids(r.id).replace("(e)", "[u]")
-            r.id = r.global_id + suffix
-            r.community_id = idx
-            # avoids https://github.com/opencobra/cobrapy/issues/926
-            r._compartments = None
-            # SBO terms may not be maintained
+        # -- Metabolites -- 
+        for m in list(model.metabolites):
+            m.id = _remove_non_alphanumeric(m.id+'__'+taxon).replace("[e]", "[u]")
+            m.compartment = _remove_non_alphanumeric(m.compartment+'__'+taxon).replace('e__','u__')
+        
+        community_model.add_reactions(model.reactions)
+        community_model.solver.update()
 
-            if "sbo" in r.annotation:
-                del r.annotation["sbo"]
-        for m in model.metabolites:
-            m.global_id = clean_ids(m.id).replace("[e]", "[u]")
-            m.id = m.global_id + suffix
-            m.compartment += suffix
-            m.community_id = idx
-        logging.info("adding reactions for {} to community".format(idx))
-        multi_species_model.add_reactions(model.reactions)
+    print('Adding exchange reactions...\n')
+    _add_exchanges(community_model, diet_fecal_compartments)
 
-        _add_exchanges(multi_species_model, model.reactions, diet_fecal_compartments)
-        multi_species_model.solver.update()  # to avoid dangling refs due to lazy add
-
-    l_biomass = cobra.Metabolite(id="microbeBiomass[u]", compartment="u")
-    multi_species_model.add_metabolites([l_biomass])
+    microbe_biomass = cobra.Metabolite(id="microbeBiomass[u]", compartment="u")
+    community_model.add_metabolites([microbe_biomass])
 
     if diet_fecal_compartments:
-        _add_fecal_exchange(multi_species_model, l_biomass)
+        _add_fecal_exchange(community_model, microbe_biomass)
     else:
-        _add_lumen_exchange(multi_species_model, l_biomass)
+        _add_lumen_exchange(community_model, microbe_biomass)
 
-    biomass_metabs = multi_species_model.metabolites.query(
-        re.compile("^biomass.*", re.IGNORECASE)
-    )
+    biomass_metabs = community_model.metabolites.query(re.compile("^biomass.*", re.IGNORECASE))
     biomass = cobra.Reaction(
         id="communityBiomass",
         lower_bound=0.4,
         upper_bound=1,
     )
     biomass.add_metabolites(
-        {m: -float(taxonomy.abundance[m.community_id]) for m in biomass_metabs}
+        {m: -float(sample_abundances[m.id.split('__')[-1]]) for m in biomass_metabs}
     )
-    biomass.add_metabolites({l_biomass: 1})
-    multi_species_model.add_reactions([biomass])
+    biomass.add_metabolites({microbe_biomass: 1})
+    community_model.add_reactions([biomass])
 
-    multi_species_model.objective = biomass
-    multi_species_model.solver.update()
-    return multi_species_model
+    print('Setting community objective to biomass reaction...')
+    print(biomass.id+': '+biomass.reaction)
 
-def _add_exchanges(model, reactions, fecal_diet):
-    """Add exchange reactions for a new model."""
-    external_compartment = "e"
-    for r in reactions:
-        # Some sanity checks for whether the reaction is an exchange
-        ex = external_compartment + "__" + r.community_id
-        # Some AGORA models label the biomass demand as exchange
-        if any(bm in r.id.lower() for bm in ["biomass"]):
+    community_model.objective = biomass
+    community_model.solver.update()
+
+    elapsed = time.time() - start
+    print('\n-----------------------------------')
+    print('Finished building %s in %.2f minutes!'%(sample,elapsed/60))
+    return community_model
+
+def _add_exchanges(model, diet_fecal_compartments):
+    for r in list(model.reactions):
+        r_taxon = r.id.split('__')[-1]
+
+        # -- Handling non-exchanges --
+        if r.id.startswith("DM_"):
+            r.lower_bound = 0
+        if r.id.startswith("sink_"):
+            r.lower_bound = -1
+        if 'biomass' in r.id.lower():
+            if 'EX_' in r.id:
+                model.remove_reactions(r.id)
             r.bounds = (0, 1000)
-            if "EX_" in r.id:
-                model.remove_reactions([r])
-            continue
-        if not cobra.medium.is_boundary_type(r, "exchange", ex):
-            continue
-        if not r.id.lower().startswith("ex"):
-            logging.warning(
-                "Reaction %s seems to be an exchange " % r.id
-                + "reaction but its ID does not start with 'EX_'..."
-            )
+        
+        # -- Handling exchanges --
+        if not is_boundary_type(r, 'exchange', 'u__'+r_taxon):
+            continue 
 
-        export = len(r.reactants) == 1
-        met = (r.reactants + r.products)[0]
-        old_compartment = compartment_id(met)
-        metab_id = re.sub(
-            COMPARTMENT_RE.format(old_compartment, old_compartment),
-            "",
-            met.global_id,
-        )
-        if metab_id not in model.metabolites:
-            lumen_m = met.copy()
-            lumen_m.id = metab_id
-            lumen_m.compartment = "u"
-            lumen_m.global_id = metab_id[:-3]
-            lumen_m.community_id = "lumen"
-            model.add_metabolites([lumen_m])
+        metab = (r.reactants + r.products)[0]
+        lumen_id = metab.id.split('__'+r_taxon)[0]
+        if lumen_id not in model.metabolites:
+            lumen_metab = metab.copy()
+            lumen_metab.id = lumen_id
+            lumen_metab.compartment = 'u'
+            
+            model.add_metabolites([lumen_metab])
 
-            if fecal_diet:
-                _add_fecal_exchange(model, lumen_m)
-                _add_diet_exchange(model, lumen_m)
+            if diet_fecal_compartments:
+                _add_fecal_exchange(model, lumen_metab)
+                _add_diet_exchange(model, lumen_metab)
             else:
-                _add_lumen_exchange(model, lumen_m)
+                _add_lumen_exchange(model, lumen_metab)
         else:
-            lumen_m = model.metabolites.get_by_id(metab_id)
-
-        coef = 1
-        r.add_metabolites({lumen_m: coef if export else -coef})
+            lumen_metab = model.metabolites.get_by_id(lumen_id)
+        
+        r.add_metabolites({lumen_metab: 1 if len(r.reactants) == 1 else -1})
         r.id = r.id.replace("EX_", "IEX_")
         r.add_metabolites({k: -v for k, v in r.metabolites.items()}, combine=False)
         r.lower_bound = -1000
         r.upper_bound = 1000
+    model.solver.update()
 
 
 def _add_lumen_exchange(model, met):
@@ -263,3 +238,6 @@ def _get_missing_exchange(metab):
         subsystem='Exchange/demand reaction')
     ex.add_metabolites({metab:-1})
     return ex
+
+def _remove_non_alphanumeric(string):
+    return re.sub(r'[^\w[\]()]+', '', string)

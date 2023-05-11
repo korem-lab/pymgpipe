@@ -12,6 +12,8 @@ from .utils import (
 )
 from .io import load_model
 
+def get_available_diets():
+    return [f.split('.txt')[0] for f in os.listdir(resource_filename("pymgpipe", "resources/diets/"))]
 
 def get_adapted_diet(
     diet, essential_metabolites=None, micronutrients=None, vaginal=False, threshold=0.8

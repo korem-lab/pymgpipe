@@ -14,9 +14,9 @@ from scipy.spatial.distance import squareform, pdist
 from pathlib import Path
 from multiprocessing import Pool
 from functools import partial
-from .build import _build
+from .build import build
 from .diet import add_diet_to_model
-from .io import load_cobra_model, write_lp_problem, write_cobra_model
+from .io import load_cobra_model, write_lp_problem, write_cobra_model, suppress_stdout
 from .utils import load_dataframe, remove_reverse_vars
 from .coupling import add_coupling_constraints
 from .metrics import compute_diversity_metrics
@@ -40,6 +40,7 @@ def build_models(
     diet_fecal_compartments=False,
     remove_reverse_vars_from_lp=False,
     hard_remove=False,
+    abundance_threshold=1e-6,
     diet=None,
     vaginal=False,
     essential_metabolites=None, 
@@ -97,9 +98,9 @@ def build_models(
     Path(model_dir).mkdir(exist_ok=True)
     Path(problem_dir).mkdir(exist_ok=True)
 
-    formatted = _format_coverage_file(coverage_file, taxa_dir, out_dir, sample_prefix)
-    samples_to_run = formatted.sample_id.unique()
-    taxa = formatted.strain.unique()
+    formatted = _format_coverage_file(coverage_file, out_dir, sample_prefix)
+    samples_to_run = list(formatted.columns)
+    taxa = list(formatted.index)
 
     print(
         "Found coverage file with %s samples and %s unique taxa"
@@ -128,8 +129,9 @@ def build_models(
     print("Output directory- %s" % str(out_dir).upper())
 
     _func = partial(
-        _build_single_model,
+        _inner,
         formatted,
+        taxa_dir,
         solver,
         model_dir,
         problem_dir,
@@ -145,6 +147,7 @@ def build_models(
         micronutrients,
         force_uptake,
         diet_threshold,
+        abundance_threshold,
         compress,
         compute_metrics,
         force
@@ -212,8 +215,9 @@ def build_models(
     print('Process took %s minutes to run...'%round((time.time()-start)/60,3))
 
 
-def _build_single_model(
+def _inner(
     coverage_df,
+    taxa_dir,
     solver,
     model_dir,
     problem_dir,
@@ -229,6 +233,7 @@ def _build_single_model(
     micronutrients,
     force_uptake,
     diet_threshold,
+    abundance_threshold,
     compress,
     compute_metrics,
     force,
@@ -241,21 +246,21 @@ def _build_single_model(
     )
     lp_out = problem_dir + "%s.%s" % (sample_label, lp_type.split(".")[1])
 
-    coverage_df = coverage_df.loc[coverage_df.sample_id == sample_label]
-
     pymgpipe_model = None
     metrics = None
 
     if not force and os.path.exists(model_out):
         pymgpipe_model = load_cobra_model(model_out)
     else:
-        pymgpipe_model = _build(
-            name=sample_label,
-            taxonomy=coverage_df,
-            rel_threshold=1e-6,
-            solver=solver,
-            diet_fecal_compartments=diet_fecal_compartments,
-        )
+        with suppress_stdout():
+            pymgpipe_model = build(
+                sample=sample_label,
+                abundances=coverage_df,
+                taxa_directory=taxa_dir,
+                threshold=abundance_threshold,
+                diet_fecal_compartments=diet_fecal_compartments,
+                solver=solver
+            )
         force = True 
         write_cobra_model(pymgpipe_model, model_out)
 
@@ -290,13 +295,12 @@ def _build_single_model(
     return metrics
 
 
-def _format_coverage_file(coverage_file, taxa_dir, out_dir, sample_prefix):
-    existing_taxa_files = {
-        t.split("/")[-1].split(".")[0]: taxa_dir + t for t in os.listdir(taxa_dir)
-    }
-
+def _format_coverage_file(coverage_file, out_dir = './', sample_prefix = None):
     coverage = load_dataframe(coverage_file)
 
+    if sample_prefix is None:
+        return coverage
+    
     conversion_file_path = out_dir + "sample_label_conversion.csv"
     try:
         sample_conversion_dict = pd.read_csv(conversion_file_path, index_col=0).iloc[:, 0].to_dict()
@@ -305,47 +309,13 @@ def _format_coverage_file(coverage_file, taxa_dir, out_dir, sample_prefix):
                 "Provided label conversion file %s does not provide labels for all samples!"
                 % conversion_file_path
         )
-        conversion_t = {v: k for k, v in sample_conversion_dict.items()}
     except:
-        if sample_prefix is not None:
-            sample_conversion_dict = {
-                v: sample_prefix + str(i + 1) for i, v in enumerate(sorted(coverage.columns))
-            }
-        else:
-            sample_conversion_dict = {v: v for v in sorted(coverage.columns)}
+        sample_conversion_dict = {
+            v: sample_prefix + str(i + 1) for i, v in enumerate(sorted(coverage.columns))
+        }
         pd.DataFrame({"conversion": sample_conversion_dict}).to_csv(conversion_file_path)
     
-        conversion_t = {v: k for k, v in sample_conversion_dict.items()}
-
-    coverage.rename(columns=sample_conversion_dict, inplace=True)
-    melted = pd.melt(
-        coverage,
-        value_vars=coverage.columns,
-        ignore_index=False,
-        var_name="sample_id",
-        value_name="abundance",
-    )
-    melted["strain"] = melted.index
-    melted["file"] = melted.strain.apply(
-        lambda x: existing_taxa_files[x] if x in existing_taxa_files else None
-    )
-    melted["original_id"] = melted.sample_id.apply(lambda x: conversion_t[x])
-
-    missing_taxa = melted[melted.file.isna()].index.unique()
-    if len(missing_taxa) > 0:
-        melted.drop(missing_taxa, axis="index", inplace=True)
-        print("Removed %s missing taxa from coverage file-" % len(missing_taxa))
-        print(missing_taxa)
-
-    melted = melted.loc[melted.abundance != 0]
-    melted.abundance = melted.abundance.div(
-        melted.groupby(["sample_id"])["abundance"].transform("sum")
-    )
-
-    melted.reset_index(inplace=True)
-    melted.rename({"index": "id"}, axis="columns", inplace=True)
-
-    return melted
+    return coverage.rename(columns=sample_conversion_dict)
 
 def _mute():
     sys.stdout = open(os.devnull, "w")

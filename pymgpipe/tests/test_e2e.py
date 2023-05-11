@@ -13,7 +13,7 @@ from pymgpipe import (
     load_dataframe,
     get_reverse_id,
 )
-from pymgpipe.build import _build
+from pymgpipe.build import build
 from pytest_check import check
 import re
 import tempfile
@@ -53,24 +53,23 @@ def test_build_models():
 
 def test_full_diet_fecal_compartments():
     sample_data = [
-        ["mc1", 0.1, "TaxaA"],
-        ["mc1", 0.2, "TaxaB"],
-        ["mc1", 0.3, "TaxaC"],
-        ["mc1", 0.4, "TaxaD"],
+        ["TaxaA", 0.1],
+        ["TaxaB", 0.2],
+        ["TaxaC", 0.3],
+        ["TaxaD", 0.4]
     ]
+    sample_data = pd.DataFrame(sample_data,columns=['','sample1'])
+    sample_data.set_index(sample_data.columns[0],inplace=True)
 
-    sample_df = pd.DataFrame(sample_data, columns=["sample_id", "abundance", "strain"])
-    sample_df["id"] = sample_df["strain"]
-    sample_df["file"] = (
-        resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
-    )
+    taxa_directory = resource_filename("pymgpipe", "resources/miniTaxa/")
+    with check:
+        assert os.path.exists(taxa_directory)
 
-    pymgpipe_model = _build(
-        name="A test model",
-        taxonomy=sample_df,
-        rel_threshold=1e-6,
-        solver="gurobi",
-        diet_fecal_compartments=True,
+    pymgpipe_model = build(
+        sample_data,
+        sample='sample1',
+        taxa_directory=taxa_directory,
+        diet_fecal_compartments=True
     )
 
     add_coupling_constraints(pymgpipe_model)
@@ -78,8 +77,8 @@ def test_full_diet_fecal_compartments():
         len([k for k in pymgpipe_model.constraints if re.match(".*_cp$", k.name)]) > 0
     )
 
-    built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
-    true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
+    built_abundances = get_abundances(pymgpipe_model).to_dict()["sample1"]
+    true_abundances = sample_data['sample1'].to_dict()
     assert built_abundances == true_abundances
 
     nmpc_res = compute_nmpcs(
@@ -100,24 +99,23 @@ def test_full_diet_fecal_compartments():
 
 def test_full_single_compartment():
     sample_data = [
-        ["mc1", 0.1, "TaxaA"],
-        ["mc1", 0.2, "TaxaB"],
-        ["mc1", 0.3, "TaxaC"],
-        ["mc1", 0.4, "TaxaD"],
+        ["TaxaA", 0.1],
+        ["TaxaB", 0.2],
+        ["TaxaC", 0.3],
+        ["TaxaD", 0.4]
     ]
+    sample_data = pd.DataFrame(sample_data,columns=['','sample1'])
+    sample_data.set_index(sample_data.columns[0],inplace=True)
 
-    sample_df = pd.DataFrame(sample_data, columns=["sample_id", "abundance", "strain"])
-    sample_df["id"] = sample_df["strain"]
-    sample_df["file"] = (
-        resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
-    )
+    taxa_directory = resource_filename("pymgpipe", "resources/miniTaxa/")
+    with check:
+        assert os.path.exists(taxa_directory)
 
-    pymgpipe_model = _build(
-        name="A test model",
-        taxonomy=sample_df,
-        rel_threshold=1e-6,
-        solver="gurobi",
-        diet_fecal_compartments=False,
+    pymgpipe_model = build(
+        sample_data,
+        sample='sample1',
+        taxa_directory=taxa_directory,
+        diet_fecal_compartments=False
     )
 
     add_coupling_constraints(pymgpipe_model)
@@ -125,8 +123,8 @@ def test_full_single_compartment():
         len([k for k in pymgpipe_model.constraints if re.match(".*_cp$", k.name)]) > 0
     )
 
-    built_abundances = get_abundances(pymgpipe_model).to_dict()["A test model"]
-    true_abundances = sample_df.set_index("strain")["abundance"].to_dict()
+    built_abundances = get_abundances(pymgpipe_model).to_dict()["sample1"]
+    true_abundances = sample_data['sample1'].to_dict()
     assert built_abundances == true_abundances
 
     nmpc_res = compute_nmpcs(
@@ -147,24 +145,23 @@ def test_full_single_compartment():
 
 def test_remove_variables():
     sample_data = [
-        ["mc1", 0.1, "TaxaA"],
-        ["mc1", 0.2, "TaxaB"],
-        ["mc1", 0.3, "TaxaC"],
-        ["mc1", 0.4, "TaxaD"],
+        ["TaxaA", 0.1],
+        ["TaxaB", 0.2],
+        ["TaxaC", 0.3],
+        ["TaxaD", 0.4]
     ]
+    sample_data = pd.DataFrame(sample_data,columns=['','sample1'])
+    sample_data.set_index(sample_data.columns[0],inplace=True)
 
-    sample_df = pd.DataFrame(sample_data, columns=["sample_id", "abundance", "strain"])
-    sample_df["id"] = sample_df["strain"]
-    sample_df["file"] = (
-        resource_filename("pymgpipe", "resources/miniTaxa/") + sample_df.id + ".xml.gz"
-    )
+    taxa_directory = resource_filename("pymgpipe", "resources/miniTaxa/")
+    with check:
+        assert os.path.exists(taxa_directory)
 
-    pymgpipe_model = _build(
-        name="A test model",
-        taxonomy=sample_df,
-        rel_threshold=1e-6,
-        solver="gurobi",
-        diet_fecal_compartments=True,
+    pymgpipe_model = build(
+        sample_data,
+        sample='sample1',
+        taxa_directory=taxa_directory,
+        diet_fecal_compartments=True
     )
     some_var = pymgpipe_model.variables[100]
     reverse_var_id = get_reverse_id(some_var.name)
