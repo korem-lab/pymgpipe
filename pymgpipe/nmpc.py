@@ -32,6 +32,7 @@ def compute_nmpcs(
     scaling=0,
     mem_aff="none",
     schedule="dynamic",
+    signed=False
 ):
     """Compute NMPCs as well as associated reaction metrics on specified list (or directory) of samples
 
@@ -162,6 +163,9 @@ def compute_nmpcs(
             nmpc.name = m_name
 
         nmpcs = pd.concat([nmpcs, nmpc], axis=1).fillna(0)
+        if not signed:
+            nmpcs = abs(nmpcs)
+            
         if write_to_file:
             nmpcs.to_csv(out_file)
             obj_values.to_csv(objective_out_file)
