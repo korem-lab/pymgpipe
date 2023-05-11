@@ -44,6 +44,14 @@ pymgpipe.main module
    :undoc-members:
    :show-inheritance:
 
+pymgpipe.modeling module
+------------------------
+
+.. automodule:: pymgpipe.modeling
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 pymgpipe.nmpc module
 --------------------
 
