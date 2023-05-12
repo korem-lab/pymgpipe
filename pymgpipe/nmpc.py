@@ -109,7 +109,6 @@ def compute_nmpcs(
         )
     ]
     print("Computing NMPCs on %s models using %s..." % (len(models), str(fva_type)))
-    print(models)
 
     for m in tqdm.tqdm(models, total=len(models)):
         m_name = m.split("/")[-1].split(".")[0] if isinstance(m, str) else m.name
