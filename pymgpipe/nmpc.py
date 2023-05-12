@@ -9,7 +9,8 @@ from pathlib import Path
 from .fva import FVA_TYPE, fva
 from .utils import load_dataframe, load_model, set_objective, Constants
 from .io import suppress_stdout
-
+import cobra
+import optlang
 
 def compute_nmpcs(
     samples,
@@ -90,34 +91,25 @@ def compute_nmpcs(
         None if obj_values.empty else obj_values[obj_values.columns[0]]
     )
 
-    try:
-        if isinstance(samples,str) and fva_type==FVA_TYPE.FAST:
-            models = [samples]
-        else:
-            models = [load_model(samples)]
-
-            # Skip models that already exist
-            if models[0].name in list(nmpcs.columns) and not force:
-                print("NMPCs for %s already exist in file!" % models[0].name)
-                return
-    except Exception:
-        models = (
-            samples
-            if isinstance(samples, list)
-            else [
-                os.path.dirname(samples) + "/" + m
-                for m in os.listdir(os.path.dirname(samples))
-            ]
-        )
-        # Skip models that already exist
+    if isinstance(samples, str) and os.path.isdir(samples):
         models = [
-            f for f in models if force
-            or (
-                f.split("/")[-1].split(".")[0] not in list(nmpcs.columns)
-                if isinstance(f, str) else f.name not in list(nmpcs.columns)
-            )
+            os.path.dirname(samples) + "/" + m
+            for m in os.listdir(os.path.dirname(samples))
         ]
+    elif isinstance(samples, list):
+        models = samples 
+    else:
+        models = [samples]
+  
+    models = [
+        f for f in models if force
+        or (
+            f.split("/")[-1].split(".")[0] not in list(nmpcs.columns)
+            if isinstance(f, str) else f.name not in list(nmpcs.columns)
+        )
+    ]
     print("Computing NMPCs on %s models using %s..." % (len(models), str(fva_type)))
+    print(models)
 
     for m in tqdm.tqdm(models, total=len(models)):
         m_name = m.split("/")[-1].split(".")[0] if isinstance(m, str) else m.name
@@ -165,7 +157,7 @@ def compute_nmpcs(
         nmpcs = pd.concat([nmpcs, nmpc], axis=1).fillna(0)
         if not signed:
             nmpcs = abs(nmpcs)
-            
+
         if write_to_file:
             nmpcs.to_csv(out_file)
             obj_values.to_csv(objective_out_file)
