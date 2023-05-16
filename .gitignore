@@ -10,6 +10,7 @@
 !/docs/
 !paper.md
 !paper.bib
+!/.github
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
