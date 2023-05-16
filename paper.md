@@ -1,12 +1,10 @@
 ---
 title: 'pymgpipe: microbiome metabolic modeling in Python'
 tags:
-  - Python
   - metabolic modeling
   - flux balance analysis
+  - microbial communities
   - microbiome
-  - cobra
-  - mgpipe
 authors:
   - name: Yoli Meydan
     orcid: 0009-0003-4597-3340
