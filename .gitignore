@@ -11,6 +11,7 @@
 !paper.md
 !paper.bib
 !/.github
+!/figures/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
