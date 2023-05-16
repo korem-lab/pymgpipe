@@ -2,6 +2,7 @@ import os
 import optlang
 import re
 import pandas as pd
+import numpy as np
 import warnings
 import logging
 import time
@@ -140,6 +141,10 @@ def constrain_reactions(model, flux_map, threshold=0.0):
 def set_objective(model, obj_expression, direction="min"):
     model = load_model(model)
     try:
+        if isinstance(obj_expression, str):
+            obj_expression = get_reactions(model, reactions=[obj_expression])[0]
+        elif isinstance(obj_expression, list):
+            obj_expression = np.sum(get_reactions(model, reactions=obj_expression))
         model.objective = model.interface.Objective(obj_expression, direction=direction)
         model.update()
         logging.info("Set model objective!")
@@ -158,13 +163,18 @@ def remove_reverse_vars(model,hard_remove=False):
     num_vars = len(model.variables)
     print('Collecting reverse variables...')
     for i in range(0,num_vars,2): # faster than searching for reverse variables
-        f = model.variables[i]
-        r = model.variables[i+1]
-        assert r.name.split('_reverse')[0]==f.name, f'Could not find reverse variable for {f.name} in model!'
-
-        f.lb = f.lb - r.ub
-        f.ub = f.ub - r.lb
-        to_remove.append(r)
+        try:
+            f = model.variables[i]
+            r = model.variables[i+1]
+            if r.name.split('_reverse')[0]==f.name:
+                f.lb = f.lb - r.ub
+                f.ub = f.ub - r.lb
+                to_remove.append(r)
+        except:
+            continue
+    if len(to_remove) == 0:
+        print('No reverse variables to remove! Returning model as is.')
+        return
     model.update()
     if hard_remove:
         print('Removing %s reverse variables...'%len(to_remove))
@@ -355,23 +365,3 @@ def port_mgpipe_model(
     community_bm.ub = 1
 
     return mgpipe
-
-def _is_valid_lp(file):
-    with open(file, "rb") as fh:
-        fh.seek(-1024, 2)
-        last = fh.readlines()[-1].decode()
-        if file.endswith(".lp"):
-            return last.strip() == "End"
-        elif file.endswith(".mps"):
-            return last.strip() == "ENDATA"
-        else:
-            raise Exception(
-                "Unrecognized LP file at %s. Must be either .lp or .mps!" % file
-            )
-
-
-def _is_valid_sbml(file):
-    with open(file, "rb") as fh:
-        fh.seek(-1024, 2)
-        last = fh.readlines()[-1].decode()
-        return last.strip() == "</sbml>"

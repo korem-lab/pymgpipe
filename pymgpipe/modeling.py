@@ -103,6 +103,7 @@ def build(
     print(biomass.id+': '+biomass.reaction)
 
     community_model.objective = biomass
+    community_model.objective_direction = 'max'
     community_model.solver.update()
 
     elapsed = time.time() - start

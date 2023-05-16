@@ -60,8 +60,8 @@ def fva(
         assert isinstance(
             model, str
         ), "For fast FVA, `model` needs to be passed in as path to .mps file"
+        assert os.path.isdir(vffva_config.path), 'Could not find VFFVA folder at %s'%vffva_config.path
         path = model
-        #solver = 'cplex'
 
     model = load_model(path=model, solver=solver)
     with suppress_stdout():
