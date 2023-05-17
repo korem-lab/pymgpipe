@@ -27,6 +27,28 @@ date: 16 May 2023
 bibliography: paper.bib
 ---
 
-# Summary
+# Introduction
 
-This is a test summary!
+Microbially-produced metabolites and microbiome metabolism in general are strongly linked to ecosystem-level phenotypes, including the health of the human host [1], [2]. To aid in the study of microbial metabolism from observational, human-derived data, a variety of computational methods that predict microbial community metabolic output from taxonomic abundances have been developed [3]–[6]. Several of these methods rely on community-scale metabolic models, which are mechanistic, knowledge-based models that enable the formulation and in silico testing of biological hypotheses regarding the metabolism of microbial communities [4], [5]. Community-scale models primarily use Flux Balance Analysis, a modeling technique that infers the metabolic fluxes in a system by optimizing an objective function, typically growth rate, subject to an assumption of a steady state and constraints imposed by the metabolic reactions present in the system [7]. These metabolic reactions are obtained from genome-scale metabolic networks (GEMs), knowledge-based computational models encompassing the known biochemical   reactions present within an organism [8]. In recent years, curated GEMs for thousands of human-associated microbial organisms have become increasingly available, allowing for a more in-depth exploration of the human microbiome [9]–[11].  In recent years, several community-scale metabolic modeling methods specifically tailored to the human microbiome have emerged, such as MICOM and mgPipe [4], [5].
+
+# Statement Of Need
+
+mgPipe is a method that combines individual GEMs into a shared compartment according to the taxonomic abundances observed in every sample to construct a community-level metabolic model [4]. Input and output compartments are added to allow for a distinction between the uptake and secretion of metabolites by the community. After constructing a representative model for each sample, mgPipe computes the metabolic capacity for all present metabolites in the form of Net Maximal Production Capacities (NMPCs) [4]. NMPCs are calculated as the absolute difference between the maximum secretion through the output compartment and the maximal uptake through the input compartment. To accomplish this, Flux Variability Analysis (FVA) [ref] is used to compute reaction bounds (minimum and maximum fluxes) through metabolite exchange reactions. 
+
+mgPipe models can further be used to explore metabolic interactions among individual taxa, the contribution of these taxa to the overall community metabolism, and to raise hypotheses regarding the biochemical machinery underlying an observed phenotype. This utility of mgPipe has been demonstrated in various studies of the role of the human microbiome in complex conditions such as preterm birth, inflammatory bowel disease, colorectal cancer, and Parkinson’s disease [12]–[16]. However, and despite its wide use and utility, only a MATLAB implementation of mgPipe is currently available, limiting its accessibility for those who are not proficient in MATLAB or cannot afford its license. Here, we provide a reliable, tested, open-source, and efficient Python implementation of mgPipe.
+
+# Implementation & Availability
+
+pymgpipe is a Python implementation of mgPipe [4]. It utilizes COBRApy [17] as its main constraint-based metabolic modeling interface, and optlang [18] to formulate and modify the underlying mathematical optimization problem. pymgpipe merges individual GEMs into a single model following  mgPipe’s biologically-informed metabolic assumptions, such as the use of preordained  diets, compartmentalized structure, abundance-scaled constraints on microbial flux contributions [ref], and community biomass optimization objective [4]. After building community-level models, metabolic profiles are computed in the form of NMPCs, as discussed above. [4]. As part of this step, pymgpipe uses the VFFVA C package for a fast and efficient FVA implementation [19]. pymgpipe is compatible with both the ‘gurobi’ and IBM CPLEX (IBM, Inc.) solvers, which are both commercially available and free for academic use.
+
+pymgpipe models are backwards-compatible with the MATLAB mgPipe models to ensure cross-software compatibility. Additionally, pymgpipe offers multithreading capabilities for both model construction and simulation, making it scalable to studies with a large sample size. The pymgpipe python package, as well as all associated documentation, tests, and example workflows, can be found at https://korem-lab.github.io/pymgpipe.
+
+# Comparison to mgPipe
+
+![Caption for example figure.\label{fig:example}](figure.png)
+
+To assess the accuracy of pymgpipe we compared its models and predictions with mgPipe, as implemented in the Microbiome Modeling Toolbox, Cobra Toolbox commit:  71c117305231f77a0292856e292b95ab32040711 [4]. We generated community-scale models for a vaginal microbiome dataset consisting of 232 samples, each composed of between 2 to 50 taxa (94 unique taxa), as previously described [12]. The models exhibited identical metabolic networks and structure between the two implementations (not shown). Additionally, metabolic profiles (NMPCs) output by pymgpipe exhibited only minor differences (mean±sd. \num{5.37e-7}±1.23x10-5; difference is below 1x10-5 for 99.4% of all data points Fig. 1). These differences are negligible (within solver tolerance) and are most likely due to variations in FVA implementations [19], solver versions, and tolerances. Overall, pymgpipe presents as an accurate Python implementation of the mgPipe pipeline. 
+
+# Acknowledgments 
+
+We thank members of the Korem lab and Dr. Marouen Ben Guebila for useful discussions. Y.M. and F.B. equally contributed to this work and are listed in random order. This work was supported by the Program for Mathematical Genomics at Columbia University (T.K.), R01HD106017 (T.K.) and R01CA255298 (Julian Abrams). 
