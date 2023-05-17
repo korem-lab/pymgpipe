@@ -52,3 +52,6 @@ To assess the accuracy of pymgpipe we compared its models and predictions with m
 # Acknowledgments 
 
 We thank members of the Korem lab and Dr. Marouen Ben Guebila for useful discussions. Y.M. and F.B. equally contributed to this work and are listed in random order. This work was supported by the Program for Mathematical Genomics at Columbia University (T.K.), R01HD106017 (T.K.) and R01CA255298 (Julian Abrams). 
+
+# References 
+
