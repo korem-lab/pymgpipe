@@ -45,9 +45,9 @@ pymgpipe models are backwards-compatible with the MATLAB mgPipe models to ensure
 
 # Comparison to mgPipe
 
-![Caption for example figure.\label{fig:example}](figure.png)
+![Histogram of magnitude of differences in NMPCs between mgPipe and pymgpipe.\label{fig:histogram}](figure.png)
 
-To assess the accuracy of pymgpipe we compared its models and predictions with mgPipe, as implemented in the Microbiome Modeling Toolbox, Cobra Toolbox commit:  71c117305231f77a0292856e292b95ab32040711 [4]. We generated community-scale models for a vaginal microbiome dataset consisting of 232 samples, each composed of between 2 to 50 taxa (94 unique taxa), as previously described [12]. The models exhibited identical metabolic networks and structure between the two implementations (not shown). Additionally, metabolic profiles (NMPCs) output by pymgpipe exhibited only minor differences (mean±sd. \num{5.37e-7}±1.23x10-5; difference is below 1x10-5 for 99.4% of all data points Fig. 1). These differences are negligible (within solver tolerance) and are most likely due to variations in FVA implementations [19], solver versions, and tolerances. Overall, pymgpipe presents as an accurate Python implementation of the mgPipe pipeline. 
+To assess the accuracy of pymgpipe we compared its models and predictions with mgPipe, as implemented in the Microbiome Modeling Toolbox, Cobra Toolbox commit:  71c117305231f77a0292856e292b95ab32040711 [4]. We generated community-scale models for a vaginal microbiome dataset consisting of 232 samples, each composed of between 2 to 50 taxa (94 unique taxa), as previously described [12]. The models exhibited identical metabolic networks and structure between the two implementations (not shown). Additionally, metabolic profiles (NMPCs) output by pymgpipe exhibited only minor differences (mean±sd. 5.37e-7±1.23e-5; difference is below 1e-5 for 99.4% of all data points \autoref{fig:histogram}). These differences are negligible (within solver tolerance) and are most likely due to variations in FVA implementations [19], solver versions, and tolerances. Overall, pymgpipe presents as an accurate Python implementation of the mgPipe pipeline. 
 
 # Acknowledgments 
 
