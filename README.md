@@ -75,4 +75,7 @@ If you want to mess around with this code, clone repository into desired directo
 
 ### Attribution
 
-Please reference this
+When using pymgpipe please cite-
+
+Baldini, F., Heinken, A., Heirendt, L., Magnusdottir, S., Fleming, R. M. T., & Thiele, I. (2019). *The Microbiome Modeling Toolbox: from microbial interactions to personalized microbial communities.* Bioinformatics (Oxford, England), 35(13), 2332–2334. https://doi.org/10.1093/bioinformatics/bty941
+
