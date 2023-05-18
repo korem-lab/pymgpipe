@@ -1,8 +1,7 @@
 optlang==1.5.2
 cobra==0.26.3
-cplex==22.1.1.0
-micom
 gurobipy==9.5.2
+cplex==22.1.1.0
 scipy>=1.0.0
 scikit-bio
 pytest
