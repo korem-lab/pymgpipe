@@ -10,7 +10,7 @@ authors:
     orcid: 0009-0003-4597-3340
     equal-contrib: true
     affiliation: 1
-  - name: Federico Bladini
+  - name: Federico Baldini
     orcid: 0000-0001-9079-8869
     equal-contrib: true 
     affiliation: 1
