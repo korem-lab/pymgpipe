@@ -55,7 +55,6 @@ def build_models(
     """Build community COBRA models using mgpipe-like compartments and constraints.
 
     This function is pymgpipe's main model building function, and can be used to build models for either one or multiple samples.
-    NOTE- All modifications done at the level of the LP (i.e. coupling constraints, diet) are not saved when writing COBRA models to file. For this reason, it is always recommended to work with LP models in the `problems/` folder.
 
     Args:
         coverage_file (pandas.DataFrame | str): Abundance matrix with taxa as rows and samples as columns
@@ -82,6 +81,7 @@ def build_models(
     Notes:
         COBRA models written to *out_dir/models/*\n
         LP problems written to *out_dir/problems/*
+        All modifications done at the level of the LP (i.e. coupling constraints, diet) are not saved when writing COBRA models to file. For this reason, it is always recommended to work with LP models in the `problems/` folder.
 
     """
      

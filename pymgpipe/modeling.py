@@ -13,9 +13,22 @@ def build(
     sample,
     taxa_directory,
     threshold=1e-6,
-    solver="gurobi",
     diet_fecal_compartments=True,
+    solver="gurobi",
 ):
+    """Build community COBRA model using mgpipe-like compartments and constraints.
+
+    This function is pymgpipe's main model building function, can can be used to build a single model (with no further modifications)
+
+    Args:
+        abundances (pandas.DataFrame | str): Abundance matrix with taxa as rows and samples as columns
+        sample (str): Label corresponding to the sample you want to build (needs to match up to column name in abundance matrix)
+        taxa_directory (str): Directory containing individual strain/species taxa models (file names corresponding to index of coverage matrix)
+        threshold (float): Abundance threshold, any taxa with an abundance less than this value will be left out and abundances will be re-normalized
+        diet_fecal_compartments (bool): Build models with mgpipe's diet/fecal compartmentalization, defaults to False
+        solver (str): LP solver (gurobi or cplex) used to solve models, defaults to gurobi
+
+    """
     abundances = load_dataframe(abundances)
     assert sample in abundances.columns, 'Sample %s not found in abundance matrix!'%sample 
 
