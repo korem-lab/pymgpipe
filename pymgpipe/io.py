@@ -4,7 +4,7 @@ import cobra
 import os.path as path
 import pickle
 import optlang
-import logging
+from .logger import logger
 from contextlib import contextmanager
 
 class UnsupportedSolverException(Exception):
@@ -151,7 +151,7 @@ def write_lp_problem(model, out_file=None, compress=True, force=True):
         load_model(model).problem.write(out_file)
     except Exception:
         if compress:
-            logging.warning(
+            logger.warning(
                 "Could not write LP to compressed file format, trying .7z extension"
             )
             model.solver.problem.write(out_file.replace(".gz", ".7z"))

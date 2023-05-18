@@ -1,4 +1,3 @@
-import logging
 import cobra
 import re
 import os
@@ -7,10 +6,7 @@ from optlang.symbolics import Zero
 from cobra.medium import is_boundary_type
 from .io import load_cobra_model, UnsupportedSolverException
 from .utils import load_dataframe
-
-import logging
-logger = logging.getLogger("cobra")
-logger.setLevel(logging.ERROR)
+from .logger import logger
 
 def build(
     abundances,
@@ -42,7 +38,7 @@ def build(
     }
     missing = [t for t in sample_abundances.index if t not in existing_taxa_files]
     if len(missing) > 0:
-        logging.warning('Could not find associated models for %s taxa- %s\nRemoving missing taxa and renormalizing abundances.'%(len(missing),missing))
+        logger.warning('Could not find associated models for %s taxa- %s\nRemoving missing taxa and renormalizing abundances.'%(len(missing),missing))
     
         sample_abundances.drop(missing, inplace=True)
         sample_abundances = sample_abundances / sample_abundances.sum()
@@ -61,7 +57,7 @@ def build(
             if 'EX_%s(e)'%ex.id.split('[e]')[0] not in model.reactions:                
                 missing.append(_get_missing_exchange(ex))
         if len(missing) > 0:
-            logging.warn('Adding %s missing exchange reaction(s) to %s!'%(len(missing),taxon))
+            print('Adding %s missing exchange reaction(s) to %s!'%(len(missing),taxon))
             model.add_reactions(missing)
 
         # -- Reactions --
@@ -108,7 +104,7 @@ def build(
 
     elapsed = time.time() - start
     print('\n-----------------------------------')
-    print('Finished building %s in %.2f minutes!'%(sample,elapsed/60))
+    logger.info('Finished building %s in %.2f minutes!'%(sample,elapsed/60))
     return community_model
 
 def _add_exchanges(model, diet_fecal_compartments):

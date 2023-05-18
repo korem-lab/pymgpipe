@@ -1,6 +1,5 @@
 import os
 import tqdm
-import logging
 import pandas as pd
 import optlang
 import time
@@ -9,6 +8,7 @@ from pathlib import Path
 from .fva import FVA_TYPE, fva
 from .utils import load_dataframe, load_model, set_objective, Constants
 from .io import suppress_stdout
+from .logger import logger
 import cobra
 import optlang
 
@@ -130,7 +130,7 @@ def compute_nmpcs(
                 schedule=schedule,
             )
         except Exception as e:
-            logging.warning(f"Cannot solve {m_name} model!\n{e}")
+            logger.warning(f"Cannot solve {m_name} model!\n{e}")
             continue
         if res is None:
             return

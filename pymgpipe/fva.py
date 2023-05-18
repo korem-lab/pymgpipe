@@ -16,6 +16,7 @@ from .utils import (
     load_dataframe,
 )
 from .io import suppress_stdout
+from .logger import logger
 from enum import Enum
 
 class FVA_TYPE(Enum):
@@ -100,7 +101,7 @@ def fva(
         parallel = False if threads <= 1 else parallel
 
     split_reactions = np.array_split(reactions_to_run, threads)
-    print(
+    logger.info(
         "Starting parallel FVA on %s reactions using %s chunks on %s threads...\n"
         % (len(reactions_to_run), threads, len(split_reactions))
     )

@@ -4,9 +4,9 @@ import re
 import pandas as pd
 import numpy as np
 import warnings
-import logging
 import time
 from .io import load_model, load_cobra_model
+from .logger import logger
 from math import isinf
 
 warnings.filterwarnings("ignore")
@@ -108,7 +108,7 @@ def get_reactions(model, reactions=None, regex=None, include_reverse=False):
             if ("reverse" not in k.name if not include_reverse else include_reverse)
         ]
     if len(r) == 0:
-        logging.warning("Returning 0 reactions from model!")
+        logger.warning("Returning 0 reactions from model!")
     return r
 
 def get_net_reactions(model, reactions=None, regex=None):
@@ -147,7 +147,7 @@ def set_objective(model, obj_expression, direction="min"):
             obj_expression = np.sum(get_reactions(model, reactions=obj_expression))
         model.objective = model.interface.Objective(obj_expression, direction=direction)
         model.update()
-        logging.info("Set model objective!")
+        logger.info("Set model objective!")
     except Exception as e:
         raise Exception(
             "Failed to add objective to %s- %s\n%s" % (model.name, e, obj_expression)

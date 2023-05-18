@@ -1,6 +1,5 @@
 import pandas as pd
 import os
-import logging
 import cobra
 from pkg_resources import resource_listdir, resource_filename
 from .utils import (
@@ -11,6 +10,7 @@ from .utils import (
     get_reaction_bounds,
 )
 from .io import load_model
+from .logger import logger
 
 def get_available_diets():
     return [f.split('.txt')[0] for f in os.listdir(resource_filename("pymgpipe", "resources/diets/"))]
@@ -464,7 +464,7 @@ def add_diet_to_model(
                 % (diet, len(diet_df.index))
             )
         except Exception:
-            logging.warning(
+            logger.warning(
                 "Skipping diet! Given diet `%s` not in list of available diets. Available diets are- %s"
                 % (
                     diet,
@@ -479,7 +479,7 @@ def add_diet_to_model(
         print("Using custom diet with %s metabolites!" % len(diet.index))
         diet_df = diet
     else:
-        logging.warning(
+        logger.warning(
             "Diet not used- please pass in valid DataFrame, local file, or resource file name!"
         )
         return
@@ -497,7 +497,7 @@ def add_diet_to_model(
 
     d = get_adapted_diet(diet_df, essential_metabolites, micronutrients, vaginal, threshold)
 
-    logging.info("Adding %s diet to model..." % diet)
+    logger.info("Adding %s diet to model..." % diet)
     added = []
 
     diet_reactions = {
@@ -519,9 +519,9 @@ def add_diet_to_model(
         model.configuration.lp_method = 'auto'
         model.optimize()
         if model.status == "infeasible":
-            logging.warning("%s is infeasible with provided diet!" % model.name)
+            logger.warning("%s is infeasible with provided diet!" % model.name)
 
     if len(added) == 0:
-        logging.warning("Zero metabolites from diet were found within model!")
+        logger.warning("Zero metabolites from diet were found within model!")
 
     return pd.DataFrame(added)
