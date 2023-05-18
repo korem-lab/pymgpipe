@@ -18,8 +18,8 @@ class InfeasibleModelException(Exception):
 
 class Constants:
     EX_REGEX = "^(Diet_)?(?i)EX_((?!biomass|community).)*(_m|\[u\]|\[d\]|\[fe\])$"
-    EX_REGEX_MULTI_SAMPLE = "^EX_.*_m_.*$"
-
+    FE_REGEX = "^EX_((?!biomass|community).)*\[fe\]$"
+    DIET_REGEX = "^(Diet_)?(?i)EX_((?!biomass|community).)*\[d\]$"
 
 def solve_model(
     model,
