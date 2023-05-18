@@ -1,4 +1,3 @@
-import logging
 import cobra
 import re
 import os
@@ -7,19 +6,29 @@ from optlang.symbolics import Zero
 from cobra.medium import is_boundary_type
 from .io import load_cobra_model, UnsupportedSolverException
 from .utils import load_dataframe
-
-import logging
-logger = logging.getLogger("cobra")
-logger.setLevel(logging.ERROR)
+from .logger import logger
 
 def build(
     abundances,
     sample,
     taxa_directory,
     threshold=1e-6,
-    solver="gurobi",
     diet_fecal_compartments=True,
+    solver="gurobi",
 ):
+    """Build community COBRA model using mgpipe-like compartments and constraints.
+
+    This function is pymgpipe's main model building function, can can be used to build a single model (with no further modifications)
+
+    Args:
+        abundances (pandas.DataFrame | str): Abundance matrix with taxa as rows and samples as columns
+        sample (str): Label corresponding to the sample you want to build (needs to match up to column name in abundance matrix)
+        taxa_directory (str): Directory containing individual strain/species taxa models (file names corresponding to index of coverage matrix)
+        threshold (float): Abundance threshold, any taxa with an abundance less than this value will be left out and abundances will be re-normalized
+        diet_fecal_compartments (bool): Build models with mgpipe's diet/fecal compartmentalization, defaults to False
+        solver (str): LP solver (gurobi or cplex) used to solve models, defaults to gurobi
+
+    """
     abundances = load_dataframe(abundances)
     assert sample in abundances.columns, 'Sample %s not found in abundance matrix!'%sample 
 
@@ -42,7 +51,7 @@ def build(
     }
     missing = [t for t in sample_abundances.index if t not in existing_taxa_files]
     if len(missing) > 0:
-        logging.warning('Could not find associated models for %s taxa- %s\nRemoving missing taxa and renormalizing abundances.'%(len(missing),missing))
+        logger.warning('Could not find associated models for %s taxa- %s\nRemoving missing taxa and renormalizing abundances.'%(len(missing),missing))
     
         sample_abundances.drop(missing, inplace=True)
         sample_abundances = sample_abundances / sample_abundances.sum()
@@ -61,7 +70,7 @@ def build(
             if 'EX_%s(e)'%ex.id.split('[e]')[0] not in model.reactions:                
                 missing.append(_get_missing_exchange(ex))
         if len(missing) > 0:
-            logging.warn('Adding %s missing exchange reaction(s) to %s!'%(len(missing),taxon))
+            print('Adding %s missing exchange reaction(s) to %s!'%(len(missing),taxon))
             model.add_reactions(missing)
 
         # -- Reactions --
@@ -103,11 +112,12 @@ def build(
     print(biomass.id+': '+biomass.reaction)
 
     community_model.objective = biomass
+    community_model.objective_direction = 'max'
     community_model.solver.update()
 
     elapsed = time.time() - start
     print('\n-----------------------------------')
-    print('Finished building %s in %.2f minutes!'%(sample,elapsed/60))
+    logger.info('Finished building %s in %.2f minutes!'%(sample,elapsed/60))
     return community_model
 
 def _add_exchanges(model, diet_fecal_compartments):

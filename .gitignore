@@ -152,4 +152,4 @@ pytest.xml
 # examples
 examples/out/*
 
-.DS_Store
+.DS_Store.DS_Store

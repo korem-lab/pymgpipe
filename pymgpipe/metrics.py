@@ -1,6 +1,8 @@
 from .utils import get_abundances
+import cobra
 
 def compute_diversity_metrics(model):
+    assert isinstance(model, cobra.Model), '`model` needs to be COBRA model to compute diversity metrics.'
     print('Computing metrics for %s...'%model.name)
 
     taxa = get_abundances(model)[model.name].to_dict()

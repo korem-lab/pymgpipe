@@ -3,7 +3,6 @@ import os
 import gc
 import tqdm
 import pandas as pd
-import logging
 import matplotlib.pyplot as plt 
 import numpy as np
 import time
@@ -20,6 +19,7 @@ from .io import load_cobra_model, write_lp_problem, write_cobra_model, suppress_
 from .utils import load_dataframe, remove_reverse_vars
 from .coupling import add_coupling_constraints
 from .metrics import compute_diversity_metrics
+from .logger import logger
 
 cobra_config = Configuration()
 cobra_config.lower_bound = -1000
@@ -54,7 +54,7 @@ def build_models(
 ):
     """Build community COBRA models using mgpipe-like compartments and constraints.
 
-    This function is pymgpipe's main model building function, and can be used to build models for either one or multiple samples
+    This function is pymgpipe's main model building function, and can be used to build models for either one or multiple samples.
 
     Args:
         coverage_file (pandas.DataFrame | str): Abundance matrix with taxa as rows and samples as columns
@@ -81,6 +81,7 @@ def build_models(
     Notes:
         COBRA models written to *out_dir/models/*\n
         LP problems written to *out_dir/problems/*
+        All modifications done at the level of the LP (i.e. coupling constraints, diet) are not saved when writing COBRA models to file. For this reason, it is always recommended to work with LP models in the `problems/` folder.
 
     """
      
@@ -207,12 +208,12 @@ def build_models(
 
 
         except Exception as e:
-            logging.warn('Ran into problem while saving metrics...skipping this step!\n%s'%e)
+            logger.warn('Ran into problem while saving metrics...skipping this step!\n%s'%e)
             pass
         
     print("-------------------------------------------------------")
-    print("Finished building %s models and associated LP problems!" % len(metrics))
-    print('Process took %s minutes to run...'%round((time.time()-start)/60,3))
+    logger.info("Finished building %s models and associated LP problems!" % len(metrics))
+    logger.info('Process took %s minutes to run...'%round((time.time()-start)/60,3))
 
 
 def _inner(
@@ -267,29 +268,30 @@ def _inner(
     if compute_metrics:
         metrics = compute_diversity_metrics(pymgpipe_model)
         if metrics is None or len(metrics)==0:
-            logging.warning('Unable to compute diversity metrics for %s'%pymgpipe_model.name)
+            logger.warning('Unable to compute diversity metrics for %s'%pymgpipe_model.name)
 
     if force or (not os.path.exists(lp_out) and not os.path.exists(lp_out+'.gz') and not os.path.exists(lp_out+'.7z')):
         # ----- START OPTLANG MODIFICATIONS -----
         if remove_reverse_vars_from_lp:
             try:
-                logging.info('Removing variables!')
+                logger.info('Removing variables from %s...'%sample_label)
                 remove_reverse_vars(pymgpipe_model,hard_remove)
             except Exception:
-                logging.warning('Failed to remove reverse variables!')
+                logger.warning('Failed to remove reverse variables!')
 
         if diet is not None:
             add_diet_to_model(pymgpipe_model, diet, force_uptake, essential_metabolites, micronutrients, vaginal, diet_threshold)
 
         if coupling_constraints:
             try:
+                logger.info('Adding coupling constraints to %s...'%sample_label)
                 add_coupling_constraints(pymgpipe_model)
             except Exception:
-                logging.warning("Failed to add coupling constraints!")
+                logger.warning("Failed to add coupling constraints!")
 
         write_lp_problem(pymgpipe_model, out_file=lp_out, compress=compress, force=True)
     else:
-        logging.info('Skipping %s because LP problem already exists!'%sample_label)
+        logger.info('Skipping %s because LP problem already exists!'%sample_label)
     del pymgpipe_model
     gc.collect()
     return metrics

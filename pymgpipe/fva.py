@@ -16,6 +16,7 @@ from .utils import (
     load_dataframe,
 )
 from .io import suppress_stdout
+from .logger import logger
 from enum import Enum
 
 class FVA_TYPE(Enum):
@@ -54,14 +55,41 @@ def fva(
     objective_percent=None,
     force=False,
 ):
+    """Run Flux Variability Analysis (FVA) on target reactions
+
+    Available FVA types are `regular` and `fast`. `Fast` FVA is significantly faster, but requires both a CPLEX license and full install of the VFFVA package.
+    Additionally, all problems need to be in .mps format if using `fast` FVA type. For more information, see VFFVA package- https://github.com/marouenbg/VFFVA.
+
+    Args:
+        model (str | optlang.Model): model you want to run FVA on
+        fva_type (str): FVA type used to compute min/max values, allowed values are `fast` and `regular`
+        reactions (list): List of reactions you want to target
+        regex (str): Regex match for list of reactions you want to target
+        ex_only (bool): Run FVA on exchange reactions only
+        solver (str): LP solver used, allowed values are `gurobi` and `cplex`
+        threads (float): How many threads to use to run FVA
+        write_to_file (bool): Setting this to True will save results to `out_file`
+        out_file (str): Name of file you want to save results (should have .csv extension)
+        parallel (bool): If set to True, will use number of threads specified by `threads` parameter
+        scaling (float): VFFVA specific parameter, see VFFVA package- https://github.com/marouenbg/VFFVA.
+        mem_aff (str): VFFVA specific parameter, see VFFVA package- https://github.com/marouenbg/VFFVA.
+        schedule (str): VFFVA specific parameter, see VFFVA package- https://github.com/marouenbg/VFFVA.
+        objective_percent (float): Takes value between 0-100. If not set to None, will compute objective and constrain to specified percentage of maximum value before running FVA
+        force (bool): Will compute FVA and overwrite existing file (if file is found with target reactions)
+
+    Notes:
+        If computation is cut short prematurely, this function will pick up where it left off based on which reactions are already present in `out_file`.
+
+    """
+        
     gc.enable()
 
     if fva_type == FVA_TYPE.FAST:
         assert isinstance(
             model, str
         ), "For fast FVA, `model` needs to be passed in as path to .mps file"
+        assert os.path.isdir(vffva_config.path), 'Could not find VFFVA folder at %s'%vffva_config.path
         path = model
-        #solver = 'cplex'
 
     model = load_model(path=model, solver=solver)
     with suppress_stdout():
@@ -100,7 +128,7 @@ def fva(
         parallel = False if threads <= 1 else parallel
 
     split_reactions = np.array_split(reactions_to_run, threads)
-    print(
+    logger.info(
         "Starting parallel FVA on %s reactions using %s chunks on %s threads...\n"
         % (len(reactions_to_run), threads, len(split_reactions))
     )
