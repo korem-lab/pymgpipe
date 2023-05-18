@@ -4,6 +4,7 @@ gurobipy==9.5.2
 scipy>=1.0.0
 scikit-bio
 pytest
+pytest_check
 pytest-cov 
 sphinx 
 seaborn 
