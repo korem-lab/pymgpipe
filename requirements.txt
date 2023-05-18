@@ -12,4 +12,5 @@ tqdm==4.65.0
 pytest 
 pytest_check 
 pytest-cov
+flake8
 
