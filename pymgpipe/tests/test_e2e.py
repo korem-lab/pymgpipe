@@ -179,12 +179,12 @@ def test_remove_variables():
     res3 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1, objective_percent=None).nmpc
     
     assert (
-        len(_compare(res1, res2)) == 0
-        and len(_compare(res1, res3)) == 0
+        len(compare(res1, res2)) == 0
+        and len(compare(res1, res3)) == 0
     )
 
 
-def _compare(first, second, threshold=1e-10):
+def compare(first, second, threshold=1e-10):
     first = load_dataframe(first)
     second = load_dataframe(second)
     bad = []
