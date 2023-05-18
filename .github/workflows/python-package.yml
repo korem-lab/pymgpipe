@@ -70,5 +70,5 @@ jobs:
       - uses: rymndhng/release-on-push-action@master
         with:
           tag_prefix: "v"
-          bump_version_scheme: minor
+          bump_version_scheme: norelease
           use_github_release_notes: true
