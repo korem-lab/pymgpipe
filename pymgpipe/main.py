@@ -80,7 +80,7 @@ def build_models(
 
     Notes:
         COBRA models written to *out_dir/models/*\n
-        LP problems written to *out_dir/problems/*
+        LP problems written to *out_dir/problems/*\n
         All modifications done at the level of the LP (i.e. coupling constraints, diet) are not saved when writing COBRA models to file. For this reason, it is always recommended to work with LP models in the `problems/` folder.
 
     """
