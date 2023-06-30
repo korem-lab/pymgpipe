@@ -72,7 +72,7 @@ jobs:
     name: Push changes
     steps:
     - uses: actions/checkout@v3
-          with:
+      with:
         persist-credentials: false 
         fetch-depth: 0 
     - name: Update version
