@@ -11,7 +11,7 @@ https://korem-lab.github.io/pymgpipe/
 1. Create a new `conda` environment using `conda create --name <env> python=3.10`
 2. Activate this environment using `conda activate <env>`
 3.  Install the required packages using `pip install -r requirements.txt`
-4.  Install **pympgipe** using `pip install 'pymgpipe @ git+https://github.com/korem-lab/pymgpipe`
+4.  Install **pympgipe** using `pip install 'pymgpipe @ git+https://github.com/korem-lab/pymgpipe'`
 
 You should now just be able to `import pymgpipe`. If you get a **ModuleNotFoundError**, make sure you're using the same python environment you used with `pip`.
 
@@ -29,7 +29,7 @@ To create multi-species community models with **pymgpipe**, you need two things 
 -  Folder with individual taxa models (either in `.mat` or `.xml` format)
 -  Relative abundance matrix (as a `.csv`) with samples as **columns** and taxa as **rows**. Taxa names should correspond to file names within taxa folder (excluding extension)
 
-Examples of both can be found in the  `examples/` folder. Individual models for thousands of bacteria can be found and downloaded [here](<https://www.vmh.life/#microbes/search>).
+Examples of both can be found in the `examples/` folder. Individual models for thousands of bacteria can be found and downloaded [here](<https://www.vmh.life/#microbes/search>).
 
 ### Outputs
 The exact location and names of output files will vary depending on the parameters you pass into each function. However, the default output for pymgpipe's **build_models** function will look something like this-
