@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    if: ${{ github.event.head_commit.message != 'Github Actions- Update README'}}
+    if: ${{ github.event.head_commit.message != 'Github Actions- Push'}}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -54,20 +54,9 @@ jobs:
       if: ${{ github.ref == 'refs/heads/main' }}
       run: |
         sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n\${{ steps.coverageComment.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
-    - name: Update version
-      uses: brettdorrans/write-version-to-file@master
-      with:
-        filename: '.VERSION'
-        placeholder: '${VERSION}'
-    - name: Commit & Push changes to Readme
-      if: ${{ github.ref == 'refs/heads/main' }} 
-      uses: actions-js/push@master
-      with:
-        github_token: ${{ secrets.PUSH_README }}
-        message: 'Github Actions- Update README'
   release:
     needs: build
-    if: ${{ github.ref == 'refs/heads/main' }}  && ${{ github.event.head_commit.message != 'Github Actions- Update README'}}
+    if: ${{ github.ref == 'refs/heads/main' }}  && ${{ github.event.head_commit.message != 'Github Actions- Push'}}
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.RELEASE }}
@@ -78,4 +67,22 @@ jobs:
           tag_prefix: "v"
           bump_version_scheme: norelease
           use_github_release_notes: true
-
+  push-changes:
+    runs-on: ubuntu-latest
+    name: Push changes
+    steps:
+    - uses: actions/checkout@v3
+          with:
+        persist-credentials: false 
+        fetch-depth: 0 
+    - name: Update version
+      uses: brettdorrans/write-version-to-file@master
+      with:
+        filename: '.VERSION'
+        placeholder: '${VERSION}'
+    - name: Commit & Push changes to Readme
+      if: ${{ github.ref == 'refs/heads/main' }} 
+      uses: actions-js/push@master
+      with:
+        github_token: ${{ secrets.PUSH_README }}
+        message: 'Github Actions- Push'

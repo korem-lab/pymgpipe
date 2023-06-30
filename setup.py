@@ -5,7 +5,7 @@ with open('.VERSION') as f:
 
 setup(
     name="pymgpipe",
-    version="0.0.1",
+    version=version,
     install_requires=[
         "cobra",
         "optlang",
