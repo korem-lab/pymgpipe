@@ -1,8 +1,11 @@
 from setuptools import setup, find_packages
 
+with open('.VERSION') as f:
+    version = f.readline().strip()[1:]
+
 setup(
     name="pymgpipe",
-    version="0.0.1",
+    version=version,
     install_requires=[
         "cobra",
         "optlang",
