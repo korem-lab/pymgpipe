@@ -77,11 +77,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Write Version to File
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v3
     - name: Update version
       uses: brettdorrans/write-version-to-file@master
       with:
-        filename: '/.VERSION'
+        filename: '.VERSION'
         placeholder: '${VERSION}'
     - name: Commit & Push changes to Readme
       if: ${{ github.ref == 'refs/heads/main' }} 
