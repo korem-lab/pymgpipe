@@ -72,3 +72,13 @@ jobs:
           tag_prefix: "v"
           bump_version_scheme: norelease
           use_github_release_notes: true
+  write-version:
+    runs-on: ubuntu-latest
+    name: Write Version to File
+    steps:
+    - uses: actions/checkout@master
+    - name: Update version
+      uses: brettdorrans/write-version-to-file@master
+      with:
+        filename: '/.VERSION'
+        placeholder: '${VERSION}'
