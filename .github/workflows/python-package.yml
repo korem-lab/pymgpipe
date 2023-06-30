@@ -78,6 +78,9 @@ jobs:
     name: Write Version to File
     steps:
     - uses: actions/checkout@v3
+      with:
+        persist-credentials: false 
+        fetch-depth: 0 
     - name: Update version
       uses: brettdorrans/write-version-to-file@master
       with:
