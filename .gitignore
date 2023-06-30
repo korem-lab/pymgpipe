@@ -8,6 +8,7 @@
 !/pymgpipe/
 !/examples/
 !/docs/
+!/.VERSION
 
 
 # Byte-compiled / optimized / DLL files
