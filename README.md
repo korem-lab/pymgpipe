@@ -7,8 +7,13 @@
 https://korem-lab.github.io/pymgpipe/
 
 ### Installation
-Run `pip install 'pymgpipe @ git+https://github.com/korem-lab/pymgpipe'`<br/><br/>
-You should now just be able to `import pymgpipe`. If you get a **ModuleNotFoundError**, make sure you're using the same python environment you used with `pip`. I highly recommend using the `pyenv` package to manage python versions & environments.
+**pympgipe** has been built and tested with python 3.10+. To install and use this package, you can run through the following steps-
+1. Create a new `conda` environment using `conda create --name <env> python=3.10`
+2. Activate this environment using `conda activate <env>`
+3.  Install the required packages using `pip install -r requirements.txt`
+4.  Install **pympgipe** using `pip install 'pymgpipe @ git+https://github.com/korem-lab/pymgpipe`
+
+You should now just be able to `import pymgpipe`. If you get a **ModuleNotFoundError**, make sure you're using the same python environment you used with `pip`.
 
 ### Additional Dependencies
 Need at least one of the following solvers (requirements.txt includes **gurobi**)-
@@ -16,7 +21,7 @@ Need at least one of the following solvers (requirements.txt includes **gurobi**
 -  [cplex](<https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/>)
 -  [gurobipy](<http://www.gurobi.com>)
 
-If you're running python 3.8.*, you should be able to just use `pip install cplex` or `pip install gurobipy`. For later versions of python, this might not work. Also, this does not actually create a license, it just installs the python interface to interact with these solvers. Both gurobipy and cplex offer free academic licenses. 
+In order to install the solver interfaces in python, you can use `pip install cplex` or `pip install gurobipy`. This does not actually create a license, it just installs the python interface to interact with these solvers. Both gurobipy and cplex offer free academic licenses. To install the licenses themselves, refer to the links provided above.
 
 ### Inputs
 To create multi-species community models with **pymgpipe**, you need two things to start-
@@ -24,7 +29,7 @@ To create multi-species community models with **pymgpipe**, you need two things 
 -  Folder with individual taxa models (either in `.mat` or `.xml` format)
 -  Relative abundance matrix (as a `.csv`) with samples as **columns** and taxa as **rows**. Taxa names should correspond to file names within taxa folder (excluding extension)
 
-Examples of both can be found in the  `examples/` folder
+Examples of both can be found in the  `examples/` folder. Individual models for thousands of bacteria can be found and downloaded [here](<https://www.vmh.life/#microbes/search>).
 
 ### Outputs
 The exact location and names of output files will vary depending on the parameters you pass into each function. However, the default output for pymgpipe's **build_models** function will look something like this-
