@@ -66,7 +66,7 @@ jobs:
         uses: rymndhng/release-on-push-action@master
         with:
           tag_prefix: "v"
-          bump_version_scheme: minor
+          bump_version_scheme: norelease
           use_github_release_notes: true
   push-changes:
     runs-on: ubuntu-latest
@@ -76,7 +76,7 @@ jobs:
       with:
         persist-credentials: false 
         fetch-depth: 0 
-    - name: Update version
+    - name: Write version to file
       uses: brettdorrans/write-version-to-file@master
       with:
         filename: 'pymgpipe/resources/.VERSION'
