@@ -45,12 +45,12 @@ _write_funcs = {
 }
 
 
-def show_availible_solvers():
+def show_available_solvers():
     return [k.lower() for k, v in optlang.available_solvers.items() if v]
 
 
 def _get_optlang_interface(solver):
-    available_solvers = show_availible_solvers()
+    available_solvers = show_available_solvers()
     if solver not in available_solvers:
         raise Exception(
             "Provided solver %s not available. Available solvers are %s"
