@@ -57,6 +57,7 @@ jobs:
   release:
     needs: build
     if: ${{ github.ref == 'refs/heads/main' }}  && ${{ github.event.head_commit.message != 'Github Actions- Push'}}
+    name: Update version
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.RELEASE }}
