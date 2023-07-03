@@ -7,13 +7,7 @@
 https://korem-lab.github.io/pymgpipe/
 
 ### Installation
-**pympgipe** has been built and tested with python 3.10+. To install and use this package, you can run through the following steps-
-1. Create a new `conda` environment using `conda create --name <env> python=3.10`
-2. Activate this environment using `conda activate <env>`
-3.  Install the required packages using `pip install -r requirements.txt`
-4.  Install **pympgipe** using `pip install 'pymgpipe @ git+https://github.com/korem-lab/pymgpipe'`
-
-You should now just be able to `import pymgpipe`. If you get a **ModuleNotFoundError**, make sure you're using the same python environment you used with `pip`.
+**pympgipe** has been built and tested with python 3.10+. To install and use our PyPi package, run `pip install pymgpipe`
 
 ### Additional Dependencies
 Need at least one of the following solvers (requirements.txt includes **gurobi**)-
