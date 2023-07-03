@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    author="Yoli Meydan",
-    author_email="ym2877@cumc.columbia.edu",
+    author="Yoli Meydan, Federico Baldini, Tal Korem",
+    author_email="ym2877@cumc.columbia.edu, fb2557@cumc.columbia.edu, tk2829@cumc.columbia.edu",
     name="pymgpipe",
     description="Community level microbiome metabolic modeling in Python",
     version=open("pymgpipe/resources/.VERSION").readline().strip()[1:],
