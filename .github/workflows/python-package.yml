@@ -76,11 +76,6 @@ jobs:
       with:
         persist-credentials: false 
         fetch-depth: 0 
-    - name: Write version to file
-      uses: brettdorrans/write-version-to-file@master
-      with:
-        filename: 'pymgpipe/resources/.VERSION'
-        placeholder: '${VERSION}'
     - name: Commit & Push changes to Readme
       if: ${{ github.ref == 'refs/heads/main' }} 
       uses: actions-js/push@master
