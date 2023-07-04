@@ -21,6 +21,7 @@ setup(
         "optlang",
         "tqdm",
         "seaborn",
+        "gurobipy"
     ],
     url="https://github.com/korem-lab/pymgpipe",
     package_dir={"pymgpipe": "pymgpipe"},
