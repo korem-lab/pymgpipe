@@ -5,7 +5,7 @@ setup(
     author_email="ym2877@cumc.columbia.edu, fb2557@cumc.columbia.edu, tk2829@cumc.columbia.edu",
     name="pymgpipe",
     description="Community level microbiome metabolic modeling in Python",
-    version="v0.16.1",
+    version="v0.16.2",
     classifiers=[
         "Intended Audience :: Healthcare Industry",
         "Intended Audience :: Information Technology",
