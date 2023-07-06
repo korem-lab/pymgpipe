@@ -11,7 +11,7 @@ from .utils import (
     load_model,
     Constants,
     get_reactions,
-    get_reverse_id,
+    _get_reverse_id,
     solve_model,
     load_dataframe,
 )
@@ -254,7 +254,7 @@ def _optlang_worker(threshold, metabolites):
     for m in metabolites:
         net = global_model.variables[m]
 
-        reverse_id = get_reverse_id(m)
+        reverse_id = _get_reverse_id(m)
         if reverse_id in global_model.variables:
             net -= global_model.variables[reverse_id]
 

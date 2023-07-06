@@ -11,9 +11,9 @@ from pymgpipe import (
     build_models,
     remove_reverse_vars,
     load_dataframe,
-    get_reverse_id,
+    build
 )
-from pymgpipe.modeling import build
+from pymgpipe.utils import _get_reverse_id
 from pytest_check import check
 import re
 import tempfile
@@ -164,7 +164,7 @@ def test_remove_variables():
         diet_fecal_compartments=True
     )
     some_var = pymgpipe_model.variables[100]
-    reverse_var_id = get_reverse_id(some_var.name)
+    reverse_var_id = _get_reverse_id(some_var.name)
 
     res1 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1, objective_percent=None).nmpc
     remove_reverse_vars(pymgpipe_model, hard_remove=False)
@@ -179,12 +179,12 @@ def test_remove_variables():
     res3 = compute_nmpcs(samples=pymgpipe_model, write_to_file=False, threads=-1, objective_percent=None).nmpc
     
     assert (
-        len(_compare(res1, res2)) == 0
-        and len(_compare(res1, res3)) == 0
+        len(compare(res1, res2)) == 0
+        and len(compare(res1, res3)) == 0
     )
 
 
-def _compare(first, second, threshold=1e-10):
+def compare(first, second, threshold=1e-10):
     first = load_dataframe(first)
     second = load_dataframe(second)
     bad = []
