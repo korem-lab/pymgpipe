@@ -42,7 +42,7 @@ def solve_model(
         flux_threshold (float): Any flux below this threshold value will be set to 0
 
     Notes:
-    `presolve` and `method` are both solver-specific parameters. Please refer to [optlang documentation](https://optlang.readthedocs.io/en/latest/) for more info.
+    `presolve` and `method` are both solver-specific parameters. Please refer to https://optlang.readthedocs.io/en/latest/ for more info.
     """
 
     model = load_model(model, solver)
@@ -159,9 +159,8 @@ def constrain_reactions(model, flux_map, threshold=0.0):
         threshold (float): Fixed value defining flexibility threshold (not a percentage!)
         
     Example:
-    Passing in the following dictionary {'EX_reactionA': 400, 'EX_reactionB': 100} with a threshold of 50 will set the bounds for these reactions like so-
-    `350 <= EX_reactionA <= 450`
-    `50 <= EX_reactionB <= 150`
+    Passing in the following dictionary {'EX_reactionA': 400} with a threshold of 50 will set the bounds for this reaction to `350 <= EX_reactionA <= 450`
+
     """
     model = load_model(model)
     if isinstance(flux_map, pd.Series):
