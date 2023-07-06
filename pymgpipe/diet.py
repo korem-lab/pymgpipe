@@ -16,7 +16,7 @@ def get_available_diets():
     """Returns all diets that come pre-packaged with pymgpipe"""
     return [f.split('.txt')[0] for f in os.listdir(resource_filename("pymgpipe", "resources/diets/"))]
 
-def get_adapted_diet(
+def _get_adapted_diet(
     diet, essential_metabolites=None, micronutrients=None, vaginal=False, threshold=0.8
 ):
     if not isinstance(diet, pd.DataFrame):
@@ -403,6 +403,7 @@ def get_adapted_diet(
 
 # Removes any diet
 def remove_diet(model):
+    """Removes existing diet from model"""
     model = load_model(model)
     print("Removing diet from model...")
     for d in get_reactions(model, regex="Diet_EX_.*"):
@@ -411,6 +412,7 @@ def remove_diet(model):
 
 # Finds diet current set in model
 def get_diet(model):
+    """Returns existing diet from model"""
     model = load_model(model)
     print("Fetching diet from model...")
 
@@ -431,6 +433,17 @@ def add_diet_to_model(
     threshold=0.8,
     check=True
 ):
+    """Add pymgpipe-adapated diet to model as defined by original mgPipe paper (see README for more details)
+
+    Args:
+        model (optlang.interface.model): LP problem
+        diet (pandas.DataFrame | str): Path to diet or dataframe
+        essential_metabolites (list): Custom of essential metabolites  (uses pre-defined list by default)
+        micronutrients (list): Custom list of micronutrients (uses pre-defined list by default)
+        vaginal (bool): Whether or not this is a vaginal diet
+        threshold (float): Value between 0 and 1 that defines how strict the diet constraints are (with 1 being the least strict)
+        check (bool): Check whether or not this diet is feasible (can take some time depending on size of model)
+    """
     model = load_model(model)
 
     print("\nAttempting to add diet...")
@@ -496,7 +509,7 @@ def add_diet_to_model(
     if micronutrients is not None:
         print("Using custom set of micronutrients...")
 
-    d = get_adapted_diet(diet_df, essential_metabolites, micronutrients, vaginal, threshold)
+    d = _get_adapted_diet(diet_df, essential_metabolites, micronutrients, vaginal, threshold)
 
     logger.info("Adding %s diet to model..." % diet)
     added = []

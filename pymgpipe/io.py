@@ -72,6 +72,7 @@ def _get_optlang_interface(solver):
 # Loads cobra file and returns cobrapy model
 # RETURNS- cobra model
 def load_cobra_model(file, solver="gurobi"):
+    """Loads and returns COBRA model"""
     _, ext = path.splitext(file)
     read_func = _read_funcs[ext]
     try:
@@ -85,8 +86,11 @@ def load_cobra_model(file, solver="gurobi"):
     return model
 
 
-# Warning- COBRA won't save any additional custom constraints to the model (i.e. coupling constraints)
 def write_cobra_model(model, file):
+    """Writes COBRA model to file
+    
+    Warning: COBRA won't save any custom modifications added to the model (i.e. coupling constraints, diet, etc). For this reason, we recommend working and using the corresponding optlang LP problems.
+    """
     _, ext = path.splitext(file)
     write_func = _write_funcs[ext]
     try:
@@ -99,6 +103,10 @@ def write_cobra_model(model, file):
 # Loads either LP file or cobra file and returns optlang model representing underlying optimization problem
 # RETURNS- optlang model
 def load_model(path, solver="gurobi"):
+    """Loads optlang.interface.Model from either an LP file (.lp or .mps) or any of the available COBRA file types (.xml, .mat, etc)
+    
+    Returns: optlang.interface.Model
+    """
     if isinstance(path, cobra.Model):
         path.solver.name = path.name
         return path.solver
@@ -136,6 +144,7 @@ def load_model(path, solver="gurobi"):
 
 
 def write_lp_problem(model, out_file=None, compress=True, force=True):
+    """Writes optlang.interface.Model out to file (will compress by default)"""
     out_file = "./" + model.name + ".xml" if out_file is None else out_file
 
     if compress and not (out_file.endswith(".gz") or out_file.endswith(".7z")):

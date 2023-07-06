@@ -18,7 +18,7 @@ from .diet import add_diet_to_model
 from .io import load_cobra_model, write_lp_problem, write_cobra_model, suppress_stdout
 from .utils import load_dataframe, remove_reverse_vars
 from .coupling import add_coupling_constraints
-from .metrics import compute_diversity_metrics
+from .metrics import _compute_diversity_metrics
 from .logger import logger
 
 cobra_config = Configuration()
@@ -266,7 +266,7 @@ def _inner(
         write_cobra_model(pymgpipe_model, model_out)
 
     if compute_metrics:
-        metrics = compute_diversity_metrics(pymgpipe_model)
+        metrics = _compute_diversity_metrics(pymgpipe_model)
         if metrics is None or len(metrics)==0:
             logger.warning('Unable to compute diversity metrics for %s'%pymgpipe_model.name)
 

@@ -32,6 +32,19 @@ def solve_model(
     flux_threshold=None,
     ex_only=True,
 ):
+    """Solves optlang.interface.Model
+
+    Args:
+        model (optlang.interface.model): LP problem
+        regex (str): Regex string corresponding to list of reactions you want to return
+        reactions (list): List of reactions you want to return
+        ex_only (bool): Only return fluxes for exchange reactions (will be overridden by either `regex` or `reactions` param)
+        flux_threshold (float): Any flux below this threshold value will be set to 0
+
+    Notes:
+    `presolve` and `method` are both solver-specific parameters. Please refer to [optlang documentation](https://optlang.readthedocs.io/en/latest/) for more info.
+    """
+
     model = load_model(model, solver)
     model.configuration.verbosity = verbosity
     model.configuration.presolve = presolve
@@ -76,6 +89,16 @@ def _get_fluxes_from_model(model, reactions=None, regex=None, threshold=1e-5):
 
 
 def get_reactions(model, reactions=None, regex=None, include_reverse=False):
+    """Fetches reactions from model
+
+    Args:
+        model (optlang.interface.model): LP problem
+        regex (str): Regex string corresponding to list of reactions you want to return
+        reactions (list): List of reactions you want to return
+        include_reverse (bool): Whether or not you want to return reverse variables as well (if model contains reverse variables)
+        
+    Returns: List of optlang.interface.Variable
+    """
     model = load_model(model)
     r = []
     if reactions is not None and len(reactions) > 0:
@@ -112,11 +135,34 @@ def get_reactions(model, reactions=None, regex=None, include_reverse=False):
     return r
 
 def get_net_reactions(model, reactions=None, regex=None):
+    """Fetches NET reactions from model
+
+    Args:
+        model (optlang.interface.model): LP problem
+        regex (str): Regex string corresponding to list of reactions you want to return
+        reactions (list): List of reactions you want to return
+        
+    Notes:
+    By default, COBRA adds a reverse variable for every forward variable within the model. 
+    Therefore, to calculate the flux going through `reaction_A` for example, you must substract the forward and reverse fluxes like so- `reaction_A - reaction_A_reverse`
+    """
     rxns = get_reactions(model,reactions,regex,include_reverse=True)
     net = {rxns[i].name:rxns[i]-rxns[i+1] for i in range(0,len(rxns),2)}
     return net 
 
 def constrain_reactions(model, flux_map, threshold=0.0):
+    """Constrains reactions within model to specific value (or range of values)
+
+    Args:
+        model (optlang.interface.model): LP problem
+        flux_map (dictionary): Dictionary defining flux value for each reaction you want to constrain
+        threshold (float): Fixed value defining flexibility threshold (not a percentage!)
+        
+    Example:
+    Passing in the following dictionary {'EX_reactionA': 400, 'EX_reactionB': 100} with a threshold of 50 will set the bounds for these reactions like so-
+    `350 <= EX_reactionA <= 450`
+    `50 <= EX_reactionB <= 150`
+    """
     model = load_model(model)
     if isinstance(flux_map, pd.Series):
         flux_map = flux_map.to_dict()
