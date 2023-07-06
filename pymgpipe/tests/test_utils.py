@@ -1,4 +1,5 @@
 from pymgpipe import *
+from pymgpipe.utils import _get_reverse_id
 
 def test_remove_reverse_reactions(mini_optlang_model):
     num_reactions = len(mini_optlang_model.variables)
