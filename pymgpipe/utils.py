@@ -75,7 +75,7 @@ def _get_fluxes_from_model(model, reactions=None, regex=None, threshold=1e-5):
     fluxes = {}
 
     for forward in get_reactions(model, reactions, regex):
-        r_id = get_reverse_id(forward.name)
+        r_id = _get_reverse_id(forward.name)
         if r_id not in model.variables:
             flux = float(forward.primal)
         else:
@@ -144,7 +144,7 @@ def get_net_reactions(model, reactions=None, regex=None):
         
     Notes:
     By default, COBRA adds a reverse variable for every forward variable within the model. 
-    Therefore, to calculate the flux going through `reaction_A` for example, you must substract the forward and reverse fluxes like so- `reaction_A - reaction_A_reverse`
+    Therefore, to calculate the flux going through `reaction_A` for example, you must subtract the forward and reverse fluxes like so- `reaction_A - reaction_A_reverse`
     """
     rxns = get_reactions(model,reactions,regex,include_reverse=True)
     net = {rxns[i].name:rxns[i]-rxns[i+1] for i in range(0,len(rxns),2)}
@@ -169,7 +169,7 @@ def constrain_reactions(model, flux_map, threshold=0.0):
     flux_map = {k: v for k, v in flux_map.items() if k in model.variables}
     for f_id, flux in flux_map.items():
         forward_var = model.variables[f_id]
-        reverse_var = model.variables[get_reverse_id(f_id)]
+        reverse_var = model.variables[_get_reverse_id(f_id)]
 
         if flux > 0:
             forward_var.set_bounds(flux - threshold, flux + threshold)
@@ -185,6 +185,11 @@ def constrain_reactions(model, flux_map, threshold=0.0):
 
 
 def set_objective(model, obj_expression, direction="min"):
+    """Sets model optimization objective (optlang.interface.Objective)
+    
+    Notes:
+    `obj_expression` can either be an optlang.interface.Objective, a string defining a specific variable, or a list of variables (in which case it will set objective to the sum of said reactions)
+    """
     model = load_model(model)
     try:
         if isinstance(obj_expression, str):
@@ -200,6 +205,17 @@ def set_objective(model, obj_expression, direction="min"):
         )
 
 def remove_reverse_vars(model,hard_remove=False):
+    """Removes all reverse variables from model
+
+    Args:
+        model (optlang.interface.model): LP problem
+        hard_remove (bool): Setting `hard_remove` to True will physically remove the variables from the model, whereas setting it to False will only set the lower/upper bounds to 0
+        
+    Notes:
+    By default, COBRA adds a reverse variable for every forward variable within the model. 
+    Therefore, to calculate the flux going through `reaction_A` for example, you must subtract the forward and reverse fluxes like so- `reaction_A - reaction_A_reverse`.
+    This function removes all reverse variables to make calculations a lot simpler and faster. Also, reduces the size of the models by roughly 50%!
+    """
     start = time.time()
     model = load_model(model) 
     if 'coupled' in model.variables: # fix for issue w/ older version of models
@@ -236,7 +252,7 @@ def remove_reverse_vars(model,hard_remove=False):
         print('Set bounds of %s out of %s variables to 0 in %s minutes!'%(len(to_remove),num_vars,round((time.time()-start)/60,3)))
 
 
-def get_reverse_id(id):
+def _get_reverse_id(id):
     import hashlib
 
     if not isinstance(id, str):
@@ -244,7 +260,7 @@ def get_reverse_id(id):
             id = id.name
         except Exception:
             raise Exception(
-                "get_reverse_id must take either string ID or optlang.Variable"
+                "_get_reverse_id must take either string ID or optlang.Variable"
             )
 
     if re.match(".*_mc.*", id) is not None:
@@ -265,12 +281,12 @@ def get_reverse_id(id):
             (id, "reverse", hashlib.md5(id.encode("utf-8")).hexdigest()[0:5])
         )
 
-
 def get_reverse_var(model, v):
-    return model.variables[get_reverse_id(v)]
-
+    """Returns associated reverse variable"""
+    return model.variables[_get_reverse_id(v)]
 
 def get_abundances(model):
+    """Returns taxa abundances within community-level model"""
     model = load_model(model)
     try:
         model.variables[1].primal
@@ -284,7 +300,6 @@ def get_abundances(model):
             }
         }
     )
-
 
 def load_dataframe(m, return_empty=False):
     if m is None:
@@ -319,6 +334,7 @@ def load_dataframe(m, return_empty=False):
 
 
 def set_reaction_bounds(model, id, lb, ub):
+    """Sets reaction lower and upper bounds"""
     forward = (
         id if isinstance(id, optlang.interface.Variable) else model.variables[id]
     )
@@ -351,6 +367,7 @@ def set_reaction_bounds(model, id, lb, ub):
 
 
 def get_reaction_bounds(model, id):
+    """Fetches reaction lower and upper bounds"""
     forward = (
         id if isinstance(id, optlang.interface.Variable) else model.variables[id]
     )
@@ -368,6 +385,7 @@ def port_mgpipe_model(
     remove_reverse=True,
     hard_remove=True,
 ):
+    """Converts pymgpipe model to mgPipe model for backwards-compatibility"""
     from .coupling import add_coupling_constraints
 
     print('Loading model from %s...'%path)
