@@ -13,6 +13,7 @@ from .io import load_model
 from .logger import logger
 
 def get_available_diets():
+    """Returns all diets that come pre-packaged with pymgpipe"""
     return [f.split('.txt')[0] for f in os.listdir(resource_filename("pymgpipe", "resources/diets/"))]
 
 def get_adapted_diet(

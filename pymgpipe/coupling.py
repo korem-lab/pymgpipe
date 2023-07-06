@@ -4,6 +4,14 @@ from .utils import get_reactions, get_reverse_var
 
 
 def remove_coupling_constraints(model):
+    """Removing coupling constraints to community-level models
+
+    Args:
+        model (optlang.interface.Model): LP problem
+
+    Notes:
+        Removes all coupling constraints from model (if they exist)
+    """
     if isinstance(model, cobra.Model):
         model = model.solver
     c = [k for k in model.constraints if re.match(".*_cp$", k.name)]
@@ -14,6 +22,19 @@ def remove_coupling_constraints(model):
 
 
 def add_coupling_constraints(model, u_const=0.01, C_const=400):
+    """Adding coupling constraints to community-level models
+
+    Args:
+        model (optlang.interface.Model): LP problem
+        u_const (float): U flexibility constant
+        C_const (float): C flexibility constant
+
+    Notes:
+        Coupling constraints are essentially a set of lower/upper bound constraints that scale reaction fluxes to the relative abundance of the microbe they belong to, like so-
+        Imagine a reaction `-1000 <= My_reaction_taxa_A <= 1000`. Adding coupling constraints would redefine the bounds like so-
+
+        `-C_const - (u_counts * <abundance of taxa A>) <= My_reaction_taxa_A <= C_const + (u_counts * <abundance of taxa A>)`
+    """
     if isinstance(model, cobra.Model):
         model = model.solver
     if 'coupled' in model.variables: # fixing some bug from old version of models
