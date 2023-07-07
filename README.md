@@ -94,7 +94,6 @@ Here are some general guidelines for code contributions:
 Issues should be reported using the [GitHub issue tracker](https://github.com/korem-lab/pymgpipe/issues). Please check the existing issues to avoid duplicates. When reporting an issue, please provide as much detail as possible about how to reproduce the problem, including the following information:
 
 - Operating system and version
-- Browser and version
 - Details of the problem, including any error messages and screenshots if possible
 
 Thank you for your contributions!
