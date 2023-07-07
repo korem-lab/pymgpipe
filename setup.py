@@ -32,6 +32,7 @@ setup(
             "resources/models/*",
             "resources/problems/*",
             "resources/miniTaxa/*",
+            "resources/.VERSION"
         ],
     },
     project_urls={

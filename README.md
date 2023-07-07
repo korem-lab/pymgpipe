@@ -75,28 +75,3 @@ When using pymgpipe please cite-
 
 Baldini, F., Heinken, A., Heirendt, L., Magnusdottir, S., Fleming, R. M. T., & Thiele, I. (2019). *The Microbiome Modeling Toolbox: from microbial interactions to personalized microbial communities.* Bioinformatics (Oxford, England), 35(13), 2332–2334. https://doi.org/10.1093/bioinformatics/bty941
 
-## Contributing
-
-We warmly welcome and appreciate contributions from everyone. There are several ways you can contribute:
-
-- Reporting Bugs: If you find a bug, please create a new issue on our GitHub page. Be sure to include as much information as possible so we can reproduce and fix the bug. The more detail you provide, the better.
-- Code Contributions: If you'd like to contribute code, great! Please fork this repository, make your changes in a separate branch, and then submit a pull request. We'll review your changes and discuss any necessary modifications or improvements before merging.
-
-Here are some general guidelines for code contributions:
-
-1. Fork the repo and create your branch from the master.
-2. If you've added code, add tests.
-3. Ensure the test suite passes.
-4. Issue that pull request!
-
-## Reporting Issues
-
-Issues should be reported using the [GitHub issue tracker](https://github.com/korem-lab/pymgpipe/issues). Please check the existing issues to avoid duplicates. When reporting an issue, please provide as much detail as possible about how to reproduce the problem, including the following information:
-
-- Operating system and version
-- Browser and version
-- Details of the problem, including any error messages and screenshots if possible
-
-Thank you for your contributions!
-
-Copyright 2023 The Trustees of Columbia University in the City of New York. See [LICENSE](https://github.com/korem-lab/pymgpipe/blob/main/LICENSE) for additional details.
