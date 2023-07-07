@@ -31,8 +31,7 @@ setup(
             "resources/diets/*.txt",
             "resources/models/*",
             "resources/problems/*",
-            "resources/miniTaxa/*",
-            "resources/.VERSION"
+            "resources/miniTaxa/*"
         ],
     },
     project_urls={
