@@ -8,8 +8,11 @@
 !/pymgpipe/
 !/examples/
 !/docs/
-!/.VERSION
-
+!paper.md
+!paper.bib
+!/.github
+!figure.png
+!figure/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
