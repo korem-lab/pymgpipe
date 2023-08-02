@@ -19,9 +19,9 @@ authors:
     corresponding: true 
     affiliation: "1, 2"
 affiliations:
- - name: Program for Mathematical Genomics, Department of Systems Biology, Columbia University Irving Medical Center, New York, NY, USA.
+ - name: Program for Mathematical Genomics, Department of Systems Biology, Columbia University Irving Medical Center, New York, NY, United States of America.
    index: 1
- - name: Department of Obstetrics and Gynecology, Columbia University Irving Medical Center, New York, NY, USA.
+ - name: Department of Obstetrics and Gynecology, Columbia University Irving Medical Center, New York, NY, United States of America.
    index: 2
 date: 16 May 2023
 bibliography: paper.bib
