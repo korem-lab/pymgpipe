@@ -73,6 +73,8 @@ Clone and run through `workflow.ipynb` in the **examples/** folder (see below)
 
 When using pymgpipe please cite-
 
+Meydan et al., (2023). pymgpipe: microbiome metabolic modeling in Python. Journal of Open Source Software, 8(88), 5545, https://doi.org/10.21105/joss.05545
+
 Baldini, F., Heinken, A., Heirendt, L., Magnusdottir, S., Fleming, R. M. T., & Thiele, I. (2019). *The Microbiome Modeling Toolbox: from microbial interactions to personalized microbial communities.* Bioinformatics (Oxford, England), 35(13), 2332–2334. https://doi.org/10.1093/bioinformatics/bty941
 
 ### Contributing
