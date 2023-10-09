@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pymgpipe.diet &mdash; pymgpipe v0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=34cd777e"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            pymgpipe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pymgpipe.html">pymgpipe package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pymgpipe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pymgpipe.diet</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pymgpipe.diet</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">cobra</span>
+<span class="kn">from</span> <span class="nn">pkg_resources</span> <span class="kn">import</span> <span class="n">resource_listdir</span><span class="p">,</span> <span class="n">resource_filename</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">load_dataframe</span><span class="p">,</span>
+    <span class="n">get_reactions</span><span class="p">,</span>
+    <span class="n">get_reverse_var</span><span class="p">,</span>
+    <span class="n">set_reaction_bounds</span><span class="p">,</span>
+    <span class="n">get_reaction_bounds</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">load_model</span>
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="kn">import</span> <span class="n">logger</span>
+
+<div class="viewcode-block" id="get_available_diets">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.diet.get_available_diets">[docs]</a>
+<span class="k">def</span> <span class="nf">get_available_diets</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns all diets that come pre-packaged with pymgpipe&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.txt&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">resource_filename</span><span class="p">(</span><span class="s2">&quot;pymgpipe&quot;</span><span class="p">,</span> <span class="s2">&quot;resources/diets/&quot;</span><span class="p">))]</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_adapted_diet</span><span class="p">(</span>
+    <span class="n">diet</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">micronutrients</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vaginal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.8</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diet</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Diet needs to be of type pd.DataFrame, received </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">diet</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">adapted_diet</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">diet</span><span class="p">)</span>
+    <span class="n">adapted_diet</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;lb&quot;</span><span class="p">]</span>
+
+    <span class="n">adapted_diet</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">to_replace</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;\[e\]&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;(e)&quot;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">adapted_diet</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;EX_adpcbl(e)&quot;</span><span class="p">:</span> <span class="s2">&quot;EX_adocbl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glc(e)&quot;</span><span class="p">:</span> <span class="s2">&quot;EX_glc_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_sbt-d(e)&quot;</span><span class="p">:</span> <span class="s2">&quot;EX_sbt_D(e)&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">essential_metabolites</span> <span class="o">=</span> <span class="n">essential_metabolites</span> <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;EX_12dgr180(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_26dap_M(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_2dmmq8(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_2obut(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_3mop(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_4abz(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_4hbz(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ac(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_acgam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_acmana(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_acnam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ade(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_adn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_adocbl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_adpcbl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ala_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ala_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_amet(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_amp(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_arab_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_arab_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_arg_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_asn_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_btn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ca2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cbl1(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cgly(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_chor(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_chsterol(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cit(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cobalt2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_csn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cu2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cys_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cytd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_dad_2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_dcyt(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ddca(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_dgsn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fald(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fe2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fe3(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fol(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_for(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gal(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glc_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gln_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glu_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gly(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glyc(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glyc3p(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gsn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gthox(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gthrd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gua(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_h(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_h2o(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_h2s(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_his_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_hxan(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ile_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_k(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_lanost(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_leu_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_lys_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_malt(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_met_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mg2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mn2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mqn7(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mqn8(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_nac(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ncam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_nmn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_no2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ocdca(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ocdcea(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_orn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_phe_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pheme(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pi(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pnto_R(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pro_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ptrc(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydx(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydxn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_q8(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_rib_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ribflv(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ser_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_sheme(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_so4(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_spmd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thm(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thr_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thymd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_trp_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ttdca(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_tyr_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ura(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_val_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_xan(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_xyl_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_zn2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_sucr(e)&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">vaginal</span>
+        <span class="k">else</span> <span class="p">[</span>
+            <span class="s2">&quot;EX_12dgr180(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_26dap_M(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_2dmmq8(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_2obut(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_3mop(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_4abz(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_4hbz(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ac(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_acgam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_acmana(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_acnam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ade(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_adn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_adocbl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ala_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ala_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_amet(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_amp(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_arab_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_arab_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_arg_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_asn_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_btn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ca2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cbl1(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cgly(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_chor(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_chsterol(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cit(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cobalt2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_csn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cu2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cys_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cytd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_dad_2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_dcyt(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ddca(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_dgsn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fald(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fe2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fe3(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fol(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_for(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gal(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glc_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gln_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glu_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gly(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glyc(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glyc3p(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gsn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gthox(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gthrd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gua(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_h(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_h2o(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_h2s(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_his_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_hxan(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ile_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_k(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_lanost(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_leu_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_lys_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_malt(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_met_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mg2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mn2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mqn7(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mqn8(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_nac(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ncam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_nmn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_no2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ocdca(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ocdcea(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_orn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_phe_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pheme(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pi(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pnto_R(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pro_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ptrc(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydx(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydxn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_q8(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_rib_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ribflv(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ser_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_sheme(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_so4(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_spmd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thm(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thr_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thymd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_trp_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ttdca(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_tyr_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ura(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_val_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_xan(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_xyl_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_zn2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glu_D(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_melib(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_chtbs(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_metsox_S_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_hdca(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_indole(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glcn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_coa(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_man(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fum(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_succ(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_no3(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ins(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_uri(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_drib(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pime(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_lac_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glypro(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_urea(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_duri(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_h2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_mal_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_tre(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_orot(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glymet(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_glyleu(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydx5p(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_so3(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_nh4(e)&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">essential_metabolites</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">diet</span><span class="o">.</span><span class="n">index</span>
+        <span class="p">):</span>  <span class="c1"># this is a bug, this should be checking adapated_diet.index to account for renamed metabolites</span>
+            <span class="n">adapted_diet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">vaginal</span><span class="p">:</span>
+        <span class="n">unmapped_metabs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;EX_asn_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gln_L(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_crn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_elaid(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_hdcea(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_dlnlcg(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_adrn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_hco3(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_sprm(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_carn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_7thf(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_Lcystin(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_hista(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_orn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ptrc(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_creat(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cytd(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_so4(e)&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">unmapped_metabs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">diet</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                <span class="n">adapted_diet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">50</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s2">&quot;EX_chol(e)&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">adapted_diet</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="n">adapted_diet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;EX_chol(e)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">41.251</span><span class="p">]</span>
+
+    <span class="n">micronutrients</span> <span class="o">=</span> <span class="n">micronutrients</span> <span class="k">if</span> <span class="n">micronutrients</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;EX_adocbl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_vitd2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_vitd3(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_psyl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gum(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_bglc(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_phyQ(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fol(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_5mthf(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_q10(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_retinol_9_cis(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydxn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydx(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pheme(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ribflv(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thm(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_avite1(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pnto_R(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_na1(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_k(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pi(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_zn2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cu2(e)&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">vaginal</span>
+        <span class="k">else</span> <span class="p">[</span>
+            <span class="s2">&quot;EX_adocbl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_vitd2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_vitd3(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_psyl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_gum(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_bglc(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_phyQ(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_fol(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_5mthf(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_q10(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_retinol_9_cis(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydxn(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydam(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pydx(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pheme(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_ribflv(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_thm(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_avite1(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_na1(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cl(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_k(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_pi(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_zn2(e)&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;EX_cu2(e)&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">adapted_diet</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="o">-</span><span class="n">adapted_diet</span><span class="o">.</span><span class="n">lb</span>
+    <span class="n">adapted_diet</span><span class="p">[</span><span class="s2">&quot;ub&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">threshold</span> <span class="o">*</span> <span class="n">adapted_diet</span><span class="o">.</span><span class="n">lb</span>
+    <span class="n">adapted_diet</span><span class="p">[</span><span class="s2">&quot;ub&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">adapted_diet</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">diet</span><span class="o">.</span><span class="n">index</span><span class="p">))]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">adapted_diet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">adapted_diet</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">micronutrients</span><span class="p">)))</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">adapted_diet</span><span class="p">[</span><span class="s2">&quot;lb&quot;</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mf">0.1</span><span class="p">),</span>
+        <span class="s2">&quot;lb&quot;</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">adapted_diet</span><span class="o">.</span><span class="n">lb</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="p">)</span>
+    <span class="n">adapted_diet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+        <span class="p">(</span><span class="n">adapted_diet</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s2">&quot;EX_fol(e)&quot;</span><span class="p">,</span> <span class="s2">&quot;EX_arab_L(e)&quot;</span><span class="p">]))</span>
+        <span class="o">&amp;</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">adapted_diet</span><span class="p">[</span><span class="s2">&quot;lb&quot;</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;lb&quot;</span><span class="p">,</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">vaginal</span><span class="p">:</span>
+        <span class="n">adapted_diet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;EX_cytd(e)&quot;</span><span class="p">,</span> <span class="s2">&quot;lb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+        <span class="n">adapted_diet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">&quot;EX_ttdca(e)&quot;</span><span class="p">,</span> <span class="s2">&quot;lb&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="n">adapted_diet</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">adapted_diet</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;\(e\)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">adapted_diet</span>
+
+
+<span class="c1"># Removes any diet</span>
+<div class="viewcode-block" id="remove_diet">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.diet.remove_diet">[docs]</a>
+<span class="k">def</span> <span class="nf">remove_diet</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Removes existing diet from model&quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Removing diet from model...&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s2">&quot;Diet_EX_.*&quot;</span><span class="p">):</span>
+        <span class="n">set_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="o">-</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Finds diet current set in model</span>
+<div class="viewcode-block" id="get_diet">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.diet.get_diet">[docs]</a>
+<span class="k">def</span> <span class="nf">get_diet</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns existing diet from model&quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fetching diet from model...&quot;</span><span class="p">)</span>
+
+    <span class="n">diet</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s2">&quot;Diet_EX_.*&quot;</span><span class="p">):</span>
+        <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">get_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">diet</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;lb&quot;</span><span class="p">:</span> <span class="n">lower</span><span class="p">,</span> <span class="s2">&quot;ub&quot;</span><span class="p">:</span> <span class="n">upper</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">diet</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="add_diet_to_model">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.diet.add_diet_to_model">[docs]</a>
+<span class="k">def</span> <span class="nf">add_diet_to_model</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">diet</span><span class="p">,</span>
+    <span class="n">force_uptake</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">essential_metabolites</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">micronutrients</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">vaginal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+    <span class="n">check</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add pymgpipe-adapated diet to model as defined by original mgPipe paper (see README for more details)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (optlang.interface.model): LP problem</span>
+<span class="sd">        diet (pandas.DataFrame | str): Path to diet or dataframe</span>
+<span class="sd">        essential_metabolites (list): Custom of essential metabolites  (uses pre-defined list by default)</span>
+<span class="sd">        micronutrients (list): Custom list of micronutrients (uses pre-defined list by default)</span>
+<span class="sd">        vaginal (bool): Whether or not this is a vaginal diet</span>
+<span class="sd">        threshold (float): Value between 0 and 1 that defines how strict the diet constraints are (with 1 being the least strict)</span>
+<span class="sd">        check (bool): Check whether or not this diet is feasible (can take some time depending on size of model)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Attempting to add diet...&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diet</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">diet</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">diet</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.csv&quot;</span><span class="p">):</span>
+            <span class="n">diet_df</span> <span class="o">=</span> <span class="n">load_dataframe</span><span class="p">(</span><span class="n">diet</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">diet</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.txt&quot;</span><span class="p">):</span>
+            <span class="n">diet_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+                <span class="n">diet</span><span class="p">,</span>
+                <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Unrecognized diet file format for </span><span class="si">%s</span><span class="s2">- must be .txt or .csv!&quot;</span> <span class="o">%</span> <span class="n">diet</span>
+            <span class="p">)</span>
+
+        <span class="c1"># In case of personalized diets</span>
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">diet_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">diet</span> <span class="o">=</span> <span class="n">diet_df</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diet</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">diet_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+                <span class="n">resource_filename</span><span class="p">(</span><span class="s2">&quot;pymgpipe&quot;</span><span class="p">,</span> <span class="s2">&quot;resources/diets/</span><span class="si">%s</span><span class="s2">.txt&quot;</span> <span class="o">%</span> <span class="n">diet</span><span class="p">),</span>
+                <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">header</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Found </span><span class="si">%s</span><span class="s2"> diet containing </span><span class="si">%s</span><span class="s2"> metabolites in resources!&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">diet</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">diet_df</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Skipping diet! Given diet `</span><span class="si">%s</span><span class="s2">` not in list of available diets. Available diets are- </span><span class="si">%s</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">diet</span><span class="p">,</span>
+                    <span class="p">[</span>
+                        <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">resource_listdir</span><span class="p">(</span><span class="s2">&quot;pymgpipe&quot;</span><span class="p">,</span> <span class="s2">&quot;resources/diets/&quot;</span><span class="p">)</span>
+                    <span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">diet</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using custom diet with </span><span class="si">%s</span><span class="s2"> metabolites!&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">diet</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+        <span class="n">diet_df</span> <span class="o">=</span> <span class="n">diet</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Diet not used- please pass in valid DataFrame, local file, or resource file name!&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">diet_reactions</span> <span class="o">=</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s2">&quot;Diet_EX_.*&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diet_reactions</span><span class="p">:</span>
+        <span class="n">set_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+
+    <span class="n">diet_df</span> <span class="o">=</span> <span class="n">diet_df</span><span class="p">[</span><span class="n">diet_df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">essential_metabolites</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using custom set of essential metabolites...&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">micronutrients</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using custom set of micronutrients...&quot;</span><span class="p">)</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="n">_get_adapted_diet</span><span class="p">(</span><span class="n">diet_df</span><span class="p">,</span> <span class="n">essential_metabolites</span><span class="p">,</span> <span class="n">micronutrients</span><span class="p">,</span> <span class="n">vaginal</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding </span><span class="si">%s</span><span class="s2"> diet to model...&quot;</span> <span class="o">%</span> <span class="n">diet</span><span class="p">)</span>
+    <span class="n">added</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">diet_reactions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;[d]&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;Diet_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">diet_reactions</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">ex</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">diet_reactions</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">diet_reactions</span><span class="p">[</span><span class="n">ex</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">force_uptake</span><span class="p">:</span>
+                <span class="n">set_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">ub</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">set_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">added</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;lb&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="s2">&quot;ub&quot;</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">ub</span><span class="p">})</span>
+
+    <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Checking diet feasibility...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">presolve</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">lp_method</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;infeasible&quot;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is infeasible with provided diet!&quot;</span> <span class="o">%</span> <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">added</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Zero metabolites from diet were found within model!&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">added</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoli Meydan, Federico Baldini, Tal Korem.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

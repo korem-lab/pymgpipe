@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pymgpipe &mdash; pymgpipe v0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=34cd777e"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pymgpipe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pymgpipe.html">pymgpipe package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pymgpipe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">pymgpipe</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pymgpipe">
+<h1>pymgpipe<a class="headerlink" href="#pymgpipe" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pymgpipe.html">pymgpipe package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.coupling">pymgpipe.coupling module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.coupling.add_coupling_constraints"><code class="docutils literal notranslate"><span class="pre">add_coupling_constraints()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.coupling.remove_coupling_constraints"><code class="docutils literal notranslate"><span class="pre">remove_coupling_constraints()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.diet">pymgpipe.diet module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.diet.add_diet_to_model"><code class="docutils literal notranslate"><span class="pre">add_diet_to_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.diet.get_available_diets"><code class="docutils literal notranslate"><span class="pre">get_available_diets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.diet.get_diet"><code class="docutils literal notranslate"><span class="pre">get_diet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.diet.remove_diet"><code class="docutils literal notranslate"><span class="pre">remove_diet()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.fva">pymgpipe.fva module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.fva.FVA_TYPE"><code class="docutils literal notranslate"><span class="pre">FVA_TYPE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pymgpipe.html#pymgpipe.fva.FVA_TYPE.FAST"><code class="docutils literal notranslate"><span class="pre">FVA_TYPE.FAST</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pymgpipe.html#pymgpipe.fva.FVA_TYPE.REGULAR"><code class="docutils literal notranslate"><span class="pre">FVA_TYPE.REGULAR</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.fva.VFFVA"><code class="docutils literal notranslate"><span class="pre">VFFVA</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pymgpipe.html#pymgpipe.fva.VFFVA.path"><code class="docutils literal notranslate"><span class="pre">VFFVA.path</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.fva.fva"><code class="docutils literal notranslate"><span class="pre">fva()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.io">pymgpipe.io module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.io.UnsupportedSolverException"><code class="docutils literal notranslate"><span class="pre">UnsupportedSolverException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.io.load_cobra_model"><code class="docutils literal notranslate"><span class="pre">load_cobra_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.io.load_model"><code class="docutils literal notranslate"><span class="pre">load_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.io.show_available_solvers"><code class="docutils literal notranslate"><span class="pre">show_available_solvers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.io.suppress_stdout"><code class="docutils literal notranslate"><span class="pre">suppress_stdout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.io.write_cobra_model"><code class="docutils literal notranslate"><span class="pre">write_cobra_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.io.write_lp_problem"><code class="docutils literal notranslate"><span class="pre">write_lp_problem()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.main">pymgpipe.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.main.build_models"><code class="docutils literal notranslate"><span class="pre">build_models()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.modeling">pymgpipe.modeling module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.modeling.build"><code class="docutils literal notranslate"><span class="pre">build()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.nmpc">pymgpipe.nmpc module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.nmpc.compute_nmpcs"><code class="docutils literal notranslate"><span class="pre">compute_nmpcs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe.utils">pymgpipe.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.Constants"><code class="docutils literal notranslate"><span class="pre">Constants</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.Constants.DIET_REGEX"><code class="docutils literal notranslate"><span class="pre">Constants.DIET_REGEX</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.Constants.EX_REGEX"><code class="docutils literal notranslate"><span class="pre">Constants.EX_REGEX</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.Constants.FE_REGEX"><code class="docutils literal notranslate"><span class="pre">Constants.FE_REGEX</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.InfeasibleModelException"><code class="docutils literal notranslate"><span class="pre">InfeasibleModelException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.constrain_reactions"><code class="docutils literal notranslate"><span class="pre">constrain_reactions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.get_abundances"><code class="docutils literal notranslate"><span class="pre">get_abundances()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.get_net_reactions"><code class="docutils literal notranslate"><span class="pre">get_net_reactions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.get_reaction_bounds"><code class="docutils literal notranslate"><span class="pre">get_reaction_bounds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.get_reactions"><code class="docutils literal notranslate"><span class="pre">get_reactions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.get_reverse_var"><code class="docutils literal notranslate"><span class="pre">get_reverse_var()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.load_dataframe"><code class="docutils literal notranslate"><span class="pre">load_dataframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.port_mgpipe_model"><code class="docutils literal notranslate"><span class="pre">port_mgpipe_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.remove_reverse_vars"><code class="docutils literal notranslate"><span class="pre">remove_reverse_vars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.set_objective"><code class="docutils literal notranslate"><span class="pre">set_objective()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.set_reaction_bounds"><code class="docutils literal notranslate"><span class="pre">set_reaction_bounds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="pymgpipe.html#pymgpipe.utils.solve_model"><code class="docutils literal notranslate"><span class="pre">solve_model()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pymgpipe.html#module-pymgpipe">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoli Meydan, Federico Baldini, Tal Korem.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

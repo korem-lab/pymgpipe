@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pymgpipe.modeling &mdash; pymgpipe v0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=34cd777e"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            pymgpipe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pymgpipe.html">pymgpipe package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pymgpipe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pymgpipe.modeling</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pymgpipe.modeling</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">cobra</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">optlang.symbolics</span> <span class="kn">import</span> <span class="n">Zero</span>
+<span class="kn">from</span> <span class="nn">cobra.medium</span> <span class="kn">import</span> <span class="n">is_boundary_type</span>
+<span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">load_cobra_model</span><span class="p">,</span> <span class="n">UnsupportedSolverException</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">load_dataframe</span>
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="kn">import</span> <span class="n">logger</span>
+
+<div class="viewcode-block" id="build">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.modeling.build">[docs]</a>
+<span class="k">def</span> <span class="nf">build</span><span class="p">(</span>
+    <span class="n">abundances</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">,</span>
+    <span class="n">taxa_directory</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+    <span class="n">diet_fecal_compartments</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build community COBRA model using mgpipe-like compartments and constraints.</span>
+
+<span class="sd">    This function is pymgpipe&#39;s main model building function, can can be used to build a single model (with no further modifications)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        abundances (pandas.DataFrame | str): Abundance matrix with taxa as rows and samples as columns</span>
+<span class="sd">        sample (str): Label corresponding to the sample you want to build (needs to match up to column name in abundance matrix)</span>
+<span class="sd">        taxa_directory (str): Directory containing individual strain/species taxa models (file names corresponding to index of coverage matrix)</span>
+<span class="sd">        threshold (float): Abundance threshold, any taxa with an abundance less than this value will be left out and abundances will be re-normalized</span>
+<span class="sd">        diet_fecal_compartments (bool): Build models with mgpipe&#39;s diet/fecal compartmentalization, defaults to False</span>
+<span class="sd">        solver (str): LP solver (gurobi or cplex) used to solve models, defaults to gurobi</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">abundances</span> <span class="o">=</span> <span class="n">load_dataframe</span><span class="p">(</span><span class="n">abundances</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">abundances</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="s1">&#39;Sample </span><span class="si">%s</span><span class="s1"> not found in abundance matrix!&#39;</span><span class="o">%</span><span class="n">sample</span> 
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">taxa_directory</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Taxa directory </span><span class="si">%s</span><span class="s1"> not found!&#39;</span><span class="o">%</span><span class="n">taxa_directory</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">solver</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;gurobi&#39;</span><span class="p">,</span><span class="s1">&#39;cplex&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="n">UnsupportedSolverException</span>
+
+    <span class="n">sample_abundances</span> <span class="o">=</span> <span class="n">abundances</span><span class="p">[</span><span class="n">sample</span><span class="p">]</span>
+    <span class="n">sample_abundances</span> <span class="o">=</span> <span class="n">sample_abundances</span><span class="p">[</span><span class="n">sample_abundances</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sample_abundances</span> <span class="o">=</span> <span class="n">sample_abundances</span><span class="p">[</span><span class="n">sample_abundances</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">]</span>
+
+    <span class="n">sample_abundances</span> <span class="o">=</span> <span class="n">sample_abundances</span> <span class="o">/</span> <span class="n">sample_abundances</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="n">existing_taxa_files</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">taxa_directory</span><span class="p">,</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">taxa_directory</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">sample_abundances</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_taxa_files</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Could not find associated models for </span><span class="si">%s</span><span class="s1"> taxa- </span><span class="si">%s</span><span class="se">\n</span><span class="s1">Removing missing taxa and renormalizing abundances.&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">),</span><span class="n">missing</span><span class="p">))</span>
+    
+        <span class="n">sample_abundances</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">missing</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sample_abundances</span> <span class="o">=</span> <span class="n">sample_abundances</span> <span class="o">/</span> <span class="n">sample_abundances</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Building community model for </span><span class="si">%s</span><span class="s1"> with </span><span class="si">%s</span><span class="s1"> unique taxa...</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">sample_abundances</span><span class="o">.</span><span class="n">index</span><span class="p">)))</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">community_model</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">sample</span><span class="p">)</span>
+    <span class="n">community_model</span><span class="o">.</span><span class="n">solver</span> <span class="o">=</span> <span class="n">solver</span> 
+
+    <span class="k">for</span> <span class="n">taxon</span> <span class="ow">in</span> <span class="n">sample_abundances</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">load_cobra_model</span><span class="p">(</span><span class="n">existing_taxa_files</span><span class="p">[</span><span class="n">taxon</span><span class="p">])</span>
+        <span class="n">taxon</span> <span class="o">=</span> <span class="n">taxon</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+        <span class="n">ex_metabolites</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span> <span class="k">if</span> <span class="s1">&#39;[e]&#39;</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">ex_metabolites</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;EX_</span><span class="si">%s</span><span class="s1">(e)&#39;</span><span class="o">%</span><span class="n">ex</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;[e]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="p">:</span>                
+                <span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_get_missing_exchange</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Adding </span><span class="si">%s</span><span class="s1"> missing exchange reaction(s) to </span><span class="si">%s</span><span class="s1">!&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">),</span><span class="n">taxon</span><span class="p">))</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">add_reactions</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span>
+
+        <span class="c1"># -- Reactions --</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">_remove_non_alphanumeric</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">+</span><span class="s1">&#39;__&#39;</span><span class="o">+</span><span class="n">taxon</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;(e)&quot;</span><span class="p">,</span> <span class="s2">&quot;[u]&quot;</span><span class="p">)</span>
+
+        <span class="c1"># -- Metabolites -- </span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="p">):</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">_remove_non_alphanumeric</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="o">+</span><span class="s1">&#39;__&#39;</span><span class="o">+</span><span class="n">taxon</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[e]&quot;</span><span class="p">,</span> <span class="s2">&quot;[u]&quot;</span><span class="p">)</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">compartment</span> <span class="o">=</span> <span class="n">_remove_non_alphanumeric</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">compartment</span><span class="o">+</span><span class="s1">&#39;__&#39;</span><span class="o">+</span><span class="n">taxon</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;e__&#39;</span><span class="p">,</span><span class="s1">&#39;u__&#39;</span><span class="p">)</span>
+        
+        <span class="n">community_model</span><span class="o">.</span><span class="n">add_reactions</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="p">)</span>
+        <span class="n">community_model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Adding exchange reactions...</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">_add_exchanges</span><span class="p">(</span><span class="n">community_model</span><span class="p">,</span> <span class="n">diet_fecal_compartments</span><span class="p">)</span>
+
+    <span class="n">microbe_biomass</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Metabolite</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;microbeBiomass[u]&quot;</span><span class="p">,</span> <span class="n">compartment</span><span class="o">=</span><span class="s2">&quot;u&quot;</span><span class="p">)</span>
+    <span class="n">community_model</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">([</span><span class="n">microbe_biomass</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">diet_fecal_compartments</span><span class="p">:</span>
+        <span class="n">_add_fecal_exchange</span><span class="p">(</span><span class="n">community_model</span><span class="p">,</span> <span class="n">microbe_biomass</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_add_lumen_exchange</span><span class="p">(</span><span class="n">community_model</span><span class="p">,</span> <span class="n">microbe_biomass</span><span class="p">)</span>
+
+    <span class="n">biomass_metabs</span> <span class="o">=</span> <span class="n">community_model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;^biomass.*&quot;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">))</span>
+    <span class="n">biomass</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;communityBiomass&quot;</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">biomass</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">(</span>
+        <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="n">sample_abundances</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">biomass_metabs</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">biomass</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">microbe_biomass</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+    <span class="n">community_model</span><span class="o">.</span><span class="n">add_reactions</span><span class="p">([</span><span class="n">biomass</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting community objective to biomass reaction...&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">biomass</span><span class="o">.</span><span class="n">id</span><span class="o">+</span><span class="s1">&#39;: &#39;</span><span class="o">+</span><span class="n">biomass</span><span class="o">.</span><span class="n">reaction</span><span class="p">)</span>
+
+    <span class="n">community_model</span><span class="o">.</span><span class="n">objective</span> <span class="o">=</span> <span class="n">biomass</span>
+    <span class="n">community_model</span><span class="o">.</span><span class="n">objective_direction</span> <span class="o">=</span> <span class="s1">&#39;max&#39;</span>
+    <span class="n">community_model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-----------------------------------&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Finished building </span><span class="si">%s</span><span class="s1"> in </span><span class="si">%.2f</span><span class="s1"> minutes!&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span><span class="n">elapsed</span><span class="o">/</span><span class="mi">60</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">community_model</span></div>
+
+
+<span class="k">def</span> <span class="nf">_add_exchanges</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">diet_fecal_compartments</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">reactions</span><span class="p">):</span>
+        <span class="n">r_taxon</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># -- Handling non-exchanges --</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;DM_&quot;</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;sink_&quot;</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">if</span> <span class="s1">&#39;biomass&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;EX_&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">remove_reactions</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+        
+        <span class="c1"># -- Handling exchanges --</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_boundary_type</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="s1">&#39;exchange&#39;</span><span class="p">,</span> <span class="s1">&#39;u__&#39;</span><span class="o">+</span><span class="n">r_taxon</span><span class="p">):</span>
+            <span class="k">continue</span> 
+
+        <span class="n">metab</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reactants</span> <span class="o">+</span> <span class="n">r</span><span class="o">.</span><span class="n">products</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">lumen_id</span> <span class="o">=</span> <span class="n">metab</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="o">+</span><span class="n">r_taxon</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">lumen_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="p">:</span>
+            <span class="n">lumen_metab</span> <span class="o">=</span> <span class="n">metab</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">lumen_metab</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">lumen_id</span>
+            <span class="n">lumen_metab</span><span class="o">.</span><span class="n">compartment</span> <span class="o">=</span> <span class="s1">&#39;u&#39;</span>
+            
+            <span class="n">model</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">([</span><span class="n">lumen_metab</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">diet_fecal_compartments</span><span class="p">:</span>
+                <span class="n">_add_fecal_exchange</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">lumen_metab</span><span class="p">)</span>
+                <span class="n">_add_diet_exchange</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">lumen_metab</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_add_lumen_exchange</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">lumen_metab</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lumen_metab</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">lumen_id</span><span class="p">)</span>
+        
+        <span class="n">r</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">lumen_metab</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">reactants</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;EX_&quot;</span><span class="p">,</span> <span class="s2">&quot;IEX_&quot;</span><span class="p">)</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="o">-</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">metabolites</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">combine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1000</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_add_lumen_exchange</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">met</span><span class="p">):</span>
+    <span class="n">ex_medium</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;EX_&quot;</span> <span class="o">+</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">met</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot; lumen exchange&quot;</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=-</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ex_medium</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">met</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+    <span class="n">ex_medium</span><span class="o">.</span><span class="n">global_id</span> <span class="o">=</span> <span class="n">ex_medium</span><span class="o">.</span><span class="n">id</span>
+    <span class="n">ex_medium</span><span class="o">.</span><span class="n">community_id</span> <span class="o">=</span> <span class="s2">&quot;lumen&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add_reactions</span><span class="p">([</span><span class="n">ex_medium</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_add_fecal_exchange</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">met</span><span class="p">):</span>
+    <span class="n">f_m</span> <span class="o">=</span> <span class="n">met</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">f_m</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[u]&quot;</span><span class="p">,</span> <span class="s2">&quot;[fe]&quot;</span><span class="p">)</span>
+    <span class="n">f_m</span><span class="o">.</span><span class="n">global_id</span> <span class="o">=</span> <span class="n">f_m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+    <span class="n">f_m</span><span class="o">.</span><span class="n">compartment</span> <span class="o">=</span> <span class="s2">&quot;fe&quot;</span>
+    <span class="n">f_m</span><span class="o">.</span><span class="n">community_id</span> <span class="o">=</span> <span class="s2">&quot;fecal&quot;</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">([</span><span class="n">f_m</span><span class="p">])</span>
+
+    <span class="n">f_ex</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;EX_&quot;</span> <span class="o">+</span> <span class="n">f_m</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">f_m</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot; fecal exchange&quot;</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=-</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">f_ex</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">f_m</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+    <span class="n">f_ex</span><span class="o">.</span><span class="n">global_id</span> <span class="o">=</span> <span class="n">f_ex</span><span class="o">.</span><span class="n">id</span>
+    <span class="n">f_ex</span><span class="o">.</span><span class="n">community_id</span> <span class="o">=</span> <span class="s2">&quot;fecal&quot;</span>
+
+    <span class="n">f_tr</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;UFEt_&quot;</span> <span class="o">+</span> <span class="n">f_m</span><span class="o">.</span><span class="n">global_id</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">f_m</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot; lumen fecal transport&quot;</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">f_tr</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">met</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">f_m</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+    <span class="n">f_tr</span><span class="o">.</span><span class="n">global_id</span> <span class="o">=</span> <span class="n">f_tr</span><span class="o">.</span><span class="n">id</span>
+    <span class="n">f_tr</span><span class="o">.</span><span class="n">community_id</span> <span class="o">=</span> <span class="s2">&quot;lumen/fecal&quot;</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">add_reactions</span><span class="p">([</span><span class="n">f_ex</span><span class="p">,</span> <span class="n">f_tr</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_add_diet_exchange</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">met</span><span class="p">):</span>
+    <span class="n">d_m</span> <span class="o">=</span> <span class="n">met</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">d_m</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">met</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;[u]&quot;</span><span class="p">,</span> <span class="s2">&quot;[d]&quot;</span><span class="p">)</span>
+    <span class="n">d_m</span><span class="o">.</span><span class="n">global_id</span> <span class="o">=</span> <span class="n">d_m</span><span class="o">.</span><span class="n">id</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">d_m</span><span class="o">.</span><span class="n">compartment</span> <span class="o">=</span> <span class="s2">&quot;d&quot;</span>
+    <span class="n">d_m</span><span class="o">.</span><span class="n">community_id</span> <span class="o">=</span> <span class="s2">&quot;diet&quot;</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">([</span><span class="n">d_m</span><span class="p">])</span>
+
+    <span class="n">d_ex</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;Diet_EX_&quot;</span> <span class="o">+</span> <span class="n">d_m</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">d_m</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot; diet exchange&quot;</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=-</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">d_ex</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">d_m</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+    <span class="n">d_ex</span><span class="o">.</span><span class="n">global_id</span> <span class="o">=</span> <span class="n">d_ex</span><span class="o">.</span><span class="n">id</span>
+    <span class="n">d_ex</span><span class="o">.</span><span class="n">community_id</span> <span class="o">=</span> <span class="s2">&quot;diet&quot;</span>
+
+    <span class="n">d_tr</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;DUt_&quot;</span> <span class="o">+</span> <span class="n">d_m</span><span class="o">.</span><span class="n">global_id</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">d_m</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot; diet lumen transport&quot;</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">d_tr</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">met</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="n">d_m</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+    <span class="n">d_tr</span><span class="o">.</span><span class="n">global_id</span> <span class="o">=</span> <span class="n">d_tr</span><span class="o">.</span><span class="n">id</span>
+    <span class="n">d_tr</span><span class="o">.</span><span class="n">community_id</span> <span class="o">=</span> <span class="s2">&quot;diet/lumen&quot;</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">add_reactions</span><span class="p">([</span><span class="n">d_ex</span><span class="p">,</span> <span class="n">d_tr</span><span class="p">])</span>
+
+<span class="k">def</span> <span class="nf">_get_missing_exchange</span><span class="p">(</span><span class="n">metab</span><span class="p">):</span>
+    <span class="n">ex</span> <span class="o">=</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Reaction</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;EX_</span><span class="si">%s</span><span class="s1">(e)&#39;</span><span class="o">%</span><span class="n">metab</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;[e]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> exchange&#39;</span><span class="o">%</span><span class="n">metab</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">lower_bound</span><span class="o">=-</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">upper_bound</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">subsystem</span><span class="o">=</span><span class="s1">&#39;Exchange/demand reaction&#39;</span><span class="p">)</span>
+    <span class="n">ex</span><span class="o">.</span><span class="n">add_metabolites</span><span class="p">({</span><span class="n">metab</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">ex</span>
+
+<span class="k">def</span> <span class="nf">_remove_non_alphanumeric</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^\w[\]()]+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">string</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoli Meydan, Federico Baldini, Tal Korem.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

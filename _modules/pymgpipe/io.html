@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pymgpipe.io &mdash; pymgpipe v0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=34cd777e"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            pymgpipe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pymgpipe.html">pymgpipe package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pymgpipe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pymgpipe.io</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pymgpipe.io</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">cobra</span>
+<span class="kn">import</span> <span class="nn">os.path</span> <span class="k">as</span> <span class="nn">path</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">optlang</span>
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+
+<div class="viewcode-block" id="UnsupportedSolverException">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.io.UnsupportedSolverException">[docs]</a>
+<span class="k">class</span> <span class="nc">UnsupportedSolverException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">msg</span><span class="o">=</span><span class="s2">&quot;Unrecognized solver. Supported solvers include gurobi and cplex&quot;</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="suppress_stdout">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.io.suppress_stdout">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">suppress_stdout</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">devnull</span><span class="p">:</span>
+        <span class="n">old_stdout</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">devnull</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">yield</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">old_stdout</span></div>
+
+
+
+<span class="n">_read_funcs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;.xml&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_sbml_model</span><span class="p">,</span>
+    <span class="s2">&quot;.gz&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read_sbml_model</span><span class="p">,</span>
+    <span class="s2">&quot;.mat&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_matlab_model</span><span class="p">,</span>
+    <span class="s2">&quot;.json&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">load_json_model</span><span class="p">,</span>
+    <span class="s2">&quot;.pickle&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">fn</span><span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)),</span>
+<span class="p">}</span>
+
+<span class="n">_write_funcs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;.xml&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_sbml_model</span><span class="p">,</span>
+    <span class="s2">&quot;.gz&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_sbml_model</span><span class="p">,</span>
+    <span class="s2">&quot;.mat&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">save_matlab_model</span><span class="p">,</span>
+    <span class="s2">&quot;.json&quot;</span><span class="p">:</span> <span class="n">cobra</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">save_json_model</span><span class="p">,</span>
+    <span class="s2">&quot;.pickle&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">fn</span><span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)),</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="show_available_solvers">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.io.show_available_solvers">[docs]</a>
+<span class="k">def</span> <span class="nf">show_available_solvers</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">optlang</span><span class="o">.</span><span class="n">available_solvers</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_get_optlang_interface</span><span class="p">(</span><span class="n">solver</span><span class="p">):</span>
+    <span class="n">available_solvers</span> <span class="o">=</span> <span class="n">show_available_solvers</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">solver</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">available_solvers</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Provided solver </span><span class="si">%s</span><span class="s2"> not available. Available solvers are </span><span class="si">%s</span><span class="s2">&quot;</span>
+            <span class="o">%</span> <span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">available_solvers</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">solver</span> <span class="o">==</span> <span class="s2">&quot;gurobi&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">optlang</span><span class="o">.</span><span class="n">gurobi_interface</span>
+    <span class="k">elif</span> <span class="n">solver</span> <span class="o">==</span> <span class="s2">&quot;cplex&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">optlang</span><span class="o">.</span><span class="n">cplex_interface</span>
+    <span class="k">elif</span> <span class="n">solver</span> <span class="o">==</span> <span class="s2">&quot;glpk&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">optlang</span><span class="o">.</span><span class="n">glpk_interface</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Provided solver </span><span class="si">%s</span><span class="s2"> is unsupported. Solver must either be `gurobi` or `cplex`.&quot;</span>
+            <span class="o">%</span> <span class="n">solver</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># Loads cobra file and returns cobrapy model</span>
+<span class="c1"># RETURNS- cobra model</span>
+<div class="viewcode-block" id="load_cobra_model">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.io.load_cobra_model">[docs]</a>
+<span class="k">def</span> <span class="nf">load_cobra_model</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads and returns COBRA model&quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">read_func</span> <span class="o">=</span> <span class="n">_read_funcs</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">suppress_stdout</span><span class="p">():</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">read_func</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Error reading cobra model at </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">file</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">solver</span> <span class="o">=</span> <span class="n">solver</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="write_cobra_model">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.io.write_cobra_model">[docs]</a>
+<span class="k">def</span> <span class="nf">write_cobra_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Writes COBRA model to file</span>
+<span class="sd">    </span>
+<span class="sd">    Warning: COBRA won&#39;t save any custom modifications added to the model (i.e. coupling constraints, diet, etc). For this reason, we recommend working and using the corresponding optlang LP problems.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">write_func</span> <span class="o">=</span> <span class="n">_write_funcs</span><span class="p">[</span><span class="n">ext</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">suppress_stdout</span><span class="p">():</span>
+            <span class="n">write_func</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Error writing cobra model to </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">file</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Loads either LP file or cobra file and returns optlang model representing underlying optimization problem</span>
+<span class="c1"># RETURNS- optlang model</span>
+<div class="viewcode-block" id="load_model">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.io.load_model">[docs]</a>
+<span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads optlang.interface.Model from either an LP file (.lp or .mps) or any of the available COBRA file types (.xml, .mat, etc)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns: optlang.interface.Model</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">cobra</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">solver</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">optlang</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">path</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Expected string, received </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Could not find model at </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading model from </span><span class="si">%s</span><span class="s2">...&quot;</span> <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">solver</span> <span class="o">==</span> <span class="s2">&quot;gurobi&quot;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">_load_gurobi_model</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">solver</span> <span class="o">==</span> <span class="s2">&quot;cplex&quot;</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">_load_cplex_model</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedSolverException</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">optlang_model</span> <span class="o">=</span> <span class="n">_get_optlang_interface</span><span class="p">(</span><span class="n">solver</span><span class="p">)</span><span class="o">.</span><span class="n">Model</span><span class="p">(</span>
+                <span class="n">problem</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;Unable to create optlang </span><span class="si">%s</span><span class="s2"> model, try switching solver&quot;</span>
+                <span class="o">%</span> <span class="n">solver</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">optlang_model</span> <span class="o">=</span> <span class="n">load_cobra_model</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">solver</span><span class="p">)</span>
+        <span class="n">optlang_model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">optlang_model</span><span class="o">.</span><span class="n">solver</span>
+
+    <span class="k">return</span> <span class="n">optlang_model</span></div>
+
+
+
+<div class="viewcode-block" id="write_lp_problem">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.io.write_lp_problem">[docs]</a>
+<span class="k">def</span> <span class="nf">write_lp_problem</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">out_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Writes optlang.interface.Model out to file (will compress by default)&quot;&quot;&quot;</span>
+    <span class="n">out_file</span> <span class="o">=</span> <span class="s2">&quot;./&quot;</span> <span class="o">+</span> <span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.xml&quot;</span> <span class="k">if</span> <span class="n">out_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">out_file</span>
+
+    <span class="k">if</span> <span class="n">compress</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">out_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">out_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.7z&quot;</span><span class="p">)):</span>
+        <span class="n">out_file</span> <span class="o">=</span> <span class="n">out_file</span> <span class="o">+</span> <span class="s2">&quot;.gz&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">out_file</span><span class="p">))</span>
+    <span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Model already exists!&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="c1"># some computers cant compress to gz</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">problem</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">compress</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Could not write LP to compressed file format, trying .7z extension&quot;</span>
+            <span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">problem</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">out_file</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;.7z&quot;</span><span class="p">))</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_load_cplex_model</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">cplex</span>
+
+        <span class="k">with</span> <span class="n">suppress_stdout</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">cplex</span><span class="o">.</span><span class="n">Cplex</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Provided model is not a valid GUROBI model- </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_load_gurobi_model</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">gurobipy</span>
+
+        <span class="k">with</span> <span class="n">suppress_stdout</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">gurobipy</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Provided model is not a valid GUROBI model- </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">path</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoli Meydan, Federico Baldini, Tal Korem.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

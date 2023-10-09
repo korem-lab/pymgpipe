@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pymgpipe.utils &mdash; pymgpipe v0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=34cd777e"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            pymgpipe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pymgpipe.html">pymgpipe package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pymgpipe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pymgpipe.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pymgpipe.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">optlang</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">.io</span> <span class="kn">import</span> <span class="n">load_model</span><span class="p">,</span> <span class="n">load_cobra_model</span>
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">isinf</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="InfeasibleModelException">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.InfeasibleModelException">[docs]</a>
+<span class="k">class</span> <span class="nc">InfeasibleModelException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Constants">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.Constants">[docs]</a>
+<span class="k">class</span> <span class="nc">Constants</span><span class="p">:</span>
+    <span class="n">EX_REGEX</span> <span class="o">=</span> <span class="s2">&quot;^(Diet_)?(?i)EX_((?!biomass|community).)*(_m|\[u\]|\[d\]|\[fe\])$&quot;</span>
+    <span class="n">FE_REGEX</span> <span class="o">=</span> <span class="s2">&quot;^EX_((?!biomass|community).)*\[fe\]$&quot;</span>
+    <span class="n">DIET_REGEX</span> <span class="o">=</span> <span class="s2">&quot;^(Diet_)?(?i)EX_((?!biomass|community).)*\[d\]$&quot;</span></div>
+
+
+<div class="viewcode-block" id="solve_model">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.solve_model">[docs]</a>
+<span class="k">def</span> <span class="nf">solve_model</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">reactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;gurobi&quot;</span><span class="p">,</span>
+    <span class="n">verbosity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">presolve</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;primal&quot;</span><span class="p">,</span>
+    <span class="n">flux_threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ex_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solves optlang.interface.Model</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (optlang.interface.model): LP problem</span>
+<span class="sd">        regex (str): Regex string corresponding to list of reactions you want to return</span>
+<span class="sd">        reactions (list): List of reactions you want to return</span>
+<span class="sd">        ex_only (bool): Only return fluxes for exchange reactions (will be overridden by either `regex` or `reactions` param)</span>
+<span class="sd">        flux_threshold (float): Any flux below this threshold value will be set to 0</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    `presolve` and `method` are both solver-specific parameters. Please refer to https://optlang.readthedocs.io/en/latest/ for more info.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">solver</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="n">verbosity</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">presolve</span> <span class="o">=</span> <span class="n">presolve</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">lp_method</span> <span class="o">=</span> <span class="n">method</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">qp_method</span> <span class="o">=</span> <span class="n">method</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error when optimizing model, make sure model is valid or try setting solve method to `auto`- $</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;infeasible&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InfeasibleModelException</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is infeasible!&quot;</span> <span class="o">%</span> <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">regex</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">reactions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ex_only</span><span class="p">:</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="n">Constants</span><span class="o">.</span><span class="n">EX_REGEX</span>
+    <span class="n">fluxes</span> <span class="o">=</span> <span class="n">_get_fluxes_from_model</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">flux_threshold</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="n">regex</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="n">reactions</span>
+    <span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">fluxes</span><span class="p">})</span>
+    <span class="k">del</span> <span class="n">model</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_get_fluxes_from_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
+    <span class="n">fluxes</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">forward</span> <span class="ow">in</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="p">,</span> <span class="n">regex</span><span class="p">):</span>
+        <span class="n">r_id</span> <span class="o">=</span> <span class="n">_get_reverse_id</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="n">flux</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">primal</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reverse</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">r_id</span><span class="p">]</span>
+            <span class="n">flux</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">primal</span> <span class="o">-</span> <span class="n">reverse</span><span class="o">.</span><span class="n">primal</span><span class="p">)</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">flux</span> <span class="o">==</span> <span class="o">-</span><span class="mf">0.0</span> <span class="k">else</span> <span class="n">flux</span>
+        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">flux</span> <span class="o">=</span> <span class="n">flux</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">threshold</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">fluxes</span><span class="p">[</span><span class="n">forward</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">flux</span>
+    <span class="k">return</span> <span class="n">fluxes</span>
+
+
+<div class="viewcode-block" id="get_reactions">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.get_reactions">[docs]</a>
+<span class="k">def</span> <span class="nf">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetches reactions from model</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (optlang.interface.model): LP problem</span>
+<span class="sd">        regex (str): Regex string corresponding to list of reactions you want to return</span>
+<span class="sd">        reactions (list): List of reactions you want to return</span>
+<span class="sd">        include_reverse (bool): Whether or not you want to return reverse variables as well (if model contains reverse variables)</span>
+<span class="sd">        </span>
+<span class="sd">    Returns: List of optlang.interface.Variable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">reactions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">reactions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">optlang</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">Variable</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">reactions</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reactions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">reactions</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;List of reactions need to be either IDs or reaction variables! Received- </span><span class="si">%s</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">reactions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">regex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">regex</span><span class="p">)</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">k</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">k</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="p">(</span>
+                    <span class="s2">&quot;reverse&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">include_reverse</span> <span class="k">else</span> <span class="n">include_reverse</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">except</span> <span class="n">re</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Invalid regex- </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">regex</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">k</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;reverse&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">include_reverse</span> <span class="k">else</span> <span class="n">include_reverse</span><span class="p">)</span>
+        <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Returning 0 reactions from model!&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span></div>
+
+
+<div class="viewcode-block" id="get_net_reactions">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.get_net_reactions">[docs]</a>
+<span class="k">def</span> <span class="nf">get_net_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetches NET reactions from model</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (optlang.interface.model): LP problem</span>
+<span class="sd">        regex (str): Regex string corresponding to list of reactions you want to return</span>
+<span class="sd">        reactions (list): List of reactions you want to return</span>
+<span class="sd">        </span>
+<span class="sd">    Notes:</span>
+<span class="sd">    By default, COBRA adds a reverse variable for every forward variable within the model. </span>
+<span class="sd">    Therefore, to calculate the flux going through `reaction_A` for example, you must subtract the forward and reverse fluxes like so- `reaction_A - reaction_A_reverse`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rxns</span> <span class="o">=</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span><span class="n">reactions</span><span class="p">,</span><span class="n">regex</span><span class="p">,</span><span class="n">include_reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">net</span> <span class="o">=</span> <span class="p">{</span><span class="n">rxns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">:</span><span class="n">rxns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">rxns</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">rxns</span><span class="p">),</span><span class="mi">2</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="n">net</span> </div>
+
+
+<div class="viewcode-block" id="constrain_reactions">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.constrain_reactions">[docs]</a>
+<span class="k">def</span> <span class="nf">constrain_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">flux_map</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constrains reactions within model to specific value (or range of values)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (optlang.interface.model): LP problem</span>
+<span class="sd">        flux_map (dictionary): Dictionary defining flux value for each reaction you want to constrain</span>
+<span class="sd">        threshold (float): Fixed value defining flexibility threshold (not a percentage!)</span>
+<span class="sd">        </span>
+<span class="sd">    Example:</span>
+<span class="sd">    Passing in the following dictionary {&#39;EX_reactionA&#39;: 400} with a threshold of 50 will set the bounds for this reaction to `350 &lt;= EX_reactionA &lt;= 450`</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flux_map</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">flux_map</span> <span class="o">=</span> <span class="n">flux_map</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+    <span class="n">flux_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">flux_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">f_id</span><span class="p">,</span> <span class="n">flux</span> <span class="ow">in</span> <span class="n">flux_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">forward_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">f_id</span><span class="p">]</span>
+        <span class="n">reverse_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">_get_reverse_id</span><span class="p">(</span><span class="n">f_id</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="n">flux</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">forward_var</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="n">flux</span> <span class="o">-</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">flux</span> <span class="o">+</span> <span class="n">threshold</span><span class="p">)</span>
+            <span class="n">reverse_var</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flux</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">reverse_var</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="o">-</span><span class="n">flux</span> <span class="o">-</span> <span class="n">threshold</span><span class="p">,</span> <span class="o">-</span><span class="n">flux</span> <span class="o">+</span> <span class="n">threshold</span><span class="p">)</span>
+            <span class="n">forward_var</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">flux</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">forward_var</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+            <span class="n">reverse_var</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">flux_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="set_objective">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.set_objective">[docs]</a>
+<span class="k">def</span> <span class="nf">set_objective</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">obj_expression</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets model optimization objective (optlang.interface.Objective)</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">    `obj_expression` can either be an optlang.interface.Objective, a string defining a specific variable, or a list of variables (in which case it will set objective to the sum of said reactions)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_expression</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">obj_expression</span> <span class="o">=</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="p">[</span><span class="n">obj_expression</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj_expression</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">obj_expression</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reactions</span><span class="o">=</span><span class="n">obj_expression</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">objective</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">Objective</span><span class="p">(</span><span class="n">obj_expression</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Set model objective!&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Failed to add objective to </span><span class="si">%s</span><span class="s2">- </span><span class="si">%s</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">obj_expression</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="remove_reverse_vars">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.remove_reverse_vars">[docs]</a>
+<span class="k">def</span> <span class="nf">remove_reverse_vars</span><span class="p">(</span><span class="n">model</span><span class="p">,</span><span class="n">hard_remove</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Removes all reverse variables from model</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model (optlang.interface.model): LP problem</span>
+<span class="sd">        hard_remove (bool): Setting `hard_remove` to True will physically remove the variables from the model, whereas setting it to False will only set the lower/upper bounds to 0</span>
+<span class="sd">        </span>
+<span class="sd">    Notes:</span>
+<span class="sd">    By default, COBRA adds a reverse variable for every forward variable within the model. </span>
+<span class="sd">    Therefore, to calculate the flux going through `reaction_A` for example, you must subtract the forward and reverse fluxes like so- `reaction_A - reaction_A_reverse`.</span>
+<span class="sd">    This function removes all reverse variables to make calculations a lot simpler and faster. Also, reduces the size of the models by roughly 50%!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> 
+    <span class="k">if</span> <span class="s1">&#39;coupled&#39;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span> <span class="c1"># fix for issue w/ older version of models</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;coupled&#39;</span><span class="p">)</span>
+    
+    <span class="n">to_remove</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">num_vars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Collecting reverse variables...&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">num_vars</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span> <span class="c1"># faster than searching for reverse variables</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_reverse&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">lb</span> <span class="o">-</span> <span class="n">r</span><span class="o">.</span><span class="n">ub</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">ub</span> <span class="o">-</span> <span class="n">r</span><span class="o">.</span><span class="n">lb</span>
+                <span class="n">to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">continue</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No reverse variables to remove! Returning model as is.&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">hard_remove</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removing </span><span class="si">%s</span><span class="s1"> reverse variables...&#39;</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">to_remove</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Removed </span><span class="si">%s</span><span class="s1"> out of </span><span class="si">%s</span><span class="s1"> total variables in </span><span class="si">%s</span><span class="s1"> minutes!&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">),</span><span class="n">num_vars</span><span class="p">,</span><span class="nb">round</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span><span class="o">/</span><span class="mi">60</span><span class="p">,</span><span class="mi">3</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Restricting bounds of </span><span class="si">%s</span><span class="s1"> reverse variables...&#39;</span><span class="o">%</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">to_remove</span><span class="p">:</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="mi">0</span> 
+            <span class="n">v</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Set bounds of </span><span class="si">%s</span><span class="s1"> out of </span><span class="si">%s</span><span class="s1"> variables to 0 in </span><span class="si">%s</span><span class="s1"> minutes!&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">to_remove</span><span class="p">),</span><span class="n">num_vars</span><span class="p">,</span><span class="nb">round</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start</span><span class="p">)</span><span class="o">/</span><span class="mi">60</span><span class="p">,</span><span class="mi">3</span><span class="p">)))</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_get_reverse_id</span><span class="p">(</span><span class="nb">id</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">hashlib</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="nb">id</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="s2">&quot;_get_reverse_id must take either string ID or optlang.Variable&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;.*_mc.*&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">id</span><span class="p">,</span> <span class="n">sample_num</span> <span class="o">=</span> <span class="nb">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_mc&quot;</span><span class="p">)</span>
+        <span class="n">sample_id</span> <span class="o">=</span> <span class="s2">&quot;_mc&quot;</span> <span class="o">+</span> <span class="n">sample_num</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="nb">id</span><span class="p">,</span>
+                    <span class="s2">&quot;reverse&quot;</span><span class="p">,</span>
+                    <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="o">+</span> <span class="n">sample_id</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="s2">&quot;reverse&quot;</span><span class="p">,</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">])</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="get_reverse_var">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.get_reverse_var">[docs]</a>
+<span class="k">def</span> <span class="nf">get_reverse_var</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns associated reverse variable&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">_get_reverse_id</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="get_abundances">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.get_abundances">[docs]</a>
+<span class="k">def</span> <span class="nf">get_abundances</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns taxa abundances within community-level model&quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">primal</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="p">{</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]:</span> <span class="n">r</span><span class="o">.</span><span class="n">primal</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s2">&quot;^biomass.*&quot;</span><span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_dataframe">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.load_dataframe">[docs]</a>
+<span class="k">def</span> <span class="nf">load_dataframe</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">return_empty</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">return_empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Tried to load dataframe but received None as parameter&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">return_empty</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Tried to load dataframe from path that does not exist- </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">m</span>
+                <span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">return_empty</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                    <span class="s2">&quot;Unable to read csv from path- </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">m</span>
+                <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">m</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;_load_dataframe can only take a string or dataframe, received </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="set_reaction_bounds">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.set_reaction_bounds">[docs]</a>
+<span class="k">def</span> <span class="nf">set_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets reaction lower and upper bounds&quot;&quot;&quot;</span>
+    <span class="n">forward</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">id</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">optlang</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span> <span class="k">else</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">reverse</span> <span class="o">=</span> <span class="n">get_reverse_var</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">forward</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># Reverse variable doesn&#39;t exist, much simpler</span>
+        <span class="n">forward</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="n">lb</span><span class="p">,</span><span class="n">ub</span><span class="o">=</span><span class="n">ub</span><span class="p">)</span>
+        <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">get_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">lower</span> <span class="o">==</span> <span class="n">lb</span> <span class="ow">and</span> <span class="n">upper</span> <span class="o">==</span> <span class="n">ub</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">lb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">forward</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span>
+            <span class="n">lb</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">isinf</span><span class="p">(</span><span class="n">lb</span><span class="p">)</span> <span class="k">else</span> <span class="n">lb</span><span class="p">,</span>
+            <span class="n">ub</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">isinf</span><span class="p">(</span><span class="n">ub</span><span class="p">)</span> <span class="k">else</span> <span class="n">ub</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">reverse</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">ub</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">forward</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">reverse</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span>
+            <span class="n">lb</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">isinf</span><span class="p">(</span><span class="n">ub</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="n">ub</span><span class="p">,</span>
+            <span class="n">ub</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">isinf</span><span class="p">(</span><span class="n">lb</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="n">lb</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">forward</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">isinf</span><span class="p">(</span><span class="n">ub</span><span class="p">)</span> <span class="k">else</span> <span class="n">ub</span><span class="p">)</span>
+        <span class="n">reverse</span><span class="o">.</span><span class="n">set_bounds</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">isinf</span><span class="p">(</span><span class="n">lb</span><span class="p">)</span> <span class="k">else</span> <span class="o">-</span><span class="n">lb</span><span class="p">)</span>
+    <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">get_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">lower</span> <span class="o">==</span> <span class="n">lb</span> <span class="ow">and</span> <span class="n">upper</span> <span class="o">==</span> <span class="n">ub</span></div>
+
+
+
+<div class="viewcode-block" id="get_reaction_bounds">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.get_reaction_bounds">[docs]</a>
+<span class="k">def</span> <span class="nf">get_reaction_bounds</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetches reaction lower and upper bounds&quot;&quot;&quot;</span>
+    <span class="n">forward</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">id</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">optlang</span><span class="o">.</span><span class="n">interface</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span> <span class="k">else</span> <span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">reverse</span> <span class="o">=</span> <span class="n">get_reverse_var</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">forward</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">forward</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="n">forward</span><span class="o">.</span><span class="n">ub</span><span class="p">)</span>
+
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">lb</span> <span class="o">-</span> <span class="n">reverse</span><span class="o">.</span><span class="n">ub</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">forward</span><span class="o">.</span><span class="n">ub</span> <span class="o">-</span> <span class="n">reverse</span><span class="o">.</span><span class="n">lb</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="port_mgpipe_model">
+<a class="viewcode-back" href="../../pymgpipe.html#pymgpipe.utils.port_mgpipe_model">[docs]</a>
+<span class="k">def</span> <span class="nf">port_mgpipe_model</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">,</span>
+    <span class="n">remove_reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">hard_remove</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts pymgpipe model to mgPipe model for backwards-compatibility&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">.coupling</span> <span class="kn">import</span> <span class="n">add_coupling_constraints</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading model from </span><span class="si">%s</span><span class="s1">...&#39;</span><span class="o">%</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">mgpipe</span> <span class="o">=</span> <span class="n">load_cobra_model</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="n">bms</span> <span class="o">=</span> <span class="n">get_reactions</span><span class="p">(</span><span class="n">mgpipe</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s2">&quot;.*_biomass.*&quot;</span><span class="p">)</span>
+    <span class="n">taxa</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_biomass&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bms</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Modifying reaction IDs, this might take some time...&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">mgpipe</span><span class="o">.</span><span class="n">reactions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">match</span> <span class="o">:=</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">taxa</span><span class="p">):</span>
+            <span class="n">reaction_name</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">match</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+
+            <span class="k">if</span> <span class="n">reaction_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;IEX&#39;</span><span class="p">):</span>
+                <span class="n">reaction_name</span> <span class="o">=</span> <span class="n">reaction_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">new_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">reaction_name</span><span class="si">}</span><span class="s1">__</span><span class="si">{</span><span class="n">match</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">new_id</span>
+        
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;[d]&#39;</span><span class="p">):</span>
+            <span class="n">new_id</span> <span class="o">=</span> <span class="s1">&#39;Diet_&#39;</span><span class="o">+</span><span class="n">r</span><span class="o">.</span><span class="n">id</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">new_id</span>
+        
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;DM_&quot;</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="mi">0</span>
+            
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;sink_&quot;</span><span class="p">):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s1">&#39;EX_&#39;</span><span class="p">,</span><span class="s1">&#39;DUt_&#39;</span><span class="p">,</span><span class="s1">&#39;UFEt_&#39;</span><span class="p">)):</span>
+            <span class="n">r</span><span class="o">.</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="mi">1000000</span>
+
+    <span class="n">mgpipe</span> <span class="o">=</span> <span class="n">mgpipe</span><span class="o">.</span><span class="n">solver</span> 
+
+    <span class="k">if</span> <span class="n">remove_reverse</span><span class="p">:</span>
+        <span class="n">remove_reverse_vars</span><span class="p">(</span><span class="n">mgpipe</span><span class="p">,</span> <span class="n">hard_remove</span><span class="o">=</span><span class="n">hard_remove</span><span class="p">)</span>
+    
+    <span class="n">add_coupling_constraints</span><span class="p">(</span><span class="n">mgpipe</span><span class="p">)</span>
+
+    <span class="n">community_bm</span> <span class="o">=</span> <span class="n">mgpipe</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;communityBiomass&quot;</span><span class="p">]</span>
+    <span class="n">community_bm</span><span class="o">.</span><span class="n">lb</span> <span class="o">=</span> <span class="mf">0.4</span>
+    <span class="n">community_bm</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">mgpipe</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoli Meydan, Federico Baldini, Tal Korem.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

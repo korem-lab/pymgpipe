@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pymgpipe package &mdash; pymgpipe v0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=34cd777e"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to pymgpipe’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pymgpipe
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pymgpipe package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.coupling">pymgpipe.coupling module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.coupling.add_coupling_constraints"><code class="docutils literal notranslate"><span class="pre">add_coupling_constraints()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.coupling.remove_coupling_constraints"><code class="docutils literal notranslate"><span class="pre">remove_coupling_constraints()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.diet">pymgpipe.diet module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.diet.add_diet_to_model"><code class="docutils literal notranslate"><span class="pre">add_diet_to_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.diet.get_available_diets"><code class="docutils literal notranslate"><span class="pre">get_available_diets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.diet.get_diet"><code class="docutils literal notranslate"><span class="pre">get_diet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.diet.remove_diet"><code class="docutils literal notranslate"><span class="pre">remove_diet()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.fva">pymgpipe.fva module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.fva.FVA_TYPE"><code class="docutils literal notranslate"><span class="pre">FVA_TYPE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pymgpipe.fva.FVA_TYPE.FAST"><code class="docutils literal notranslate"><span class="pre">FVA_TYPE.FAST</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pymgpipe.fva.FVA_TYPE.REGULAR"><code class="docutils literal notranslate"><span class="pre">FVA_TYPE.REGULAR</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.fva.VFFVA"><code class="docutils literal notranslate"><span class="pre">VFFVA</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pymgpipe.fva.VFFVA.path"><code class="docutils literal notranslate"><span class="pre">VFFVA.path</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.fva.fva"><code class="docutils literal notranslate"><span class="pre">fva()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.io">pymgpipe.io module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.io.UnsupportedSolverException"><code class="docutils literal notranslate"><span class="pre">UnsupportedSolverException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.io.load_cobra_model"><code class="docutils literal notranslate"><span class="pre">load_cobra_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.io.load_model"><code class="docutils literal notranslate"><span class="pre">load_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.io.show_available_solvers"><code class="docutils literal notranslate"><span class="pre">show_available_solvers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.io.suppress_stdout"><code class="docutils literal notranslate"><span class="pre">suppress_stdout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.io.write_cobra_model"><code class="docutils literal notranslate"><span class="pre">write_cobra_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.io.write_lp_problem"><code class="docutils literal notranslate"><span class="pre">write_lp_problem()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.main">pymgpipe.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.main.build_models"><code class="docutils literal notranslate"><span class="pre">build_models()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.modeling">pymgpipe.modeling module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.modeling.build"><code class="docutils literal notranslate"><span class="pre">build()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.nmpc">pymgpipe.nmpc module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.nmpc.compute_nmpcs"><code class="docutils literal notranslate"><span class="pre">compute_nmpcs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe.utils">pymgpipe.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.Constants"><code class="docutils literal notranslate"><span class="pre">Constants</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pymgpipe.utils.Constants.DIET_REGEX"><code class="docutils literal notranslate"><span class="pre">Constants.DIET_REGEX</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pymgpipe.utils.Constants.EX_REGEX"><code class="docutils literal notranslate"><span class="pre">Constants.EX_REGEX</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pymgpipe.utils.Constants.FE_REGEX"><code class="docutils literal notranslate"><span class="pre">Constants.FE_REGEX</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.InfeasibleModelException"><code class="docutils literal notranslate"><span class="pre">InfeasibleModelException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.constrain_reactions"><code class="docutils literal notranslate"><span class="pre">constrain_reactions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.get_abundances"><code class="docutils literal notranslate"><span class="pre">get_abundances()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.get_net_reactions"><code class="docutils literal notranslate"><span class="pre">get_net_reactions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.get_reaction_bounds"><code class="docutils literal notranslate"><span class="pre">get_reaction_bounds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.get_reactions"><code class="docutils literal notranslate"><span class="pre">get_reactions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.get_reverse_var"><code class="docutils literal notranslate"><span class="pre">get_reverse_var()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.load_dataframe"><code class="docutils literal notranslate"><span class="pre">load_dataframe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.port_mgpipe_model"><code class="docutils literal notranslate"><span class="pre">port_mgpipe_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.remove_reverse_vars"><code class="docutils literal notranslate"><span class="pre">remove_reverse_vars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.set_objective"><code class="docutils literal notranslate"><span class="pre">set_objective()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.set_reaction_bounds"><code class="docutils literal notranslate"><span class="pre">set_reaction_bounds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pymgpipe.utils.solve_model"><code class="docutils literal notranslate"><span class="pre">solve_model()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-pymgpipe">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pymgpipe</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">pymgpipe package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pymgpipe.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pymgpipe-package">
+<h1>pymgpipe package<a class="headerlink" href="#pymgpipe-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-pymgpipe.coupling">
+<span id="pymgpipe-coupling-module"></span><h2>pymgpipe.coupling module<a class="headerlink" href="#module-pymgpipe.coupling" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.coupling.add_coupling_constraints">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.coupling.</span></span><span class="sig-name descname"><span class="pre">add_coupling_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_const</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_const</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">400</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/coupling.html#add_coupling_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.coupling.add_coupling_constraints" title="Link to this definition"></a></dt>
+<dd><p>Adding coupling constraints to community-level models</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>optlang.interface.Model</em>) – LP problem</p></li>
+<li><p><strong>u_const</strong> (<em>float</em>) – U flexibility constant</p></li>
+<li><p><strong>C_const</strong> (<em>float</em>) – C flexibility constant</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Coupling constraints are essentially a set of lower/upper bound constraints that scale reaction fluxes to the relative abundance of the microbe they belong to, like so-
+Imagine a reaction <cite>-1000 &lt;= My_reaction_taxa_A &lt;= 1000</cite>. Adding coupling constraints would redefine the bounds like so-</p>
+<p><cite>-C_const - (u_counts * &lt;abundance of taxa A&gt;) &lt;= My_reaction_taxa_A &lt;= C_const + (u_counts * &lt;abundance of taxa A&gt;)</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.coupling.remove_coupling_constraints">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.coupling.</span></span><span class="sig-name descname"><span class="pre">remove_coupling_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/coupling.html#remove_coupling_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.coupling.remove_coupling_constraints" title="Link to this definition"></a></dt>
+<dd><p>Removing coupling constraints to community-level models</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<em>optlang.interface.Model</em>) – LP problem</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Removes all coupling constraints from model (if they exist)</p>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe.diet">
+<span id="pymgpipe-diet-module"></span><h2>pymgpipe.diet module<a class="headerlink" href="#module-pymgpipe.diet" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.diet.add_diet_to_model">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.diet.</span></span><span class="sig-name descname"><span class="pre">add_diet_to_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_uptake</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">essential_metabolites</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">micronutrients</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vaginal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/diet.html#add_diet_to_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.diet.add_diet_to_model" title="Link to this definition"></a></dt>
+<dd><p>Add pymgpipe-adapated diet to model as defined by original mgPipe paper (see README for more details)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>optlang.interface.model</em>) – LP problem</p></li>
+<li><p><strong>diet</strong> (<em>pandas.DataFrame</em><em> | </em><em>str</em>) – Path to diet or dataframe</p></li>
+<li><p><strong>essential_metabolites</strong> (<em>list</em>) – Custom of essential metabolites  (uses pre-defined list by default)</p></li>
+<li><p><strong>micronutrients</strong> (<em>list</em>) – Custom list of micronutrients (uses pre-defined list by default)</p></li>
+<li><p><strong>vaginal</strong> (<em>bool</em>) – Whether or not this is a vaginal diet</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Value between 0 and 1 that defines how strict the diet constraints are (with 1 being the least strict)</p></li>
+<li><p><strong>check</strong> (<em>bool</em>) – Check whether or not this diet is feasible (can take some time depending on size of model)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.diet.get_available_diets">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.diet.</span></span><span class="sig-name descname"><span class="pre">get_available_diets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/diet.html#get_available_diets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.diet.get_available_diets" title="Link to this definition"></a></dt>
+<dd><p>Returns all diets that come pre-packaged with pymgpipe</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.diet.get_diet">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.diet.</span></span><span class="sig-name descname"><span class="pre">get_diet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/diet.html#get_diet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.diet.get_diet" title="Link to this definition"></a></dt>
+<dd><p>Returns existing diet from model</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.diet.remove_diet">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.diet.</span></span><span class="sig-name descname"><span class="pre">remove_diet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/diet.html#remove_diet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.diet.remove_diet" title="Link to this definition"></a></dt>
+<dd><p>Removes existing diet from model</p>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe.fva">
+<span id="pymgpipe-fva-module"></span><h2>pymgpipe.fva module<a class="headerlink" href="#module-pymgpipe.fva" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pymgpipe.fva.FVA_TYPE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pymgpipe.fva.</span></span><span class="sig-name descname"><span class="pre">FVA_TYPE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/fva.html#FVA_TYPE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.fva.FVA_TYPE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pymgpipe.fva.FVA_TYPE.FAST">
+<span class="sig-name descname"><span class="pre">FAST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#pymgpipe.fva.FVA_TYPE.FAST" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pymgpipe.fva.FVA_TYPE.REGULAR">
+<span class="sig-name descname"><span class="pre">REGULAR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#pymgpipe.fva.FVA_TYPE.REGULAR" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pymgpipe.fva.VFFVA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pymgpipe.fva.</span></span><span class="sig-name descname"><span class="pre">VFFVA</span></span><a class="reference internal" href="_modules/pymgpipe/fva.html#VFFVA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.fva.VFFVA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pymgpipe.fva.VFFVA.path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#pymgpipe.fva.VFFVA.path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.fva.fva">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.fva.</span></span><span class="sig-name descname"><span class="pre">fva</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fva_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">FVA_TYPE.REGULAR</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ex_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gurobi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mem_aff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dynamic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/fva.html#fva"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.fva.fva" title="Link to this definition"></a></dt>
+<dd><p>Run Flux Variability Analysis (FVA) on target reactions</p>
+<p>Available FVA types are <cite>regular</cite> and <cite>fast</cite>. <cite>Fast</cite> FVA is significantly faster, but requires both a CPLEX license and full install of the VFFVA package.
+Additionally, all problems need to be in .mps format if using <cite>fast</cite> FVA type. For more information, see VFFVA package- <a class="reference external" href="https://github.com/marouenbg/VFFVA">https://github.com/marouenbg/VFFVA</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>str</em><em> | </em><em>optlang.Model</em>) – model you want to run FVA on</p></li>
+<li><p><strong>fva_type</strong> (<em>str</em>) – FVA type used to compute min/max values, allowed values are <cite>fast</cite> and <cite>regular</cite></p></li>
+<li><p><strong>reactions</strong> (<em>list</em>) – List of reactions you want to target</p></li>
+<li><p><strong>regex</strong> (<em>str</em>) – Regex match for list of reactions you want to target</p></li>
+<li><p><strong>ex_only</strong> (<em>bool</em>) – Run FVA on exchange reactions only</p></li>
+<li><p><strong>solver</strong> (<em>str</em>) – LP solver used, allowed values are <cite>gurobi</cite> and <cite>cplex</cite></p></li>
+<li><p><strong>threads</strong> (<em>float</em>) – How many threads to use to run FVA</p></li>
+<li><p><strong>write_to_file</strong> (<em>bool</em>) – Setting this to True will save results to <cite>out_file</cite></p></li>
+<li><p><strong>out_file</strong> (<em>str</em>) – Name of file you want to save results (should have .csv extension)</p></li>
+<li><p><strong>parallel</strong> (<em>bool</em>) – If set to True, will use number of threads specified by <cite>threads</cite> parameter</p></li>
+<li><p><strong>scaling</strong> (<em>float</em>) – VFFVA specific parameter, see VFFVA package- <a class="reference external" href="https://github.com/marouenbg/VFFVA">https://github.com/marouenbg/VFFVA</a>.</p></li>
+<li><p><strong>mem_aff</strong> (<em>str</em>) – VFFVA specific parameter, see VFFVA package- <a class="reference external" href="https://github.com/marouenbg/VFFVA">https://github.com/marouenbg/VFFVA</a>.</p></li>
+<li><p><strong>schedule</strong> (<em>str</em>) – VFFVA specific parameter, see VFFVA package- <a class="reference external" href="https://github.com/marouenbg/VFFVA">https://github.com/marouenbg/VFFVA</a>.</p></li>
+<li><p><strong>objective_percent</strong> (<em>float</em>) – Takes value between 0-100. If not set to None, will compute objective and constrain to specified percentage of maximum value before running FVA</p></li>
+<li><p><strong>force</strong> (<em>bool</em>) – Will compute FVA and overwrite existing file (if file is found with target reactions)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If computation is cut short prematurely, this function will pick up where it left off based on which reactions are already present in <cite>out_file</cite>.</p>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe.io">
+<span id="pymgpipe-io-module"></span><h2>pymgpipe.io module<a class="headerlink" href="#module-pymgpipe.io" title="Link to this heading"></a></h2>
+<dl class="py exception">
+<dt class="sig sig-object py" id="pymgpipe.io.UnsupportedSolverException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pymgpipe.io.</span></span><span class="sig-name descname"><span class="pre">UnsupportedSolverException</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Unrecognized</span> <span class="pre">solver.</span> <span class="pre">Supported</span> <span class="pre">solvers</span> <span class="pre">include</span> <span class="pre">gurobi</span> <span class="pre">and</span> <span class="pre">cplex'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/io.html#UnsupportedSolverException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.io.UnsupportedSolverException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.io.load_cobra_model">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.io.</span></span><span class="sig-name descname"><span class="pre">load_cobra_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gurobi'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/io.html#load_cobra_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.io.load_cobra_model" title="Link to this definition"></a></dt>
+<dd><p>Loads and returns COBRA model</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.io.load_model">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.io.</span></span><span class="sig-name descname"><span class="pre">load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gurobi'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/io.html#load_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.io.load_model" title="Link to this definition"></a></dt>
+<dd><p>Loads optlang.interface.Model from either an LP file (.lp or .mps) or any of the available COBRA file types (.xml, .mat, etc)</p>
+<p>Returns: optlang.interface.Model</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.io.show_available_solvers">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.io.</span></span><span class="sig-name descname"><span class="pre">show_available_solvers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/io.html#show_available_solvers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.io.show_available_solvers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.io.suppress_stdout">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.io.</span></span><span class="sig-name descname"><span class="pre">suppress_stdout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/io.html#suppress_stdout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.io.suppress_stdout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.io.write_cobra_model">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.io.</span></span><span class="sig-name descname"><span class="pre">write_cobra_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/io.html#write_cobra_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.io.write_cobra_model" title="Link to this definition"></a></dt>
+<dd><p>Writes COBRA model to file</p>
+<p>Warning: COBRA won’t save any custom modifications added to the model (i.e. coupling constraints, diet, etc). For this reason, we recommend working and using the corresponding optlang LP problems.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.io.write_lp_problem">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.io.</span></span><span class="sig-name descname"><span class="pre">write_lp_problem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/io.html#write_lp_problem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.io.write_lp_problem" title="Link to this definition"></a></dt>
+<dd><p>Writes optlang.interface.Model out to file (will compress by default)</p>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe.main">
+<span id="pymgpipe-main-module"></span><h2>pymgpipe.main module<a class="headerlink" href="#module-pymgpipe.main" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.main.build_models">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.main.</span></span><span class="sig-name descname"><span class="pre">build_models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coverage_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taxa_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gurobi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lp_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.mps'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cobra_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.xml'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_constraints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diet_fecal_compartments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_reverse_vars_from_lp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hard_remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abundance_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vaginal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">essential_metabolites</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">micronutrients</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_uptake</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diet_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mc'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/main.html#build_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.main.build_models" title="Link to this definition"></a></dt>
+<dd><p>Build community COBRA models using mgpipe-like compartments and constraints.</p>
+<p>This function is pymgpipe’s main model building function, and can be used to build models for either one or multiple samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coverage_file</strong> (<em>pandas.DataFrame</em><em> | </em><em>str</em>) – Abundance matrix with taxa as rows and samples as columns</p></li>
+<li><p><strong>taxa_dir</strong> (<em>str</em>) – Directory containing individual strain/species taxa models (file names corresponding to index of coverage matrix)</p></li>
+<li><p><strong>out_dir</strong> (<em>str</em>) – Directory to save output of this function (models, LP problems, etc.), defaults to cwd</p></li>
+<li><p><strong>diet_fecal_compartments</strong> (<em>bool</em>) – Build models with mgpipe’s diet/fecal compartmentalization, defaults to False</p></li>
+<li><p><strong>coupling_constraints</strong> (<em>bool</em>) – Add mgpipe’s abundance coupling constraints to internal reactions, defaults to True</p></li>
+<li><p><strong>remove_reverse_vars_from_lp</strong> (<em>bool</em>) – Remove reverse variables that are added into COBRApy models</p></li>
+<li><p><strong>hard_remove</strong> (<em>bool</em>) – If set to True, variables will be removed entirely from models, which can be a time consuming process. Having it set to False will <cite>remove</cite> them by setting their bounds to 0.</p></li>
+<li><p><strong>diet</strong> (<em>str</em>) – Name of diet or file you want to impose on models (can be one diet or personalized)</p></li>
+<li><p><strong>vaginal</strong> (<em>bool</em>) – Impose vaginal diet constraints to support vaginal diet</p></li>
+<li><p><strong>essential_metabolites</strong> (<em>list</em>) – List of metabolites to include as essential within the diet</p></li>
+<li><p><strong>micronutrients</strong> (<em>list</em>) – List of metabolites to include as micronutrients within diet</p></li>
+<li><p><strong>force_uptake</strong> (<em>bool</em>) – Force minimum uptake of nutrients from diet</p></li>
+<li><p><strong>diet_threshold</strong> (<em>float</em>) – Threshold on imposed diet uptake, i.e. lb &lt; metabolite &lt; (threshold * lb)</p></li>
+<li><p><strong>solver</strong> (<em>str</em>) – LP solver (gurobi or cplex) used to solve models, defaults to gurobi</p></li>
+<li><p><strong>parallel</strong> (<em>bool</em>) – Samples will be built in parallel if set to True</p></li>
+<li><p><strong>threads</strong> (<em>int</em>) – Number of threads to use if building in parallel</p></li>
+<li><p><strong>lp_type</strong> (<em>str</em>) – File type for LP problem (either .mps or .lp), defaults to .mps</p></li>
+<li><p><strong>cobra_type</strong> (<em>str</em>) – File type for COBRA model (.xml, .mat, .json), defaults to .xml</p></li>
+<li><p><strong>compress</strong> (<em>bool</em>) – Models and LP problems will be saved as compressed files if set to True, defaults to True</p></li>
+<li><p><strong>compute_metrics</strong> (<em>bool</em>) – Compute diversity metrics for built models, defaults to True</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>COBRA models written to <em>out_dir/models/</em></p>
+<p>LP problems written to <em>out_dir/problems/</em></p>
+<p>All modifications done at the level of the LP (i.e. coupling constraints, diet) are not saved when writing COBRA models to file. For this reason, it is always recommended to work with LP models in the <cite>problems/</cite> folder.</p>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe.modeling">
+<span id="pymgpipe-modeling-module"></span><h2>pymgpipe.modeling module<a class="headerlink" href="#module-pymgpipe.modeling" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.modeling.build">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.modeling.</span></span><span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">abundances</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taxa_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diet_fecal_compartments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gurobi'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/modeling.html#build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.modeling.build" title="Link to this definition"></a></dt>
+<dd><p>Build community COBRA model using mgpipe-like compartments and constraints.</p>
+<p>This function is pymgpipe’s main model building function, can can be used to build a single model (with no further modifications)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>abundances</strong> (<em>pandas.DataFrame</em><em> | </em><em>str</em>) – Abundance matrix with taxa as rows and samples as columns</p></li>
+<li><p><strong>sample</strong> (<em>str</em>) – Label corresponding to the sample you want to build (needs to match up to column name in abundance matrix)</p></li>
+<li><p><strong>taxa_directory</strong> (<em>str</em>) – Directory containing individual strain/species taxa models (file names corresponding to index of coverage matrix)</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Abundance threshold, any taxa with an abundance less than this value will be left out and abundances will be re-normalized</p></li>
+<li><p><strong>diet_fecal_compartments</strong> (<em>bool</em>) – Build models with mgpipe’s diet/fecal compartmentalization, defaults to False</p></li>
+<li><p><strong>solver</strong> (<em>str</em>) – LP solver (gurobi or cplex) used to solve models, defaults to gurobi</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe.nmpc">
+<span id="pymgpipe-nmpc-module"></span><h2>pymgpipe.nmpc module<a class="headerlink" href="#module-pymgpipe.nmpc" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.nmpc.compute_nmpcs">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.nmpc.</span></span><span class="sig-name descname"><span class="pre">compute_nmpcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nmpcs.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_out_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'community_objectives.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fluxes_out_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all_fluxes.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ex_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gurobi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threads</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diet_fecal_compartments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_to_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fva_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">FVA_TYPE.REGULAR</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objective_percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mem_aff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schedule</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dynamic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/nmpc.html#compute_nmpcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.nmpc.compute_nmpcs" title="Link to this definition"></a></dt>
+<dd><p>Compute NMPCs as well as associated reaction metrics on specified list (or directory) of samples</p>
+<p>This function is computes NMPCs at the level of the optlang LP problem to leverage speed of low-level representation.
+Available FVA types are <cite>regular</cite> and <cite>fast</cite>. <cite>Fast</cite> FVA is significantly faster, but requires both a CPLEX license and full install of the VFFVA package.
+Additionally, all problems need to be in .mps format if using <cite>fast</cite> FVA type. For more information, see VFFVA package- <a class="reference external" href="https://github.com/marouenbg/VFFVA">https://github.com/marouenbg/VFFVA</a>.</p>
+<p>NMPCs are calculated as the max fluxes secreted by the fecal compartment (positive values only) summed with the min flux uptaken by the diet compartment (negative values only).
+In cases where models are not build with diet/fecal compartments, NMPCs are simply calculated as the sum of the max and min fluxes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>samples</strong> (<em>list</em><em> | </em><em>str</em>) – List of samples or directory containing samples</p></li>
+<li><p><strong>out_dir</strong> (<em>str</em>) – Directory to output results</p></li>
+<li><p><strong>out_file</strong> (<em>str</em>) – Name of file containing final NMPCs</p></li>
+<li><p><strong>objective_out_file</strong> (<em>str</em>) – Name of file containing community objectives</p></li>
+<li><p><strong>fluxes_out_file</strong> (<em>str</em>) – Name of file containing fluxes</p></li>
+<li><p><strong>reactions</strong> (<em>list</em>) – List of reactions to run NMPCs on</p></li>
+<li><p><strong>regex</strong> (<em>str</em>) – Regex match for list of reactions to run NMPCs on</p></li>
+<li><p><strong>diet_fecal_compartments</strong> (<em>bool</em>) – Whether or not models are built with diet/fecal compartmentalization</p></li>
+<li><p><strong>ex_only</strong> (<em>bool</em>) – Compute NMPCs on exchange reactions only</p></li>
+<li><p><strong>fva_type</strong> (<em>str</em>) – FVA type used to compute NMPCs, allowed values are <cite>fast</cite> and <cite>regular</cite></p></li>
+<li><p><strong>solver</strong> (<em>str</em>) – LP solver used to compute NMPCs, allowed values are <cite>gurobi</cite> and <cite>cplex</cite></p></li>
+<li><p><strong>obj_optimality</strong> (<em>float</em>) – Percent of optimal objective value constrained during NMPC computation</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Fluxes below threshold will be set to 0</p></li>
+<li><p><strong>write_to_file</strong> (<em>bool</em>) – Write results to file</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>If computation is cut short prematurely, this function will pick up where it left off based on which samples are already present in <cite>out_file</cite>.</p>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe.utils">
+<span id="pymgpipe-utils-module"></span><h2>pymgpipe.utils module<a class="headerlink" href="#module-pymgpipe.utils" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pymgpipe.utils.Constants">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">Constants</span></span><a class="reference internal" href="_modules/pymgpipe/utils.html#Constants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.Constants" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pymgpipe.utils.Constants.DIET_REGEX">
+<span class="sig-name descname"><span class="pre">DIET_REGEX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'^(Diet_)?(?i)EX_((?!biomass|community).)*\\[d\\]$'</span></em><a class="headerlink" href="#pymgpipe.utils.Constants.DIET_REGEX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pymgpipe.utils.Constants.EX_REGEX">
+<span class="sig-name descname"><span class="pre">EX_REGEX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'^(Diet_)?(?i)EX_((?!biomass|community).)*(_m|\\[u\\]|\\[d\\]|\\[fe\\])$'</span></em><a class="headerlink" href="#pymgpipe.utils.Constants.EX_REGEX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pymgpipe.utils.Constants.FE_REGEX">
+<span class="sig-name descname"><span class="pre">FE_REGEX</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'^EX_((?!biomass|community).)*\\[fe\\]$'</span></em><a class="headerlink" href="#pymgpipe.utils.Constants.FE_REGEX" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="pymgpipe.utils.InfeasibleModelException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">InfeasibleModelException</span></span><a class="reference internal" href="_modules/pymgpipe/utils.html#InfeasibleModelException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.InfeasibleModelException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.constrain_reactions">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">constrain_reactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#constrain_reactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.constrain_reactions" title="Link to this definition"></a></dt>
+<dd><p>Constrains reactions within model to specific value (or range of values)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>optlang.interface.model</em>) – LP problem</p></li>
+<li><p><strong>flux_map</strong> (<em>dictionary</em>) – Dictionary defining flux value for each reaction you want to constrain</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Fixed value defining flexibility threshold (not a percentage!)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:
+Passing in the following dictionary {‘EX_reactionA’: 400} with a threshold of 50 will set the bounds for this reaction to <cite>350 &lt;= EX_reactionA &lt;= 450</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.get_abundances">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">get_abundances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#get_abundances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.get_abundances" title="Link to this definition"></a></dt>
+<dd><p>Returns taxa abundances within community-level model</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.get_net_reactions">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">get_net_reactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#get_net_reactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.get_net_reactions" title="Link to this definition"></a></dt>
+<dd><p>Fetches NET reactions from model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>optlang.interface.model</em>) – LP problem</p></li>
+<li><p><strong>regex</strong> (<em>str</em>) – Regex string corresponding to list of reactions you want to return</p></li>
+<li><p><strong>reactions</strong> (<em>list</em>) – List of reactions you want to return</p></li>
+</ul>
+</dd>
+</dl>
+<p>Notes:
+By default, COBRA adds a reverse variable for every forward variable within the model.
+Therefore, to calculate the flux going through <cite>reaction_A</cite> for example, you must subtract the forward and reverse fluxes like so- <cite>reaction_A - reaction_A_reverse</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.get_reaction_bounds">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">get_reaction_bounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#get_reaction_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.get_reaction_bounds" title="Link to this definition"></a></dt>
+<dd><p>Fetches reaction lower and upper bounds</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.get_reactions">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">get_reactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#get_reactions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.get_reactions" title="Link to this definition"></a></dt>
+<dd><p>Fetches reactions from model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>optlang.interface.model</em>) – LP problem</p></li>
+<li><p><strong>regex</strong> (<em>str</em>) – Regex string corresponding to list of reactions you want to return</p></li>
+<li><p><strong>reactions</strong> (<em>list</em>) – List of reactions you want to return</p></li>
+<li><p><strong>include_reverse</strong> (<em>bool</em>) – Whether or not you want to return reverse variables as well (if model contains reverse variables)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: List of optlang.interface.Variable</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.get_reverse_var">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">get_reverse_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#get_reverse_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.get_reverse_var" title="Link to this definition"></a></dt>
+<dd><p>Returns associated reverse variable</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.load_dataframe">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">load_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_empty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#load_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.load_dataframe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.port_mgpipe_model">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">port_mgpipe_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hard_remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#port_mgpipe_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.port_mgpipe_model" title="Link to this definition"></a></dt>
+<dd><p>Converts pymgpipe model to mgPipe model for backwards-compatibility</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.remove_reverse_vars">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">remove_reverse_vars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hard_remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#remove_reverse_vars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.remove_reverse_vars" title="Link to this definition"></a></dt>
+<dd><p>Removes all reverse variables from model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>optlang.interface.model</em>) – LP problem</p></li>
+<li><p><strong>hard_remove</strong> (<em>bool</em>) – Setting <cite>hard_remove</cite> to True will physically remove the variables from the model, whereas setting it to False will only set the lower/upper bounds to 0</p></li>
+</ul>
+</dd>
+</dl>
+<p>Notes:
+By default, COBRA adds a reverse variable for every forward variable within the model.
+Therefore, to calculate the flux going through <cite>reaction_A</cite> for example, you must subtract the forward and reverse fluxes like so- <cite>reaction_A - reaction_A_reverse</cite>.
+This function removes all reverse variables to make calculations a lot simpler and faster. Also, reduces the size of the models by roughly 50%!</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.set_objective">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">set_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obj_expression</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'min'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#set_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.set_objective" title="Link to this definition"></a></dt>
+<dd><p>Sets model optimization objective (optlang.interface.Objective)</p>
+<p>Notes:
+<cite>obj_expression</cite> can either be an optlang.interface.Objective, a string defining a specific variable, or a list of variables (in which case it will set objective to the sum of said reactions)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.set_reaction_bounds">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">set_reaction_bounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ub</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#set_reaction_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.set_reaction_bounds" title="Link to this definition"></a></dt>
+<dd><p>Sets reaction lower and upper bounds</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pymgpipe.utils.solve_model">
+<span class="sig-prename descclassname"><span class="pre">pymgpipe.utils.</span></span><span class="sig-name descname"><span class="pre">solve_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reactions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">solver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gurobi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">presolve</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'primal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flux_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ex_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pymgpipe/utils.html#solve_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pymgpipe.utils.solve_model" title="Link to this definition"></a></dt>
+<dd><p>Solves optlang.interface.Model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>optlang.interface.model</em>) – LP problem</p></li>
+<li><p><strong>regex</strong> (<em>str</em>) – Regex string corresponding to list of reactions you want to return</p></li>
+<li><p><strong>reactions</strong> (<em>list</em>) – List of reactions you want to return</p></li>
+<li><p><strong>ex_only</strong> (<em>bool</em>) – Only return fluxes for exchange reactions (will be overridden by either <cite>regex</cite> or <cite>reactions</cite> param)</p></li>
+<li><p><strong>flux_threshold</strong> (<em>float</em>) – Any flux below this threshold value will be set to 0</p></li>
+</ul>
+</dd>
+</dl>
+<p>Notes:
+<cite>presolve</cite> and <cite>method</cite> are both solver-specific parameters. Please refer to <a class="reference external" href="https://optlang.readthedocs.io/en/latest/">https://optlang.readthedocs.io/en/latest/</a> for more info.</p>
+</dd></dl>
+
+</section>
+<section id="module-pymgpipe">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pymgpipe" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to pymgpipe’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoli Meydan, Federico Baldini, Tal Korem.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
